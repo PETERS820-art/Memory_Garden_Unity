@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class MemoryModeUIController : MonoBehaviour
 {
     [SerializeField] private CanvasGroup canvasGroup;
+    [SerializeField] private MemoryModeUIFollower uiFollower;
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text storyText;
     [SerializeField] private TMP_Text emotionTagText;
@@ -25,6 +26,7 @@ public class MemoryModeUIController : MonoBehaviour
     {
         AutoAssignReferences(logWarnings: true);
         EnsureCanvasGroup();
+        EnsureUIFollower(logWarnings: true);
         ApplyHiddenStateImmediate();
         gameObject.SetActive(false);
     }
@@ -42,6 +44,17 @@ public class MemoryModeUIController : MonoBehaviour
             fadeCoroutine = null;
         }
 
+        EnsureUIFollower(logWarnings: true);
+        if (uiFollower != null)
+        {
+            uiFollower.SnapToView();
+            uiFollower.BeginFollow();
+        }
+        else
+        {
+            Debug.LogWarning("[MemoryModeUIController] MemoryModeUIFollower reference is missing.", this);
+        }
+
         EnsureCanvasGroup();
         gameObject.SetActive(true);
         PopulateUI(data);
@@ -54,6 +67,16 @@ public class MemoryModeUIController : MonoBehaviour
         {
             StopCoroutine(fadeCoroutine);
             fadeCoroutine = null;
+        }
+
+        EnsureUIFollower(logWarnings: false);
+        if (uiFollower != null)
+        {
+            uiFollower.EndFollow();
+        }
+        else
+        {
+            Debug.LogWarning("[MemoryModeUIController] MemoryModeUIFollower reference is missing.", this);
         }
 
         EnsureCanvasGroup();
@@ -173,6 +196,7 @@ public class MemoryModeUIController : MonoBehaviour
     private void AutoAssignReferences(bool logWarnings)
     {
         EnsureCanvasGroup();
+        EnsureUIFollower(logWarnings: false);
 
         titleText = titleText != null ? titleText : FindText("TitleText");
         storyText = storyText != null ? storyText : FindText("StoryText");
@@ -218,6 +242,20 @@ public class MemoryModeUIController : MonoBehaviour
         if (canvasGroup == null)
         {
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
+    }
+
+    private void EnsureUIFollower(bool logWarnings)
+    {
+        if (uiFollower != null)
+        {
+            return;
+        }
+
+        uiFollower = GetComponent<MemoryModeUIFollower>();
+        if (logWarnings && uiFollower == null)
+        {
+            Debug.LogWarning("[MemoryModeUIController] Could not find MemoryModeUIFollower on MemoryModeRoot.", this);
         }
     }
 

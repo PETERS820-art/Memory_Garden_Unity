@@ -2100,7 +2100,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1439812399}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 2}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.002, y: 0.002, z: 0.002}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2113,7 +2113,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 1.5}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 1200, y: 700}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1439812401
@@ -4252,6 +4252,7 @@ GameObject:
   - component: {fileID: 2082350684}
   - component: {fileID: 2082350686}
   - component: {fileID: 2082350685}
+  - component: {fileID: 2082350687}
   m_Layer: 0
   m_Name: MemoryModelRoot
   m_TagString: Untagged
@@ -4300,6 +4301,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canvasGroup: {fileID: 2082350685}
+  uiFollower: {fileID: 0}
   titleText: {fileID: 398187889}
   storyText: {fileID: 562035080}
   emotionTagText: {fileID: 817390136}
@@ -4310,6 +4312,28 @@ MonoBehaviour:
   - {fileID: 1240298696}
   timelineRoot: {fileID: 39015460}
   fadeDuration: 0.5
+--- !u!114 &2082350687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2082350683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: beb9f34970f5a8b408409819f2d1ea9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetCamera: {fileID: 899484208}
+  followDistance: 1.8
+  verticalOffset: -0.05
+  lateralOffset: 0
+  positionSmoothTime: 0.2
+  rotationSmoothSpeed: 8
+  recenterAngleThreshold: 20
+  recenterDistanceThreshold: 0.35
+  keepUpright: 1
+  followOnlyWhenVisible: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
