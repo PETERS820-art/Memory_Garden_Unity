@@ -18,5 +18,9 @@ MonoBehaviour:
   emotionType: nostalgic
   storyText: This teddy bear reminds me of a quiet room, old afternoons, and the
     feeling of being accompanied.
-  photos: []
+  photos:
+  - {fileID: 21300000, guid: cde25ca57f94fe7408f2f1464c919d00, type: 3}
+  - {fileID: 21300000, guid: 7450501f63d3dd64fa1f5537233cac4d, type: 3}
+  - {fileID: 21300000, guid: e8937ad7c81075241a1fa7abbf2ed8ac, type: 3}
+  - {fileID: 21300000, guid: 2b395486045cc9242ba51062cc050560, type: 3}
   timelineEvents: []
