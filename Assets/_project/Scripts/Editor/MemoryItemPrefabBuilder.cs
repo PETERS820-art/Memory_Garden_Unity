@@ -114,6 +114,7 @@ public static class MemoryItemPrefabBuilder
             ConfigureRigidbody(root);
             ConfigureGrabInteractable(root);
             ConfigureMemoryObject(root, fbxAssetPath);
+            ConfigureRespawn(root);
 
             var savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabAssetPath);
             if (savedPrefab == null)
@@ -171,6 +172,7 @@ public static class MemoryItemPrefabBuilder
         grabInteractable.trackPosition = true;
         grabInteractable.trackRotation = true;
         grabInteractable.throwOnDetach = true;
+        ConfigureDynamicAttachSettings(grabInteractable);
     }
 
     private static void ConfigureMemoryObject(GameObject root, string fbxAssetPath)
@@ -178,7 +180,89 @@ public static class MemoryItemPrefabBuilder
         var memoryObject = GetOrAddComponent<MemoryObject>(root);
         memoryObject.observeRequiredTime = 5f;
         memoryObject.maxObserveAngle = 25f;
+        memoryObject.observeAnchor = null;
+        memoryObject.useBoundsCenterForObservation = true;
+        memoryObject.preferColliderBounds = true;
         MemoryItemDataAssetBuilder.TryAssignExistingDataAsset(memoryObject, fbxAssetPath);
+    }
+
+    private static void ConfigureDynamicAttachSettings(XRGrabInteractable grabInteractable)
+    {
+        var serializedObject = new SerializedObject(grabInteractable);
+        serializedObject.UpdateIfRequiredOrScript();
+
+        bool useDynamicAttachApplied = TrySetSerializedBool(serializedObject, "m_UseDynamicAttach", true);
+        bool matchAttachPositionApplied = TrySetSerializedBool(serializedObject, "m_MatchAttachPosition", true);
+        bool matchAttachRotationApplied = TrySetSerializedBool(serializedObject, "m_MatchAttachRotation", false);
+        bool snapToColliderVolumeApplied = TrySetSerializedBool(serializedObject, "m_SnapToColliderVolume", true);
+
+        if (serializedObject.hasModifiedProperties)
+        {
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        if (!useDynamicAttachApplied)
+        {
+            grabInteractable.useDynamicAttach = true;
+        }
+
+        if (!matchAttachPositionApplied)
+        {
+            grabInteractable.matchAttachPosition = true;
+        }
+
+        if (!matchAttachRotationApplied)
+        {
+            grabInteractable.matchAttachRotation = false;
+        }
+
+        if (!snapToColliderVolumeApplied)
+        {
+            grabInteractable.snapToColliderVolume = true;
+        }
+    }
+
+    private static void ConfigureRespawn(GameObject root)
+    {
+        var respawn = GetOrAddComponent<MemoryItemRespawn>(root);
+        var serializedObject = new SerializedObject(respawn);
+        serializedObject.UpdateIfRequiredOrScript();
+
+        TrySetSerializedFloat(serializedObject, "maxDistanceFromStart", 100f);
+        TrySetSerializedFloat(serializedObject, "minY", -10f);
+        TrySetSerializedFloat(serializedObject, "checkInterval", 0.5f);
+        TrySetSerializedFloat(serializedObject, "respawnHeightOffset", 0.3f);
+        TrySetSerializedBool(serializedObject, "resetWhenSelected", false);
+        TrySetSerializedBool(serializedObject, "resetOnLowYEvenWhenSelected", true);
+
+        if (serializedObject.hasModifiedProperties)
+        {
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+    }
+
+    private static bool TrySetSerializedBool(SerializedObject serializedObject, string propertyName, bool value)
+    {
+        var property = serializedObject.FindProperty(propertyName);
+        if (property == null || property.propertyType != SerializedPropertyType.Boolean)
+        {
+            return false;
+        }
+
+        property.boolValue = value;
+        return true;
+    }
+
+    private static bool TrySetSerializedFloat(SerializedObject serializedObject, string propertyName, float value)
+    {
+        var property = serializedObject.FindProperty(propertyName);
+        if (property == null || property.propertyType != SerializedPropertyType.Float)
+        {
+            return false;
+        }
+
+        property.floatValue = value;
+        return true;
     }
 
     private static T GetOrAddComponent<T>(GameObject gameObject) where T : Component

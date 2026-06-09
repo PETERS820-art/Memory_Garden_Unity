@@ -4,6 +4,9 @@ using UnityEngine.XR.Interaction.Toolkit;
 [RequireComponent(typeof(XRGrabInteractable))]
 public class MemoryObject : MonoBehaviour
 {
+    private const float ObservationGizmoSphereRadius = 0.03f;
+    private const float ObservationGizmoCrossHalfSize = 0.08f;
+
     [Header("Memory Data")]
     [SerializeField] private MemoryItemData memoryItemData;
 
@@ -11,6 +14,9 @@ public class MemoryObject : MonoBehaviour
     public float observeRequiredTime = 2f;
     public float maxObserveAngle = 25f;
     public float observeLogInterval = 0.5f;
+    public Transform observeAnchor;
+    public bool useBoundsCenterForObservation = true;
+    public bool preferColliderBounds = true;
 
     public bool IsHeld { get; private set; }
     public bool IsBeingObserved { get; private set; }
@@ -76,7 +82,8 @@ public class MemoryObject : MonoBehaviour
             return;
         }
 
-        Vector3 directionToObject = transform.position - mainCamera.transform.position;
+        Vector3 observationCenter = GetObservationCenter();
+        Vector3 directionToObject = observationCenter - mainCamera.transform.position;
         if (directionToObject.sqrMagnitude <= Mathf.Epsilon)
         {
             return;
@@ -191,5 +198,107 @@ public class MemoryObject : MonoBehaviour
         {
             hasTriggeredWhileHeld = false;
         }
+    }
+
+    public Vector3 GetObservationCenter()
+    {
+        if (observeAnchor != null)
+        {
+            return observeAnchor.position;
+        }
+
+        if (useBoundsCenterForObservation)
+        {
+            if (preferColliderBounds)
+            {
+                if (TryGetCombinedColliderBounds(out Bounds colliderBounds))
+                {
+                    return colliderBounds.center;
+                }
+
+                if (TryGetCombinedRendererBounds(out Bounds rendererBounds))
+                {
+                    return rendererBounds.center;
+                }
+            }
+            else
+            {
+                if (TryGetCombinedRendererBounds(out Bounds rendererBounds))
+                {
+                    return rendererBounds.center;
+                }
+
+                if (TryGetCombinedColliderBounds(out Bounds colliderBounds))
+                {
+                    return colliderBounds.center;
+                }
+            }
+        }
+
+        return transform.position;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Vector3 center = GetObservationCenter();
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawSphere(center, ObservationGizmoSphereRadius);
+        Gizmos.DrawLine(center + (Vector3.right * ObservationGizmoCrossHalfSize), center - (Vector3.right * ObservationGizmoCrossHalfSize));
+        Gizmos.DrawLine(center + (Vector3.up * ObservationGizmoCrossHalfSize), center - (Vector3.up * ObservationGizmoCrossHalfSize));
+        Gizmos.DrawLine(center + (Vector3.forward * ObservationGizmoCrossHalfSize), center - (Vector3.forward * ObservationGizmoCrossHalfSize));
+    }
+
+    private bool TryGetCombinedColliderBounds(out Bounds combinedBounds)
+    {
+        Collider[] colliders = GetComponentsInChildren<Collider>(true);
+        bool hasBounds = false;
+        combinedBounds = default;
+
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider collider = colliders[i];
+            if (collider == null)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                combinedBounds = collider.bounds;
+                hasBounds = true;
+                continue;
+            }
+
+            combinedBounds.Encapsulate(collider.bounds);
+        }
+
+        return hasBounds;
+    }
+
+    private bool TryGetCombinedRendererBounds(out Bounds combinedBounds)
+    {
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+        bool hasBounds = false;
+        combinedBounds = default;
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                combinedBounds = renderer.bounds;
+                hasBounds = true;
+                continue;
+            }
+
+            combinedBounds.Encapsulate(renderer.bounds);
+        }
+
+        return hasBounds;
     }
 }
