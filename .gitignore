@@ -11,6 +11,8 @@
 /.vs/
 /.vscode/
 /.idea/
+/.vsconfig/
+/.vsconfig
 
 # Generated solution and project files
 *.csproj
