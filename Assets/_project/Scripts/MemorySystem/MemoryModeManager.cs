@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -10,10 +11,13 @@ public class MemoryModeManager : MonoBehaviour
     public float memoryLightIntensity = 0.3f;
     public Volume targetGlobalVolume;
     public float memoryVolumeWeight = 1f;
+    public float memoryTransitionDuration = 0.3f;
 
     public bool IsInMemoryMode { get; private set; }
+    public MemoryObject CurrentMemoryObject => currentMemoryObject;
 
     private MemoryObject currentMemoryObject;
+    private Coroutine visualTransitionCoroutine;
     private float originalLightIntensity;
     private float originalVolumeWeight;
     private bool originalVolumeEnabled;
@@ -30,6 +34,7 @@ public class MemoryModeManager : MonoBehaviour
         }
 
         Instance = this;
+        CacheOriginalVisualState();
     }
 
     private void OnDestroy()
@@ -48,6 +53,8 @@ public class MemoryModeManager : MonoBehaviour
             return;
         }
 
+        CacheOriginalVisualState();
+
         if (IsInMemoryMode && currentMemoryObject == memoryObject)
         {
             Debug.Log("[MemoryModeManager] EnterMemoryMode ignored because this object is already active.", this);
@@ -59,14 +66,19 @@ public class MemoryModeManager : MonoBehaviour
             currentMemoryObject.SetHighlight(false);
         }
 
-        IsInMemoryMode = true;
         currentMemoryObject = memoryObject;
+        IsInMemoryMode = true;
+        currentMemoryObject.SetHighlight(true);
+
+        StartVisualTransition(
+            hasCachedLightState ? memoryLightIntensity : 0f,
+            hasCachedVolumeState ? memoryVolumeWeight : 0f,
+            true,
+            "[MemoryModeManager] Memory mode visual feedback applied.");
 
         string safeItemName = string.IsNullOrWhiteSpace(memoryObject.itemName) ? "(Unnamed Memory)" : memoryObject.itemName;
         string safeDescription = string.IsNullOrWhiteSpace(memoryObject.shortDescription) ? "(No Description)" : memoryObject.shortDescription;
         string safeEmotion = string.IsNullOrWhiteSpace(memoryObject.emotionType) ? "(No Emotion Type)" : memoryObject.emotionType;
-
-        ApplyVisualFeedback(memoryObject);
 
         Debug.Log(
             $"[MemoryModeManager] EnterMemoryMode -> Name: {safeItemName}, Description: {safeDescription}, Emotion: {safeEmotion}",
@@ -75,74 +87,132 @@ public class MemoryModeManager : MonoBehaviour
 
     public void ExitMemoryMode()
     {
-        if (!IsInMemoryMode)
+        if (!IsInMemoryMode && currentMemoryObject == null)
         {
-            Debug.Log("[MemoryModeManager] ExitMemoryMode called, but memory mode was already inactive.", this);
             return;
         }
 
-        RestoreVisualFeedback();
+        MemoryObject exitingMemoryObject = currentMemoryObject;
+
         IsInMemoryMode = false;
         currentMemoryObject = null;
-        Debug.Log("[MemoryModeManager] Exited memory mode.", this);
+
+        if (exitingMemoryObject != null)
+        {
+            exitingMemoryObject.SetHighlight(false);
+        }
+
+        CacheOriginalVisualState();
+        StartVisualTransition(
+            hasCachedLightState ? originalLightIntensity : 0f,
+            hasCachedVolumeState ? originalVolumeWeight : 0f,
+            hasCachedVolumeState && originalVolumeEnabled,
+            "[MemoryModeManager] Memory mode visual feedback restored.");
+
+        Debug.Log("[MemoryModeManager] Exiting memory mode.", this);
     }
 
-    private void ApplyVisualFeedback(MemoryObject memoryObject)
+    private void CacheOriginalVisualState()
+    {
+        if (targetDirectionalLight != null && !hasCachedLightState)
+        {
+            originalLightIntensity = targetDirectionalLight.intensity;
+            hasCachedLightState = true;
+        }
+
+        if (targetGlobalVolume != null && !hasCachedVolumeState)
+        {
+            originalVolumeEnabled = targetGlobalVolume.enabled;
+            originalVolumeWeight = targetGlobalVolume.weight;
+            hasCachedVolumeState = true;
+        }
+    }
+
+    private void StartVisualTransition(
+        float targetLightIntensity,
+        float targetVolumeWeight,
+        bool finalVolumeEnabled,
+        string completionLog)
+    {
+        if (visualTransitionCoroutine != null)
+        {
+            StopCoroutine(visualTransitionCoroutine);
+            visualTransitionCoroutine = null;
+        }
+
+        visualTransitionCoroutine = StartCoroutine(
+            TransitionVisualState(targetLightIntensity, targetVolumeWeight, finalVolumeEnabled, completionLog));
+    }
+
+    private IEnumerator TransitionVisualState(
+        float targetLightIntensity,
+        float targetVolumeWeight,
+        bool finalVolumeEnabled,
+        string completionLog)
+    {
+        float duration = Mathf.Max(0f, memoryTransitionDuration);
+
+        float startingLightIntensity = targetDirectionalLight != null ? targetDirectionalLight.intensity : 0f;
+        float startingVolumeWeight = targetGlobalVolume != null ? targetGlobalVolume.weight : 0f;
+
+        if (targetGlobalVolume != null)
+        {
+            targetGlobalVolume.enabled = true;
+        }
+
+        if (duration <= Mathf.Epsilon)
+        {
+            ApplyVisualState(targetLightIntensity, targetVolumeWeight, finalVolumeEnabled);
+            visualTransitionCoroutine = null;
+
+            if (!string.IsNullOrWhiteSpace(completionLog))
+            {
+                Debug.Log(completionLog, this);
+            }
+
+            yield break;
+        }
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            if (targetDirectionalLight != null)
+            {
+                targetDirectionalLight.intensity = Mathf.Lerp(startingLightIntensity, targetLightIntensity, t);
+            }
+
+            if (targetGlobalVolume != null)
+            {
+                targetGlobalVolume.weight = Mathf.Lerp(startingVolumeWeight, targetVolumeWeight, t);
+            }
+
+            yield return null;
+        }
+
+        ApplyVisualState(targetLightIntensity, targetVolumeWeight, finalVolumeEnabled);
+        visualTransitionCoroutine = null;
+
+        if (!string.IsNullOrWhiteSpace(completionLog))
+        {
+            Debug.Log(completionLog, this);
+        }
+    }
+
+    private void ApplyVisualState(float lightIntensity, float volumeWeight, bool finalVolumeEnabled)
     {
         if (targetDirectionalLight != null)
         {
-            if (!hasCachedLightState)
-            {
-                originalLightIntensity = targetDirectionalLight.intensity;
-                hasCachedLightState = true;
-            }
-
-            targetDirectionalLight.intensity = memoryLightIntensity;
-        }
-        else
-        {
-            Debug.LogWarning("[MemoryModeManager] No targetDirectionalLight assigned. Light feedback skipped.", this);
+            targetDirectionalLight.intensity = lightIntensity;
         }
 
         if (targetGlobalVolume != null)
         {
-            if (!hasCachedVolumeState)
-            {
-                originalVolumeEnabled = targetGlobalVolume.enabled;
-                originalVolumeWeight = targetGlobalVolume.weight;
-                hasCachedVolumeState = true;
-            }
-
-            targetGlobalVolume.enabled = true;
-            targetGlobalVolume.weight = memoryVolumeWeight;
+            targetGlobalVolume.weight = volumeWeight;
+            targetGlobalVolume.enabled = finalVolumeEnabled;
         }
-        else
-        {
-            Debug.LogWarning("[MemoryModeManager] No targetGlobalVolume assigned. Volume feedback skipped.", this);
-        }
-
-        memoryObject.SetHighlight(true);
-        Debug.Log("[MemoryModeManager] Memory mode visual feedback applied.", this);
-    }
-
-    private void RestoreVisualFeedback()
-    {
-        if (targetDirectionalLight != null && hasCachedLightState)
-        {
-            targetDirectionalLight.intensity = originalLightIntensity;
-        }
-
-        if (targetGlobalVolume != null && hasCachedVolumeState)
-        {
-            targetGlobalVolume.enabled = originalVolumeEnabled;
-            targetGlobalVolume.weight = originalVolumeWeight;
-        }
-
-        if (currentMemoryObject != null)
-        {
-            currentMemoryObject.SetHighlight(false);
-        }
-
-        Debug.Log("[MemoryModeManager] Memory mode visual feedback restored.", this);
     }
 }

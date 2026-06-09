@@ -14,6 +14,7 @@ public class MemoryObject : MonoBehaviour
     [Header("Observe Settings")]
     public float observeRequiredTime = 2f;
     public float maxObserveAngle = 25f;
+    public float observeLogInterval = 0.5f;
 
     [Header("Visual Feedback")]
     public Color highlightColor = Color.cyan;
@@ -28,6 +29,7 @@ public class MemoryObject : MonoBehaviour
     private bool hasTriggeredWhileHeld;
     private bool hasCachedOriginalVisuals;
     private bool originalEmissionKeywordEnabled;
+    private float nextObserveLogTime;
     private Color originalBaseColor = Color.white;
     private Color originalEmissionColor = Color.black;
 
@@ -99,61 +101,100 @@ public class MemoryObject : MonoBehaviour
         }
 
         float angle = Vector3.Angle(mainCamera.transform.forward, directionToObject.normalized);
+        bool isWithinObserveAngle = angle <= maxObserveAngle;
 
-        if (angle <= maxObserveAngle)
+        if (isWithinObserveAngle)
         {
-            IsBeingObserved = true;
-            ObserveProgress += Time.deltaTime;
+            HandleObserveWithinAngle();
+            return;
+        }
 
+        HandleObserveOutsideAngle();
+    }
+
+    private void HandleObserveWithinAngle()
+    {
+        if (!IsBeingObserved)
+        {
+            Debug.Log($"[MemoryObject] Started observing {itemName}.", this);
+            nextObserveLogTime = Time.time + Mathf.Max(0.1f, observeLogInterval);
+        }
+
+        IsBeingObserved = true;
+
+        if (hasTriggeredWhileHeld)
+        {
+            return;
+        }
+
+        ObserveProgress = Mathf.Min(ObserveProgress + Time.deltaTime, observeRequiredTime);
+
+        if (Time.time >= nextObserveLogTime)
+        {
             Debug.Log(
                 $"[MemoryObject] Observing {itemName} ({ObserveProgress:F2}/{observeRequiredTime:F2}s).",
                 this);
+            nextObserveLogTime = Time.time + Mathf.Max(0.1f, observeLogInterval);
+        }
 
-            if (!hasTriggeredWhileHeld && ObserveProgress >= observeRequiredTime)
-            {
-                hasTriggeredWhileHeld = true;
-                ObserveProgress = observeRequiredTime;
+        if (ObserveProgress < observeRequiredTime)
+        {
+            return;
+        }
 
-                Debug.Log($"[MemoryObject] Memory triggered for {itemName}.", this);
+        hasTriggeredWhileHeld = true;
+        ObserveProgress = observeRequiredTime;
 
-                if (MemoryModeManager.Instance != null)
-                {
-                    MemoryModeManager.Instance.EnterMemoryMode(this);
-                }
-                else
-                {
-                    Debug.LogWarning("[MemoryObject] MemoryModeManager.Instance is null.", this);
-                }
-            }
+        Debug.Log($"[MemoryObject] Memory triggered for {itemName}.", this);
+
+        if (MemoryModeManager.Instance != null)
+        {
+            MemoryModeManager.Instance.EnterMemoryMode(this);
         }
         else
         {
-            if (ObserveProgress > 0f)
-            {
-                Debug.Log($"[MemoryObject] Lost observation on {itemName}. Progress reset.", this);
-            }
-
-            IsBeingObserved = false;
-            ObserveProgress = 0f;
+            Debug.LogWarning("[MemoryObject] MemoryModeManager.Instance is null.", this);
         }
+    }
+
+    private void HandleObserveOutsideAngle()
+    {
+        bool wasActiveMemoryObject = MemoryModeManager.Instance != null &&
+            MemoryModeManager.Instance.CurrentMemoryObject == this;
+
+        if (wasActiveMemoryObject)
+        {
+            Debug.Log($"[MemoryObject] Lost observation on active memory {itemName}. Exiting memory mode.", this);
+            MemoryModeManager.Instance.ExitMemoryMode();
+            ResetObservationState(true);
+            return;
+        }
+
+        if (IsBeingObserved || ObserveProgress > 0f)
+        {
+            Debug.Log($"[MemoryObject] Lost observation on {itemName}. Progress reset.", this);
+        }
+
+        ResetObservationState(hasTriggeredWhileHeld);
     }
 
     private void OnSelectEntered(SelectEnterEventArgs args)
     {
         IsHeld = true;
-        IsBeingObserved = false;
-        ObserveProgress = 0f;
-        hasTriggeredWhileHeld = false;
+        ResetObservationState(true);
 
         Debug.Log($"[MemoryObject] Grabbed {itemName}.", this);
     }
 
     private void OnSelectExited(SelectExitEventArgs args)
     {
+        if (MemoryModeManager.Instance != null && MemoryModeManager.Instance.CurrentMemoryObject == this)
+        {
+            MemoryModeManager.Instance.ExitMemoryMode();
+        }
+
         IsHeld = false;
-        IsBeingObserved = false;
-        ObserveProgress = 0f;
-        hasTriggeredWhileHeld = false;
+        ResetObservationState(true);
 
         Debug.Log($"[MemoryObject] Released {itemName}. Observation reset.", this);
     }
@@ -193,6 +234,18 @@ public class MemoryObject : MonoBehaviour
         SetMaterialColor(originalBaseColor);
         SetMaterialEmission(originalEmissionColor, originalEmissionKeywordEnabled);
         Debug.Log($"[MemoryObject] Highlight disabled for {itemName}.", this);
+    }
+
+    private void ResetObservationState(bool allowRetrigger)
+    {
+        IsBeingObserved = false;
+        ObserveProgress = 0f;
+        nextObserveLogTime = 0f;
+
+        if (allowRetrigger)
+        {
+            hasTriggeredWhileHeld = false;
+        }
     }
 
     private void CacheOriginalVisuals()

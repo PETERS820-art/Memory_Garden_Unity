@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: bd144a8a789d240429740c080536c2fd, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -552,6 +552,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 754ae355ed687b740b1a32f2f32d529c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  targetDirectionalLight: {fileID: 410087040}
+  memoryLightIntensity: 0.2
+  targetGlobalVolume: {fileID: 832575518}
+  memoryVolumeWeight: 1
+  memoryTransitionDuration: 0.3
 --- !u!1 &610173184
 GameObject:
   m_ObjectHideFlags: 0
@@ -1443,12 +1448,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ccc7bca7c0f4de40ad6bbc4e5ef11e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemId: 
-  itemName: 
-  shortDescription: 
-  emotionType: 
-  observeRequiredTime: 2
+  itemId: Test_Cube_001
+  itemName: test memory cube
+  shortDescription: First test object for Memory Garden.
+  emotionType: neutral
+  observeRequiredTime: 5
   maxObserveAngle: 25
+  observeLogInterval: 0.5
+  highlightColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!1 &1631424356
 GameObject:
   m_ObjectHideFlags: 0
