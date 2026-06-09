@@ -5,11 +5,7 @@ using UnityEngine.XR.Interaction.Toolkit;
 public class MemoryObject : MonoBehaviour
 {
     [Header("Memory Data")]
-    public string itemId;
-    public string itemName;
-    [TextArea]
-    public string shortDescription;
-    public string emotionType;
+    [SerializeField] private MemoryItemData memoryItemData;
 
     [Header("Observe Settings")]
     public float observeRequiredTime = 2f;
@@ -22,6 +18,11 @@ public class MemoryObject : MonoBehaviour
     public bool IsHeld { get; private set; }
     public bool IsBeingObserved { get; private set; }
     public float ObserveProgress { get; private set; }
+    public MemoryItemData MemoryItemData => memoryItemData;
+    public string ItemId => memoryItemData != null ? memoryItemData.ItemId : string.Empty;
+    public string ItemName => memoryItemData != null ? memoryItemData.ItemName : gameObject.name;
+    public string ShortDescription => memoryItemData != null ? memoryItemData.ShortDescription : string.Empty;
+    public string EmotionType => memoryItemData != null ? memoryItemData.EmotionType : string.Empty;
 
     private XRGrabInteractable grabInteractable;
     private Renderer cachedRenderer;
@@ -116,7 +117,7 @@ public class MemoryObject : MonoBehaviour
     {
         if (!IsBeingObserved)
         {
-            Debug.Log($"[MemoryObject] Started observing {itemName}.", this);
+            Debug.Log($"[MemoryObject] Started observing {ItemName}.", this);
             nextObserveLogTime = Time.time + Mathf.Max(0.1f, observeLogInterval);
         }
 
@@ -132,7 +133,7 @@ public class MemoryObject : MonoBehaviour
         if (Time.time >= nextObserveLogTime)
         {
             Debug.Log(
-                $"[MemoryObject] Observing {itemName} ({ObserveProgress:F2}/{observeRequiredTime:F2}s).",
+                $"[MemoryObject] Observing {ItemName} ({ObserveProgress:F2}/{observeRequiredTime:F2}s).",
                 this);
             nextObserveLogTime = Time.time + Mathf.Max(0.1f, observeLogInterval);
         }
@@ -145,7 +146,7 @@ public class MemoryObject : MonoBehaviour
         hasTriggeredWhileHeld = true;
         ObserveProgress = observeRequiredTime;
 
-        Debug.Log($"[MemoryObject] Memory triggered for {itemName}.", this);
+        Debug.Log($"[MemoryObject] Memory triggered for {ItemName}.", this);
 
         if (MemoryModeManager.Instance != null)
         {
@@ -164,7 +165,7 @@ public class MemoryObject : MonoBehaviour
 
         if (wasActiveMemoryObject)
         {
-            Debug.Log($"[MemoryObject] Lost observation on active memory {itemName}. Exiting memory mode.", this);
+            Debug.Log($"[MemoryObject] Lost observation on active memory {ItemName}. Exiting memory mode.", this);
             MemoryModeManager.Instance.ExitMemoryMode();
             ResetObservationState(true);
             return;
@@ -172,7 +173,7 @@ public class MemoryObject : MonoBehaviour
 
         if (IsBeingObserved || ObserveProgress > 0f)
         {
-            Debug.Log($"[MemoryObject] Lost observation on {itemName}. Progress reset.", this);
+            Debug.Log($"[MemoryObject] Lost observation on {ItemName}. Progress reset.", this);
         }
 
         ResetObservationState(hasTriggeredWhileHeld);
@@ -183,7 +184,7 @@ public class MemoryObject : MonoBehaviour
         IsHeld = true;
         ResetObservationState(true);
 
-        Debug.Log($"[MemoryObject] Grabbed {itemName}.", this);
+        Debug.Log($"[MemoryObject] Grabbed {ItemName}.", this);
     }
 
     private void OnSelectExited(SelectExitEventArgs args)
@@ -196,7 +197,7 @@ public class MemoryObject : MonoBehaviour
         IsHeld = false;
         ResetObservationState(true);
 
-        Debug.Log($"[MemoryObject] Released {itemName}. Observation reset.", this);
+        Debug.Log($"[MemoryObject] Released {ItemName}. Observation reset.", this);
     }
 
     public void SetHighlight(bool enabled)
@@ -227,13 +228,13 @@ public class MemoryObject : MonoBehaviour
         {
             SetMaterialColor(highlightColor);
             SetMaterialEmission(highlightColor * 1.5f, true);
-            Debug.Log($"[MemoryObject] Highlight enabled for {itemName}.", this);
+            Debug.Log($"[MemoryObject] Highlight enabled for {ItemName}.", this);
             return;
         }
 
         SetMaterialColor(originalBaseColor);
         SetMaterialEmission(originalEmissionColor, originalEmissionKeywordEnabled);
-        Debug.Log($"[MemoryObject] Highlight disabled for {itemName}.", this);
+        Debug.Log($"[MemoryObject] Highlight disabled for {ItemName}.", this);
     }
 
     private void ResetObservationState(bool allowRetrigger)

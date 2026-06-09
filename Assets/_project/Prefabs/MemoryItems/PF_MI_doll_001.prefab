@@ -280,10 +280,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ccc7bca7c0f4de40ad6bbc4e5ef11e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemId: MI_doll_001
-  itemName: MI_doll_001
-  shortDescription: Imported memory item.
-  emotionType: neutral
+  memoryItemData: {fileID: 11400000, guid: 913989823f84bb547bf2a6b37a2a9a99, type: 2}
   observeRequiredTime: 5
   maxObserveAngle: 25
   observeLogInterval: 0.5

@@ -13,6 +13,9 @@ public class MemoryModeManager : MonoBehaviour
     public float memoryVolumeWeight = 1f;
     public float memoryTransitionDuration = 0.3f;
 
+    [Header("Memory Mode UI")]
+    [SerializeField] private MemoryModeUIController memoryModeUIController;
+
     public bool IsInMemoryMode { get; private set; }
     public MemoryObject CurrentMemoryObject => currentMemoryObject;
 
@@ -35,6 +38,7 @@ public class MemoryModeManager : MonoBehaviour
 
         Instance = this;
         CacheOriginalVisualState();
+        TryAutoAssignUIController();
     }
 
     private void OnDestroy()
@@ -76,12 +80,15 @@ public class MemoryModeManager : MonoBehaviour
             true,
             "[MemoryModeManager] Memory mode visual feedback applied.");
 
-        string safeItemName = string.IsNullOrWhiteSpace(memoryObject.itemName) ? "(Unnamed Memory)" : memoryObject.itemName;
-        string safeDescription = string.IsNullOrWhiteSpace(memoryObject.shortDescription) ? "(No Description)" : memoryObject.shortDescription;
-        string safeEmotion = string.IsNullOrWhiteSpace(memoryObject.emotionType) ? "(No Emotion Type)" : memoryObject.emotionType;
+        MemoryItemData data = memoryObject.MemoryItemData;
+        ShowMemoryModeUI(data);
+        string safeItemId = data != null && !string.IsNullOrWhiteSpace(data.ItemId) ? data.ItemId : "(No Item Id)";
+        string safeItemName = string.IsNullOrWhiteSpace(memoryObject.ItemName) ? "(Unnamed Memory)" : memoryObject.ItemName;
+        string safeDescription = string.IsNullOrWhiteSpace(memoryObject.ShortDescription) ? "(No Description)" : memoryObject.ShortDescription;
+        string safeEmotion = string.IsNullOrWhiteSpace(memoryObject.EmotionType) ? "(No Emotion Type)" : memoryObject.EmotionType;
 
         Debug.Log(
-            $"[MemoryModeManager] EnterMemoryMode -> Name: {safeItemName}, Description: {safeDescription}, Emotion: {safeEmotion}",
+            $"[MemoryModeManager] EnterMemoryMode -> Id: {safeItemId}, Name: {safeItemName}, Description: {safeDescription}, Emotion: {safeEmotion}",
             this);
     }
 
@@ -109,7 +116,45 @@ public class MemoryModeManager : MonoBehaviour
             hasCachedVolumeState && originalVolumeEnabled,
             "[MemoryModeManager] Memory mode visual feedback restored.");
 
+        HideMemoryModeUI();
+
         Debug.Log("[MemoryModeManager] Exiting memory mode.", this);
+    }
+
+    private void TryAutoAssignUIController()
+    {
+        if (memoryModeUIController != null)
+        {
+            return;
+        }
+
+        memoryModeUIController = UnityEngine.Object.FindObjectOfType<MemoryModeUIController>(true);
+    }
+
+    private void ShowMemoryModeUI(MemoryItemData data)
+    {
+        TryAutoAssignUIController();
+
+        if (memoryModeUIController == null)
+        {
+            Debug.LogWarning("[MemoryModeManager] MemoryModeUIController is not assigned.", this);
+            return;
+        }
+
+        memoryModeUIController.Show(data);
+    }
+
+    private void HideMemoryModeUI()
+    {
+        TryAutoAssignUIController();
+
+        if (memoryModeUIController == null)
+        {
+            Debug.LogWarning("[MemoryModeManager] MemoryModeUIController is not assigned.", this);
+            return;
+        }
+
+        memoryModeUIController.Hide();
     }
 
     private void CacheOriginalVisualState()

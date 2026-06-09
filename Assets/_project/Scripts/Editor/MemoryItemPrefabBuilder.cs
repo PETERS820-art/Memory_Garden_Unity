@@ -9,23 +9,12 @@ using UnityEngine.XR.Interaction.Toolkit;
 public static class MemoryItemPrefabBuilder
 {
     private const string MenuItemPath = "Tools/Memory Garden/Build Memory Item Prefabs";
-    private static readonly string[] ModelRootCandidates =
-    {
-        "Assets/_Project/Art/Models/MemoryItems",
-        "Assets/_project/Art/Models/MemoryItems",
-    };
-
-    private static readonly string[] PrefabRootCandidates =
-    {
-        "Assets/_Project/Prefabs/MemoryItems",
-        "Assets/_project/Prefabs/MemoryItems",
-    };
 
     [MenuItem(MenuItemPath)]
     public static void BuildMemoryItemPrefabs()
     {
-        var modelRoot = ResolveExistingFolder(ModelRootCandidates);
-        var prefabRoot = ResolveOrCreateFolder(PrefabRootCandidates);
+        var modelRoot = MemoryItemDataAssetBuilder.ResolveExistingFolder(MemoryItemDataAssetBuilder.ModelRootCandidates);
+        var prefabRoot = ResolveOrCreatePrefabFolder();
 
         if (string.IsNullOrWhiteSpace(modelRoot))
         {
@@ -34,7 +23,7 @@ public static class MemoryItemPrefabBuilder
             return;
         }
 
-        var modelRootAbsolute = ToAbsolutePath(modelRoot);
+        var modelRootAbsolute = MemoryItemDataAssetBuilder.ToAbsolutePath(modelRoot);
         if (!Directory.Exists(modelRootAbsolute))
         {
             Debug.LogWarning($"[MemoryItemPrefabBuilder] Model folder does not exist on disk: {modelRoot}");
@@ -58,7 +47,7 @@ public static class MemoryItemPrefabBuilder
         {
             foreach (var fbxAbsolutePath in fbxFiles)
             {
-                var fbxAssetPath = ToAssetPath(fbxAbsolutePath);
+                var fbxAssetPath = MemoryItemDataAssetBuilder.ToAssetPath(fbxAbsolutePath);
                 var prefabAssetPath = BuildPrefabForFbx(fbxAssetPath, prefabRoot);
                 generatedPrefabs.Add(prefabAssetPath);
             }
@@ -97,7 +86,7 @@ public static class MemoryItemPrefabBuilder
         var rootName = $"PF_{fbxName}";
         var prefabAssetPath = $"{prefabRoot}/{rootName}.prefab";
 
-        if (File.Exists(ToAbsolutePath(prefabAssetPath)))
+        if (File.Exists(MemoryItemDataAssetBuilder.ToAbsolutePath(prefabAssetPath)))
         {
             Debug.LogWarning($"[MemoryItemPrefabBuilder] Overwriting existing prefab: {prefabAssetPath}");
         }
@@ -124,7 +113,7 @@ public static class MemoryItemPrefabBuilder
             ConfigureCollider(root);
             ConfigureRigidbody(root);
             ConfigureGrabInteractable(root);
-            ConfigureMemoryObject(root, fbxName);
+            ConfigureMemoryObject(root, fbxAssetPath);
 
             var savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabAssetPath);
             if (savedPrefab == null)
@@ -184,15 +173,12 @@ public static class MemoryItemPrefabBuilder
         grabInteractable.throwOnDetach = true;
     }
 
-    private static void ConfigureMemoryObject(GameObject root, string fbxName)
+    private static void ConfigureMemoryObject(GameObject root, string fbxAssetPath)
     {
         var memoryObject = GetOrAddComponent<MemoryObject>(root);
-        memoryObject.itemId = fbxName;
-        memoryObject.itemName = fbxName;
-        memoryObject.shortDescription = "Imported memory item.";
-        memoryObject.emotionType = "neutral";
         memoryObject.observeRequiredTime = 5f;
         memoryObject.maxObserveAngle = 25f;
+        MemoryItemDataAssetBuilder.TryAssignExistingDataAsset(memoryObject, fbxAssetPath);
     }
 
     private static T GetOrAddComponent<T>(GameObject gameObject) where T : Component
@@ -212,72 +198,22 @@ public static class MemoryItemPrefabBuilder
         return component;
     }
 
-    private static string ResolveExistingFolder(IEnumerable<string> candidates)
+    private static string ResolveOrCreatePrefabFolder()
     {
-        foreach (var candidate in candidates)
-        {
-            if (AssetDatabase.IsValidFolder(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-
-    private static string ResolveOrCreateFolder(IReadOnlyList<string> candidates)
-    {
-        var existing = ResolveExistingFolder(candidates);
+        var candidates = MemoryItemDataAssetBuilder.PrefabRootCandidates;
+        var existing = MemoryItemDataAssetBuilder.ResolveExistingFolder(candidates);
         if (!string.IsNullOrWhiteSpace(existing))
         {
             return existing;
         }
 
-        if (candidates.Count == 0)
+        if (candidates.Length == 0)
         {
             throw new InvalidOperationException("No asset folder candidates were provided.");
         }
 
-        EnsureFolder(candidates[candidates.Count - 1]);
-        return candidates[candidates.Count - 1];
-    }
-
-    private static void EnsureFolder(string assetPath)
-    {
-        if (AssetDatabase.IsValidFolder(assetPath))
-        {
-            return;
-        }
-
-        var parentPath = Path.GetDirectoryName(assetPath)?.Replace("\\", "/");
-        var folderName = Path.GetFileName(assetPath);
-
-        if (string.IsNullOrWhiteSpace(parentPath) || string.IsNullOrWhiteSpace(folderName))
-        {
-            throw new InvalidOperationException($"Could not create folder: {assetPath}");
-        }
-
-        EnsureFolder(parentPath);
-        AssetDatabase.CreateFolder(parentPath, folderName);
-    }
-
-    private static string ToAbsolutePath(string assetPath)
-    {
-        var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-        return Path.GetFullPath(Path.Combine(projectRoot, assetPath));
-    }
-
-    private static string ToAssetPath(string absolutePath)
-    {
-        var normalizedAbsolute = absolutePath.Replace("\\", "/");
-        var normalizedDataPath = Application.dataPath.Replace("\\", "/");
-
-        if (!normalizedAbsolute.StartsWith(normalizedDataPath, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException($"Path is outside the Unity Assets folder: {absolutePath}");
-        }
-
-        return $"Assets{normalizedAbsolute.Substring(normalizedDataPath.Length)}";
+        MemoryItemDataAssetBuilder.EnsureFolder(candidates[candidates.Length - 1]);
+        return candidates[candidates.Length - 1];
     }
 
     private static void ShowSummary(string message)
