@@ -110,6 +110,7 @@ public static class MemoryItemPrefabBuilder
             modelInstance.transform.localRotation = Quaternion.identity;
             modelInstance.transform.localScale = Vector3.one;
 
+            ConfigureModelOffset(root, modelContainer.transform);
             ConfigureCollider(root);
             ConfigureRigidbody(root);
             ConfigureGrabInteractable(root);
@@ -184,6 +185,13 @@ public static class MemoryItemPrefabBuilder
         memoryObject.useBoundsCenterForObservation = true;
         memoryObject.preferColliderBounds = true;
         MemoryItemDataAssetBuilder.TryAssignExistingDataAsset(memoryObject, fbxAssetPath);
+    }
+
+    private static void ConfigureModelOffset(GameObject root, Transform modelRoot)
+    {
+        var modelOffset = GetOrAddComponent<MemoryItemModelOffset>(root);
+        var collider = GetOrAddComponent<BoxCollider>(root);
+        modelOffset.SetReferences(modelRoot, collider);
     }
 
     private static void ConfigureDynamicAttachSettings(XRGrabInteractable grabInteractable)
