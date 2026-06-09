@@ -12,9 +12,6 @@ public class MemoryObject : MonoBehaviour
     public float maxObserveAngle = 25f;
     public float observeLogInterval = 0.5f;
 
-    [Header("Visual Feedback")]
-    public Color highlightColor = Color.cyan;
-
     public bool IsHeld { get; private set; }
     public bool IsBeingObserved { get; private set; }
     public float ObserveProgress { get; private set; }
@@ -25,33 +22,17 @@ public class MemoryObject : MonoBehaviour
     public string EmotionType => memoryItemData != null ? memoryItemData.EmotionType : string.Empty;
 
     private XRGrabInteractable grabInteractable;
-    private Renderer cachedRenderer;
-    private Material runtimeMaterial;
     private bool hasTriggeredWhileHeld;
-    private bool hasCachedOriginalVisuals;
-    private bool originalEmissionKeywordEnabled;
     private float nextObserveLogTime;
-    private Color originalBaseColor = Color.white;
-    private Color originalEmissionColor = Color.black;
 
     private void Awake()
     {
         grabInteractable = GetComponent<XRGrabInteractable>();
-        cachedRenderer = GetComponentInChildren<Renderer>();
 
         if (grabInteractable == null)
         {
             Debug.LogError($"[{nameof(MemoryObject)}] Missing {nameof(XRGrabInteractable)} on {name}.", this);
         }
-
-        if (cachedRenderer == null)
-        {
-            Debug.LogWarning($"[{nameof(MemoryObject)}] No Renderer found on {name}. Highlight feedback will be skipped.", this);
-            return;
-        }
-
-        runtimeMaterial = cachedRenderer.material;
-        CacheOriginalVisuals();
     }
 
     private void OnEnable()
@@ -200,43 +181,6 @@ public class MemoryObject : MonoBehaviour
         Debug.Log($"[MemoryObject] Released {ItemName}. Observation reset.", this);
     }
 
-    public void SetHighlight(bool enabled)
-    {
-        if (cachedRenderer == null)
-        {
-            Debug.LogWarning($"[{nameof(MemoryObject)}] Cannot toggle highlight on {name} because no Renderer is assigned.", this);
-            return;
-        }
-
-        if (runtimeMaterial == null)
-        {
-            runtimeMaterial = cachedRenderer.material;
-        }
-
-        if (runtimeMaterial == null)
-        {
-            Debug.LogWarning($"[{nameof(MemoryObject)}] Cannot toggle highlight on {name} because no runtime Material is available.", this);
-            return;
-        }
-
-        if (!hasCachedOriginalVisuals)
-        {
-            CacheOriginalVisuals();
-        }
-
-        if (enabled)
-        {
-            SetMaterialColor(highlightColor);
-            SetMaterialEmission(highlightColor * 1.5f, true);
-            Debug.Log($"[MemoryObject] Highlight enabled for {ItemName}.", this);
-            return;
-        }
-
-        SetMaterialColor(originalBaseColor);
-        SetMaterialEmission(originalEmissionColor, originalEmissionKeywordEnabled);
-        Debug.Log($"[MemoryObject] Highlight disabled for {ItemName}.", this);
-    }
-
     private void ResetObservationState(bool allowRetrigger)
     {
         IsBeingObserved = false;
@@ -247,61 +191,5 @@ public class MemoryObject : MonoBehaviour
         {
             hasTriggeredWhileHeld = false;
         }
-    }
-
-    private void CacheOriginalVisuals()
-    {
-        if (runtimeMaterial == null)
-        {
-            return;
-        }
-
-        if (runtimeMaterial.HasProperty("_BaseColor"))
-        {
-            originalBaseColor = runtimeMaterial.GetColor("_BaseColor");
-        }
-        else if (runtimeMaterial.HasProperty("_Color"))
-        {
-            originalBaseColor = runtimeMaterial.GetColor("_Color");
-        }
-
-        if (runtimeMaterial.HasProperty("_EmissionColor"))
-        {
-            originalEmissionColor = runtimeMaterial.GetColor("_EmissionColor");
-        }
-
-        originalEmissionKeywordEnabled = runtimeMaterial.IsKeywordEnabled("_EMISSION");
-        hasCachedOriginalVisuals = true;
-    }
-
-    private void SetMaterialColor(Color color)
-    {
-        if (runtimeMaterial.HasProperty("_BaseColor"))
-        {
-            runtimeMaterial.SetColor("_BaseColor", color);
-        }
-
-        if (runtimeMaterial.HasProperty("_Color"))
-        {
-            runtimeMaterial.SetColor("_Color", color);
-        }
-    }
-
-    private void SetMaterialEmission(Color emissionColor, bool enableKeyword)
-    {
-        if (!runtimeMaterial.HasProperty("_EmissionColor"))
-        {
-            return;
-        }
-
-        runtimeMaterial.SetColor("_EmissionColor", emissionColor);
-
-        if (enableKeyword)
-        {
-            runtimeMaterial.EnableKeyword("_EMISSION");
-            return;
-        }
-
-        runtimeMaterial.DisableKeyword("_EMISSION");
     }
 }
