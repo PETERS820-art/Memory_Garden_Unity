@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -5,36 +6,80 @@ using UnityEngine;
 
 public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
 {
+    private enum BuilderMode
+    {
+        SceneUtility,
+        BatchPrefabBuilder
+    }
+
+    private enum BatchBuildFilter
+    {
+        All,
+        MissingOnly,
+        ExistingOnly
+    }
+
     private const string MenuItemPath = "Tools/Memory Garden/Display Furniture Builder";
+    private const string ModelContainerObjectName = "Model";
+    private const string SlotsRootObjectName = "Slots";
     private const string PlacementBoundsObjectName = "_PlacementBounds";
     private const string BlockingColliderObjectName = "_BlockingCollider";
-    private const string DefaultPrefabFolder = "Assets/Prefabs/MemoryGarden/DisplayFurniture";
+    private const string SourceModelFolder = "Assets/_project/Art/Models/DisplayFurniture";
+    private const string OutputPrefabFolder = "Assets/_project/Prefabs/DisplayFurniture";
+    private const string DataFolderName = "Data";
     private const float DefaultSingleFallbackOffset = 0.25f;
+    private const float DefaultSlotHeightOffset = 0.02f;
     private const float LeftRightNormalized = 0.2f;
     private const float RightNormalized = 0.8f;
+
+    private static readonly string[] ModeLabels =
+    {
+        "Scene Utility Mode",
+        "Batch Prefab Builder Mode"
+    };
+
+    private BuilderMode builderMode = BuilderMode.SceneUtility;
 
     private GameObject furnitureTarget;
     private FurnitureType furnitureType = FurnitureType.Shelf;
     private SlotPreset slotPreset = SlotPreset.ShelfLeftCenterRight;
-    private float slotHeightOffset = 0.02f;
+    private float slotHeightOffset = DefaultSlotHeightOffset;
+    private Vector3 boundsPadding = Vector3.zero;
     private bool clearExistingSlots = true;
     private bool createOrUpdatePlacementBounds = true;
     private bool autoFitBoundsFromRenderers = true;
     private bool createBlockingColliderOption = true;
     private bool generateSlotsFromPlacementBounds = true;
     private bool saveAsPrefab;
-    private string prefabFolder = DefaultPrefabFolder;
+    private string prefabFolder = OutputPrefabFolder;
 
     [MenuItem(MenuItemPath)]
     public static void OpenWindow()
     {
         MemoryDisplayFurnitureBuilderWindow window =
             GetWindow<MemoryDisplayFurnitureBuilderWindow>("Display Furniture Builder");
-        window.minSize = new Vector2(380f, 260f);
+        window.minSize = new Vector2(420f, 320f);
         window.Show();
     }
 
     private void OnGUI()
+    {
+        builderMode = (BuilderMode)GUILayout.Toolbar((int)builderMode, ModeLabels);
+        EditorGUILayout.Space();
+
+        switch (builderMode)
+        {
+            case BuilderMode.SceneUtility:
+                DrawSceneUtilityMode();
+                break;
+
+            case BuilderMode.BatchPrefabBuilder:
+                DrawBatchPrefabBuilderMode();
+                break;
+        }
+    }
+
+    private void DrawSceneUtilityMode()
     {
         EditorGUILayout.LabelField("Furniture Target", EditorStyles.boldLabel);
         furnitureTarget = (GameObject)EditorGUILayout.ObjectField(
@@ -66,6 +111,7 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         furnitureType = (FurnitureType)EditorGUILayout.EnumPopup("Furniture Type", furnitureType);
         slotPreset = (SlotPreset)EditorGUILayout.EnumPopup("Slot Preset", slotPreset);
         slotHeightOffset = EditorGUILayout.FloatField("Slot Height Offset", slotHeightOffset);
+        boundsPadding = EditorGUILayout.Vector3Field("Bounds Padding", boundsPadding);
         clearExistingSlots = EditorGUILayout.Toggle("Clear Existing Slots", clearExistingSlots);
         createOrUpdatePlacementBounds = EditorGUILayout.Toggle("Create / Update Placement Bounds", createOrUpdatePlacementBounds);
         autoFitBoundsFromRenderers = EditorGUILayout.Toggle("Auto Fit Bounds From Renderers", autoFitBoundsFromRenderers);
@@ -81,9 +127,9 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
 
         using (new EditorGUI.DisabledScope(furnitureTarget == null))
         {
-            if (GUILayout.Button("Build / Update"))
+            if (GUILayout.Button("Build / Update Selected Scene Furniture"))
             {
-                BuildOrUpdateFurniture();
+                BuildOrUpdateSelectedSceneFurniture();
             }
         }
 
@@ -96,7 +142,55 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         }
     }
 
-    private void BuildOrUpdateFurniture()
+    private void DrawBatchPrefabBuilderMode()
+    {
+        EditorGUILayout.HelpBox(
+            "Select one or more Display Furniture FBX assets or source folders in the Project window to use the selected-build action.",
+            MessageType.Info);
+
+        using (new EditorGUI.DisabledScope(true))
+        {
+            EditorGUILayout.TextField("Source Models", SourceModelFolder);
+            EditorGUILayout.TextField("Prefab Output", OutputPrefabFolder);
+            EditorGUILayout.TextField("Build Profiles", "<Each DF folder>/Data");
+        }
+
+        EditorGUILayout.Space();
+        if (GUILayout.Button("Create Missing Folders"))
+        {
+            CreateMissingFolders();
+        }
+
+        if (GUILayout.Button("Generate Missing Profiles"))
+        {
+            GenerateMissingProfiles();
+        }
+
+        EditorGUILayout.Space();
+
+        using (new EditorGUI.DisabledScope(!HasSelectedBatchSource()))
+        {
+            if (GUILayout.Button("Build Selected Furniture Prefab"))
+            {
+                BuildSelectedFurniturePrefabs();
+            }
+        }
+
+        if (GUILayout.Button("Build All Display Furniture Prefabs"))
+        {
+            BuildDisplayFurniturePrefabs(BatchBuildFilter.MissingOnly);
+        }
+
+        if (GUILayout.Button("Rebuild Existing Prefabs"))
+        {
+            if (ConfirmRebuildExistingPrefabs("Display Furniture"))
+            {
+                BuildDisplayFurniturePrefabs(BatchBuildFilter.ExistingOnly);
+            }
+        }
+    }
+
+    private void BuildOrUpdateSelectedSceneFurniture()
     {
         if (furnitureTarget == null)
         {
@@ -104,60 +198,16 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             return;
         }
 
-        Undo.IncrementCurrentGroup();
-        Undo.SetCurrentGroupName("Build Display Furniture");
-        int undoGroup = Undo.GetCurrentGroup();
-
-        MemoryDisplayFurniture furniture = GetOrAddComponentWithUndo<MemoryDisplayFurniture>(furnitureTarget);
-        ApplyFurnitureSettings(furniture, furnitureTarget.name);
-
-        BoxCollider placementBoundsCollider = null;
-        if (createOrUpdatePlacementBounds || generateSlotsFromPlacementBounds || createBlockingColliderOption)
-        {
-            placementBoundsCollider = CreateOrUpdatePlacementBounds(furnitureTarget.transform, furniture);
-        }
-
-        if (createBlockingColliderOption && placementBoundsCollider != null)
-        {
-            CreateOrUpdateBlockingCollider(furnitureTarget.transform, placementBoundsCollider);
-        }
-
-        Transform slotsRoot = FindOrCreateSlotsRoot(furnitureTarget.transform);
-        if (clearExistingSlots)
-        {
-            ClearExistingSlotChildren(slotsRoot);
-        }
-
-        List<SlotDefinition> slotDefinitions = CreateSlotDefinitions(furnitureTarget.transform, furniture, placementBoundsCollider);
-        for (int i = 0; i < slotDefinitions.Count; i++)
-        {
-            CreateOrUpdateSlot(slotsRoot, slotDefinitions[i]);
-        }
-
-        furniture.AutoCollectSlots();
+        FurnitureBuildSettings settings = CreateSceneBuildSettings();
+        BuildResult result = BuildFurniture(furnitureTarget, settings, useUndo: true);
 
         if (saveAsPrefab)
         {
             SaveFurnitureAsPrefab(furnitureTarget);
         }
 
-        EditorUtility.SetDirty(furnitureTarget);
-        EditorUtility.SetDirty(furniture);
-        EditorUtility.SetDirty(slotsRoot.gameObject);
-
-        for (int i = 0; i < furniture.Slots.Count; i++)
-        {
-            MemoryDisplaySlot slot = furniture.Slots[i];
-            if (slot != null)
-            {
-                EditorUtility.SetDirty(slot);
-                EditorUtility.SetDirty(slot.gameObject);
-            }
-        }
-
-        Undo.CollapseUndoOperations(undoGroup);
         Debug.Log(
-            $"[MemoryDisplayFurnitureBuilderWindow] Built {slotDefinitions.Count} slot(s) for {furnitureTarget.name}.",
+            $"[MemoryDisplayFurnitureBuilderWindow] Built {result.SlotCount} slot(s) for {furnitureTarget.name}.",
             furnitureTarget);
     }
 
@@ -186,12 +236,12 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             }
 
             bool wasMissingMemoryObject = target.GetComponent<MemoryObject>() == null;
-            MemoryObject memoryObject = GetOrAddComponentWithUndo<MemoryObject>(target);
+            MemoryObject memoryObject = GetOrAddComponent<MemoryObject>(target, useUndo: true);
             EnsurePlacementDefaults(memoryObject, wasMissingMemoryObject);
 
             configuredCount++;
-            EditorUtility.SetDirty(memoryObject);
-            EditorUtility.SetDirty(target);
+            SetDirty(memoryObject);
+            SetDirty(target);
         }
 
         Undo.CollapseUndoOperations(undoGroup);
@@ -199,86 +249,350 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             $"[MemoryDisplayFurnitureBuilderWindow] Configured placement settings on {configuredCount} object(s).");
     }
 
-    private void ApplyFurnitureSettings(MemoryDisplayFurniture furniture, string fallbackId)
+    private void CreateMissingFolders()
+    {
+        int createdFolderCount = EnsureRequiredFolders();
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        string message = createdFolderCount > 0
+            ? $"Created {createdFolderCount} folder(s) for Display Furniture."
+            : "All Display Furniture folders already exist.";
+        ShowSummary("Display Furniture Builder", message);
+    }
+
+    private void GenerateMissingProfiles()
+    {
+        EnsureRequiredFolders();
+
+        List<DisplayFurnitureSourceEntry> sources = DiscoverDisplayFurnitureSources();
+        if (sources.Count == 0)
+        {
+            ShowSummary("Display Furniture Profiles", $"No FBX files found under {SourceModelFolder}.");
+            return;
+        }
+
+        int createdProfiles = 0;
+        for (int i = 0; i < sources.Count; i++)
+        {
+            EnsureBuildProfile(sources[i], out bool wasCreated);
+            if (wasCreated)
+            {
+                createdProfiles++;
+            }
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        string message = createdProfiles > 0
+            ? $"Created {createdProfiles} missing build profile(s)."
+            : "All Display Furniture build profiles already exist.";
+        ShowSummary("Display Furniture Profiles", message);
+    }
+
+    private void BuildSelectedFurniturePrefabs()
+    {
+        EnsureRequiredFolders();
+
+        List<DisplayFurnitureSourceEntry> selectedSources = DiscoverSelectedDisplayFurnitureSources();
+        if (selectedSources.Count == 0)
+        {
+            ShowSummary(
+                "Display Furniture Prefabs",
+                "Select one or more Display Furniture FBX assets or source folders in the Project window.");
+            return;
+        }
+
+        BuildDisplayFurniturePrefabs(selectedSources, BatchBuildFilter.All, "Built selected Display Furniture prefab(s)");
+    }
+
+    private void BuildDisplayFurniturePrefabs(BatchBuildFilter filter)
+    {
+        EnsureRequiredFolders();
+
+        List<DisplayFurnitureSourceEntry> sources = DiscoverDisplayFurnitureSources();
+        if (sources.Count == 0)
+        {
+            ShowSummary("Display Furniture Prefabs", $"No FBX files found under {SourceModelFolder}.");
+            return;
+        }
+
+        string message = filter switch
+        {
+            BatchBuildFilter.MissingOnly => "Built missing Display Furniture prefab(s)",
+            BatchBuildFilter.ExistingOnly => "Rebuilt existing Display Furniture prefab(s)",
+            _ => "Built Display Furniture prefab(s)"
+        };
+
+        BuildDisplayFurniturePrefabs(sources, filter, message);
+    }
+
+    private void BuildDisplayFurniturePrefabs(
+        List<DisplayFurnitureSourceEntry> sources,
+        BatchBuildFilter filter,
+        string summaryAction)
+    {
+        EnsureRequiredFolders();
+
+        List<DisplayFurnitureSourceEntry> targets = FilterBatchSources(sources, filter);
+        if (targets.Count == 0)
+        {
+            string message = filter switch
+            {
+                BatchBuildFilter.MissingOnly => "No missing Display Furniture prefabs were found.",
+                BatchBuildFilter.ExistingOnly => "No existing Display Furniture prefabs were found to rebuild.",
+                _ => "No Display Furniture sources were selected."
+            };
+
+            ShowSummary("Display Furniture Prefabs", message);
+            return;
+        }
+
+        int createdProfiles = 0;
+
+        try
+        {
+            for (int i = 0; i < targets.Count; i++)
+            {
+                DisplayFurnitureSourceEntry source = targets[i];
+                EditorUtility.DisplayProgressBar(
+                    "Display Furniture Builder",
+                    $"Building {source.ModelId} ({i + 1}/{targets.Count})",
+                    (float)(i + 1) / targets.Count);
+
+                DisplayFurnitureBuildProfile profile = EnsureBuildProfile(source, out bool wasCreated);
+                if (wasCreated)
+                {
+                    createdProfiles++;
+                }
+
+                FurnitureBuildSettings settings = CreateBatchBuildSettings(source.ModelId, profile);
+                BuildPrefabFromSource(source, settings);
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"[MemoryDisplayFurnitureBuilderWindow] Failed while building Display Furniture prefabs: {exception}");
+            ShowSummary("Display Furniture Prefabs", exception.Message);
+            throw;
+        }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+        }
+
+        string summary = createdProfiles > 0
+            ? $"{summaryAction}: {targets.Count} prefab(s), {createdProfiles} profile(s) created."
+            : $"{summaryAction}: {targets.Count} prefab(s).";
+        ShowSummary("Display Furniture Prefabs", summary);
+    }
+
+    private void BuildPrefabFromSource(DisplayFurnitureSourceEntry source, FurnitureBuildSettings settings)
+    {
+        GameObject modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(source.SourceAssetPath);
+        if (modelAsset == null)
+        {
+            throw new InvalidOperationException($"Could not load Display Furniture model at {source.SourceAssetPath}.");
+        }
+
+        string prefabFolderPath = Path.GetDirectoryName(source.PrefabAssetPath)?.Replace("\\", "/");
+        if (string.IsNullOrWhiteSpace(prefabFolderPath))
+        {
+            throw new InvalidOperationException($"Could not resolve prefab folder for {source.SourceAssetPath}.");
+        }
+
+        EnsureAssetFolder(prefabFolderPath);
+
+        GameObject root = new GameObject(source.PrefabRootName);
+
+        try
+        {
+            Transform modelContainer = FindOrCreateChild(root.transform, ModelContainerObjectName, useUndo: false);
+            GameObject modelInstance = PrefabUtility.InstantiatePrefab(modelAsset) as GameObject;
+            if (modelInstance == null)
+            {
+                modelInstance = UnityEngine.Object.Instantiate(modelAsset);
+            }
+
+            modelInstance.name = modelAsset.name;
+            modelInstance.transform.SetParent(modelContainer, false);
+            modelInstance.transform.localPosition = Vector3.zero;
+            modelInstance.transform.localRotation = Quaternion.identity;
+            modelInstance.transform.localScale = Vector3.one;
+
+            BuildFurniture(root, settings, useUndo: false);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, source.PrefabAssetPath);
+            if (savedPrefab == null)
+            {
+                throw new InvalidOperationException($"Failed to save Display Furniture prefab at {source.PrefabAssetPath}.");
+            }
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
+    private BuildResult BuildFurniture(GameObject target, FurnitureBuildSettings settings, bool useUndo)
+    {
+        int undoGroup = -1;
+
+        if (useUndo)
+        {
+            Undo.IncrementCurrentGroup();
+            Undo.SetCurrentGroupName("Build Display Furniture");
+            undoGroup = Undo.GetCurrentGroup();
+        }
+
+        try
+        {
+            MemoryDisplayFurniture furniture = GetOrAddComponent<MemoryDisplayFurniture>(target, useUndo);
+            ApplyFurnitureSettings(furniture, settings, target.name);
+
+            BoxCollider placementBoundsCollider = null;
+            if (settings.CreatePlacementBounds || settings.GenerateSlotsFromPlacementBounds || settings.CreateBlockingCollider)
+            {
+                placementBoundsCollider = CreateOrUpdatePlacementBounds(target.transform, furniture, settings, useUndo);
+            }
+            else
+            {
+                RemoveChildIfExists(target.transform, PlacementBoundsObjectName, useUndo);
+                AssignPlacementBoundsReference(furniture, null);
+            }
+
+            if (settings.CreateBlockingCollider && placementBoundsCollider != null)
+            {
+                CreateOrUpdateBlockingCollider(target.transform, placementBoundsCollider, useUndo);
+            }
+            else
+            {
+                RemoveChildIfExists(target.transform, BlockingColliderObjectName, useUndo);
+            }
+
+            Transform slotsRoot = FindOrCreateChild(target.transform, SlotsRootObjectName, useUndo);
+            if (settings.ClearExistingSlots)
+            {
+                ClearExistingSlotChildren(slotsRoot, useUndo);
+            }
+
+            List<SlotDefinition> slotDefinitions =
+                CreateSlotDefinitions(target.transform, settings, placementBoundsCollider);
+            for (int i = 0; i < slotDefinitions.Count; i++)
+            {
+                CreateOrUpdateSlot(slotsRoot, slotDefinitions[i], useUndo);
+            }
+
+            furniture.AutoCollectSlots();
+
+            SetDirty(target);
+            SetDirty(furniture);
+            SetDirty(slotsRoot.gameObject);
+
+            IReadOnlyList<MemoryDisplaySlot> slots = furniture.Slots;
+            for (int i = 0; i < slots.Count; i++)
+            {
+                MemoryDisplaySlot slot = slots[i];
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                SetDirty(slot);
+                SetDirty(slot.gameObject);
+            }
+
+            return new BuildResult(furniture, slotDefinitions.Count);
+        }
+        finally
+        {
+            if (useUndo && undoGroup >= 0)
+            {
+                Undo.CollapseUndoOperations(undoGroup);
+            }
+        }
+    }
+
+    private void ApplyFurnitureSettings(MemoryDisplayFurniture furniture, FurnitureBuildSettings settings, string fallbackId)
     {
         SerializedObject serializedFurniture = new SerializedObject(furniture);
         serializedFurniture.UpdateIfRequiredOrScript();
 
         SerializedProperty furnitureIdProperty = serializedFurniture.FindProperty("furnitureId");
-        if (furnitureIdProperty != null && string.IsNullOrWhiteSpace(furnitureIdProperty.stringValue))
+        if (furnitureIdProperty != null)
         {
-            furnitureIdProperty.stringValue = fallbackId;
+            furnitureIdProperty.stringValue = string.IsNullOrWhiteSpace(settings.FurnitureId)
+                ? fallbackId
+                : settings.FurnitureId;
         }
 
         SerializedProperty furnitureTypeProperty = serializedFurniture.FindProperty("furnitureType");
         if (furnitureTypeProperty != null)
         {
-            furnitureTypeProperty.enumValueIndex = (int)furnitureType;
+            furnitureTypeProperty.enumValueIndex = (int)settings.FurnitureType;
         }
 
         SerializedProperty usePlacementBoundsForSlotsProperty = serializedFurniture.FindProperty("usePlacementBoundsForSlots");
         if (usePlacementBoundsForSlotsProperty != null)
         {
-            usePlacementBoundsForSlotsProperty.boolValue = generateSlotsFromPlacementBounds;
+            usePlacementBoundsForSlotsProperty.boolValue = settings.GenerateSlotsFromPlacementBounds;
         }
 
         SerializedProperty createBlockingColliderProperty = serializedFurniture.FindProperty("createBlockingCollider");
         if (createBlockingColliderProperty != null)
         {
-            createBlockingColliderProperty.boolValue = createBlockingColliderOption;
+            createBlockingColliderProperty.boolValue = settings.CreateBlockingCollider;
         }
 
         serializedFurniture.ApplyModifiedPropertiesWithoutUndo();
     }
 
-    private BoxCollider CreateOrUpdatePlacementBounds(Transform furnitureTransform, MemoryDisplayFurniture furniture)
+    private BoxCollider CreateOrUpdatePlacementBounds(
+        Transform furnitureTransform,
+        MemoryDisplayFurniture furniture,
+        FurnitureBuildSettings settings,
+        bool useUndo)
     {
-        Transform placementBoundsTransform = FindOrCreateChild(furnitureTransform, PlacementBoundsObjectName);
-        BoxCollider placementBoundsCollider = GetOrAddComponentWithUndo<BoxCollider>(placementBoundsTransform.gameObject);
+        Transform placementBoundsTransform = FindOrCreateChild(furnitureTransform, PlacementBoundsObjectName, useUndo);
+        SetLocalTransformIdentity(placementBoundsTransform, useUndo, "Reset Placement Bounds");
 
-        if (autoFitBoundsFromRenderers)
+        BoxCollider placementBoundsCollider = GetOrAddComponent<BoxCollider>(placementBoundsTransform.gameObject, useUndo);
+        if (useUndo)
         {
-            Undo.RecordObject(placementBoundsCollider, "Auto Fit Placement Bounds");
-            furniture.AutoAssignPlacementBounds();
-
-            SerializedObject serializedFurniture = new SerializedObject(furniture);
-            serializedFurniture.UpdateIfRequiredOrScript();
-            SerializedProperty placementBoundsProperty = serializedFurniture.FindProperty("placementBoundsCollider");
-            if (placementBoundsProperty != null)
-            {
-                placementBoundsProperty.objectReferenceValue = placementBoundsCollider;
-            }
-            serializedFurniture.ApplyModifiedPropertiesWithoutUndo();
-
-            furniture.AutoFitPlacementBoundsFromRenderers();
+            Undo.RecordObject(placementBoundsCollider, "Update Placement Bounds");
         }
-        else
+
+        AssignPlacementBoundsReference(furniture, placementBoundsCollider);
+
+        if (settings.AutoFitBoundsFromRenderers)
         {
-            SerializedObject serializedFurniture = new SerializedObject(furniture);
-            serializedFurniture.UpdateIfRequiredOrScript();
-            SerializedProperty placementBoundsProperty = serializedFurniture.FindProperty("placementBoundsCollider");
-            if (placementBoundsProperty != null)
-            {
-                placementBoundsProperty.objectReferenceValue = placementBoundsCollider;
-            }
-            serializedFurniture.ApplyModifiedPropertiesWithoutUndo();
-            furniture.AutoAssignPlacementBounds();
+            FitColliderFromRenderers(furnitureTransform, placementBoundsCollider, settings.BoundsPadding);
         }
 
         placementBoundsCollider.isTrigger = true;
 
-        EditorUtility.SetDirty(placementBoundsTransform.gameObject);
-        EditorUtility.SetDirty(placementBoundsCollider);
+        SetDirty(placementBoundsTransform.gameObject);
+        SetDirty(placementBoundsCollider);
         return placementBoundsCollider;
     }
 
-    private void CreateOrUpdateBlockingCollider(Transform furnitureTransform, BoxCollider placementBoundsCollider)
+    private void CreateOrUpdateBlockingCollider(
+        Transform furnitureTransform,
+        BoxCollider placementBoundsCollider,
+        bool useUndo)
     {
-        Transform blockingColliderTransform = FindOrCreateChild(furnitureTransform, BlockingColliderObjectName);
-        BoxCollider blockingCollider = GetOrAddComponentWithUndo<BoxCollider>(blockingColliderTransform.gameObject);
+        Transform blockingColliderTransform = FindOrCreateChild(furnitureTransform, BlockingColliderObjectName, useUndo);
+        BoxCollider blockingCollider = GetOrAddComponent<BoxCollider>(blockingColliderTransform.gameObject, useUndo);
 
-        Undo.RecordObject(blockingColliderTransform, "Update Blocking Collider");
-        Undo.RecordObject(blockingCollider, "Update Blocking Collider");
+        if (useUndo)
+        {
+            Undo.RecordObject(blockingColliderTransform, "Update Blocking Collider");
+            Undo.RecordObject(blockingCollider, "Update Blocking Collider");
+        }
 
         blockingColliderTransform.localPosition = placementBoundsCollider.transform.localPosition;
         blockingColliderTransform.localRotation = placementBoundsCollider.transform.localRotation;
@@ -288,29 +602,98 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         blockingCollider.size = placementBoundsCollider.size;
         blockingCollider.isTrigger = false;
 
-        EditorUtility.SetDirty(blockingColliderTransform.gameObject);
-        EditorUtility.SetDirty(blockingCollider);
+        SetDirty(blockingColliderTransform.gameObject);
+        SetDirty(blockingCollider);
     }
 
-    private Transform FindOrCreateSlotsRoot(Transform furnitureTransform)
+    private static void AssignPlacementBoundsReference(MemoryDisplayFurniture furniture, BoxCollider placementBoundsCollider)
     {
-        Transform slotsRoot = furnitureTransform.Find("Slots");
-        if (slotsRoot != null)
+        SerializedObject serializedFurniture = new SerializedObject(furniture);
+        serializedFurniture.UpdateIfRequiredOrScript();
+
+        SerializedProperty placementBoundsProperty = serializedFurniture.FindProperty("placementBoundsCollider");
+        if (placementBoundsProperty != null)
         {
-            return slotsRoot;
+            placementBoundsProperty.objectReferenceValue = placementBoundsCollider;
+            serializedFurniture.ApplyModifiedPropertiesWithoutUndo();
+        }
+    }
+
+    private static void FitColliderFromRenderers(
+        Transform furnitureTransform,
+        BoxCollider placementBoundsCollider,
+        Vector3 boundsPadding)
+    {
+        Vector3 clampedPadding = ClampToNonNegative(boundsPadding);
+
+        if (!TryGetCombinedLocalRendererBounds(furnitureTransform, out Bounds localBounds))
+        {
+            placementBoundsCollider.center = Vector3.zero;
+            placementBoundsCollider.size = Vector3.Max(Vector3.one * 0.25f + (clampedPadding * 2f), Vector3.one * 0.01f);
+            return;
         }
 
-        GameObject slotsRootObject = new GameObject("Slots");
-        Undo.RegisterCreatedObjectUndo(slotsRootObject, "Create Slots Root");
-        slotsRoot = slotsRootObject.transform;
-        slotsRoot.SetParent(furnitureTransform, false);
-        slotsRoot.localPosition = Vector3.zero;
-        slotsRoot.localRotation = Quaternion.identity;
-        slotsRoot.localScale = Vector3.one;
-        return slotsRoot;
+        localBounds.Expand(clampedPadding * 2f);
+        ApplyFurnitureLocalBoundsToCollider(placementBoundsCollider, furnitureTransform, localBounds);
     }
 
-    private Transform FindOrCreateChild(Transform parent, string childName)
+    private static void ApplyFurnitureLocalBoundsToCollider(
+        BoxCollider collider,
+        Transform furnitureTransform,
+        Bounds furnitureLocalBounds)
+    {
+        Vector3[] worldCorners = new Vector3[8];
+        Vector3 center = furnitureLocalBounds.center;
+        Vector3 extents = furnitureLocalBounds.extents;
+        int index = 0;
+
+        for (int x = -1; x <= 1; x += 2)
+        {
+            for (int y = -1; y <= 1; y += 2)
+            {
+                for (int z = -1; z <= 1; z += 2)
+                {
+                    Vector3 localCorner = center + new Vector3(
+                        extents.x * x,
+                        extents.y * y,
+                        extents.z * z);
+                    worldCorners[index] = furnitureTransform.TransformPoint(localCorner);
+                    index++;
+                }
+            }
+        }
+
+        Vector3 min = Vector3.zero;
+        Vector3 max = Vector3.zero;
+        bool hasCorner = false;
+
+        for (int i = 0; i < worldCorners.Length; i++)
+        {
+            Vector3 colliderLocalCorner = collider.transform.InverseTransformPoint(worldCorners[i]);
+            if (!hasCorner)
+            {
+                min = colliderLocalCorner;
+                max = colliderLocalCorner;
+                hasCorner = true;
+                continue;
+            }
+
+            min = Vector3.Min(min, colliderLocalCorner);
+            max = Vector3.Max(max, colliderLocalCorner);
+        }
+
+        if (!hasCorner)
+        {
+            collider.center = Vector3.zero;
+            collider.size = Vector3.one * 0.01f;
+            return;
+        }
+
+        collider.center = (min + max) * 0.5f;
+        collider.size = Vector3.Max(max - min, Vector3.one * 0.01f);
+    }
+
+    private Transform FindOrCreateChild(Transform parent, string childName, bool useUndo)
     {
         Transform child = parent.Find(childName);
         if (child != null)
@@ -319,7 +702,11 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         }
 
         GameObject childObject = new GameObject(childName);
-        Undo.RegisterCreatedObjectUndo(childObject, $"Create {childName}");
+        if (useUndo)
+        {
+            Undo.RegisterCreatedObjectUndo(childObject, $"Create {childName}");
+        }
+
         child = childObject.transform;
         child.SetParent(parent, false);
         child.localPosition = Vector3.zero;
@@ -328,15 +715,56 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         return child;
     }
 
-    private void ClearExistingSlotChildren(Transform slotsRoot)
+    private static void SetLocalTransformIdentity(Transform transformToReset, bool useUndo, string undoLabel)
+    {
+        if (transformToReset == null)
+        {
+            return;
+        }
+
+        if (useUndo)
+        {
+            Undo.RecordObject(transformToReset, undoLabel);
+        }
+
+        transformToReset.localPosition = Vector3.zero;
+        transformToReset.localRotation = Quaternion.identity;
+        transformToReset.localScale = Vector3.one;
+    }
+
+    private static void RemoveChildIfExists(Transform parent, string childName, bool useUndo)
+    {
+        Transform child = parent.Find(childName);
+        if (child == null)
+        {
+            return;
+        }
+
+        if (useUndo)
+        {
+            Undo.DestroyObjectImmediate(child.gameObject);
+            return;
+        }
+
+        UnityEngine.Object.DestroyImmediate(child.gameObject);
+    }
+
+    private static void ClearExistingSlotChildren(Transform slotsRoot, bool useUndo)
     {
         for (int i = slotsRoot.childCount - 1; i >= 0; i--)
         {
-            Undo.DestroyObjectImmediate(slotsRoot.GetChild(i).gameObject);
+            if (useUndo)
+            {
+                Undo.DestroyObjectImmediate(slotsRoot.GetChild(i).gameObject);
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(slotsRoot.GetChild(i).gameObject);
+            }
         }
     }
 
-    private void CreateOrUpdateSlot(Transform slotsRoot, SlotDefinition definition)
+    private void CreateOrUpdateSlot(Transform slotsRoot, SlotDefinition definition, bool useUndo)
     {
         Transform slotTransform = slotsRoot.Find(definition.Name);
         GameObject slotObject;
@@ -344,14 +772,21 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         if (slotTransform == null)
         {
             slotObject = new GameObject(definition.Name);
-            Undo.RegisterCreatedObjectUndo(slotObject, "Create Display Slot");
+            if (useUndo)
+            {
+                Undo.RegisterCreatedObjectUndo(slotObject, "Create Display Slot");
+            }
+
             slotTransform = slotObject.transform;
             slotTransform.SetParent(slotsRoot, false);
         }
         else
         {
             slotObject = slotTransform.gameObject;
-            Undo.RecordObject(slotTransform, "Update Display Slot");
+            if (useUndo)
+            {
+                Undo.RecordObject(slotTransform, "Update Display Slot");
+            }
         }
 
         slotObject.name = definition.Name;
@@ -359,15 +794,15 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         slotTransform.localRotation = Quaternion.identity;
         slotTransform.localScale = Vector3.one;
 
-        MemoryDisplaySlot slot = GetOrAddComponentWithUndo<MemoryDisplaySlot>(slotObject);
+        MemoryDisplaySlot slot = GetOrAddComponent<MemoryDisplaySlot>(slotObject, useUndo);
         ApplySlotSettings(slot, definition);
 
-        EditorUtility.SetDirty(slotTransform);
-        EditorUtility.SetDirty(slotObject);
-        EditorUtility.SetDirty(slot);
+        SetDirty(slotTransform);
+        SetDirty(slotObject);
+        SetDirty(slot);
     }
 
-    private void ApplySlotSettings(MemoryDisplaySlot slot, SlotDefinition definition)
+    private static void ApplySlotSettings(MemoryDisplaySlot slot, SlotDefinition definition)
     {
         SerializedObject serializedSlot = new SerializedObject(slot);
         serializedSlot.UpdateIfRequiredOrScript();
@@ -430,10 +865,10 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
 
     private List<SlotDefinition> CreateSlotDefinitions(
         Transform furnitureTransform,
-        MemoryDisplayFurniture furniture,
+        FurnitureBuildSettings settings,
         BoxCollider placementBoundsCollider)
     {
-        if (slotPreset == SlotPreset.Custom)
+        if (settings.SlotPreset == SlotPreset.Custom)
         {
             return new List<SlotDefinition>();
         }
@@ -441,7 +876,7 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         bool hasLocalBounds = false;
         Bounds localBounds = default;
 
-        if (generateSlotsFromPlacementBounds && placementBoundsCollider != null)
+        if (settings.GenerateSlotsFromPlacementBounds && placementBoundsCollider != null)
         {
             hasLocalBounds = TryGetColliderBoundsInRootLocal(placementBoundsCollider, furnitureTransform, out localBounds);
         }
@@ -451,22 +886,26 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             hasLocalBounds = TryGetCombinedLocalRendererBounds(furnitureTransform, out localBounds);
         }
 
-        float topY = hasLocalBounds ? localBounds.max.y + slotHeightOffset : slotHeightOffset;
+        float topY = hasLocalBounds ? localBounds.max.y + settings.SlotHeightOffset : settings.SlotHeightOffset;
         float centerX = hasLocalBounds ? localBounds.center.x : 0f;
         float centerZ = hasLocalBounds ? localBounds.center.z : 0f;
-        float leftX = hasLocalBounds ? Mathf.Lerp(localBounds.min.x, localBounds.max.x, LeftRightNormalized) : -DefaultSingleFallbackOffset;
-        float rightX = hasLocalBounds ? Mathf.Lerp(localBounds.min.x, localBounds.max.x, RightNormalized) : DefaultSingleFallbackOffset;
+        float leftX = hasLocalBounds
+            ? Mathf.Lerp(localBounds.min.x, localBounds.max.x, LeftRightNormalized)
+            : -DefaultSingleFallbackOffset;
+        float rightX = hasLocalBounds
+            ? Mathf.Lerp(localBounds.min.x, localBounds.max.x, RightNormalized)
+            : DefaultSingleFallbackOffset;
 
         List<SlotDefinition> definitions = new List<SlotDefinition>();
 
-        switch (slotPreset)
+        switch (settings.SlotPreset)
         {
             case SlotPreset.SingleCenter:
                 definitions.Add(new SlotDefinition(
                     "Slot_Center",
                     new Vector3(centerX, topY, centerZ),
-                    ResolveSingleCenterSlotType(),
-                    ResolveSingleCenterAcceptedSizes()));
+                    ResolveSingleCenterSlotType(settings.FurnitureType),
+                    ResolveSingleCenterAcceptedSizes(settings.FurnitureType)));
                 break;
 
             case SlotPreset.ShelfLeftCenterRight:
@@ -517,14 +956,14 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         return definitions;
     }
 
-    private SlotType ResolveSingleCenterSlotType()
+    private static SlotType ResolveSingleCenterSlotType(FurnitureType resolvedFurnitureType)
     {
-        if (furnitureType == FurnitureType.FloorPad)
+        if (resolvedFurnitureType == FurnitureType.FloorPad)
         {
             return SlotType.FloorLarge;
         }
 
-        if (furnitureType == FurnitureType.WallShelf)
+        if (resolvedFurnitureType == FurnitureType.WallShelf)
         {
             return SlotType.WallShelf;
         }
@@ -532,9 +971,9 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         return SlotType.MediumTabletop;
     }
 
-    private List<ItemSize> ResolveSingleCenterAcceptedSizes()
+    private static List<ItemSize> ResolveSingleCenterAcceptedSizes(FurnitureType resolvedFurnitureType)
     {
-        if (furnitureType == FurnitureType.FloorPad)
+        if (resolvedFurnitureType == FurnitureType.FloorPad)
         {
             return CreateSizeList(ItemSize.Medium, ItemSize.Large, ItemSize.Tall);
         }
@@ -551,6 +990,471 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         }
 
         return result;
+    }
+
+    private FurnitureBuildSettings CreateSceneBuildSettings()
+    {
+        return new FurnitureBuildSettings
+        {
+            FurnitureId = furnitureTarget != null ? furnitureTarget.name : string.Empty,
+            FurnitureType = furnitureType,
+            SlotPreset = slotPreset,
+            SlotHeightOffset = slotHeightOffset,
+            BoundsPadding = boundsPadding,
+            ClearExistingSlots = clearExistingSlots,
+            CreatePlacementBounds = createOrUpdatePlacementBounds,
+            AutoFitBoundsFromRenderers = autoFitBoundsFromRenderers,
+            CreateBlockingCollider = createBlockingColliderOption,
+            GenerateSlotsFromPlacementBounds = generateSlotsFromPlacementBounds
+        };
+    }
+
+    private static FurnitureBuildSettings CreateBatchBuildSettings(
+        string modelId,
+        DisplayFurnitureBuildProfile profile)
+    {
+        InferTypeAndPreset(modelId, out FurnitureType inferredType, out SlotPreset inferredPreset);
+
+        if (profile == null)
+        {
+            return new FurnitureBuildSettings
+            {
+                FurnitureId = modelId,
+                FurnitureType = inferredType,
+                SlotPreset = inferredPreset,
+                SlotHeightOffset = DefaultSlotHeightOffset,
+                BoundsPadding = Vector3.zero,
+                ClearExistingSlots = true,
+                CreatePlacementBounds = true,
+                AutoFitBoundsFromRenderers = true,
+                CreateBlockingCollider = true,
+                GenerateSlotsFromPlacementBounds = true
+            };
+        }
+
+        return new FurnitureBuildSettings
+        {
+            FurnitureId = string.IsNullOrWhiteSpace(profile.furnitureId) ? modelId : profile.furnitureId,
+            FurnitureType = profile.furnitureType,
+            SlotPreset = profile.slotPreset,
+            SlotHeightOffset = profile.slotHeightOffset,
+            BoundsPadding = ClampToNonNegative(profile.boundsPadding),
+            ClearExistingSlots = true,
+            CreatePlacementBounds = profile.createPlacementBounds,
+            AutoFitBoundsFromRenderers = true,
+            CreateBlockingCollider = profile.createBlockingCollider,
+            GenerateSlotsFromPlacementBounds = profile.generateSlotsFromPlacementBounds
+        };
+    }
+
+    private static DisplayFurnitureBuildProfile EnsureBuildProfile(
+        DisplayFurnitureSourceEntry source,
+        out bool wasCreated)
+    {
+        DisplayFurnitureBuildProfile existingProfile =
+            AssetDatabase.LoadAssetAtPath<DisplayFurnitureBuildProfile>(source.ProfileAssetPath);
+        if (existingProfile != null)
+        {
+            wasCreated = false;
+            return existingProfile;
+        }
+
+        EnsureAssetFolder(source.DataFolderAssetPath);
+
+        DisplayFurnitureBuildProfile profile = CreateInstance<DisplayFurnitureBuildProfile>();
+        InferTypeAndPreset(source.ModelId, out FurnitureType inferredType, out SlotPreset inferredPreset);
+
+        profile.furnitureId = source.ModelId;
+        profile.furnitureType = inferredType;
+        profile.slotPreset = inferredPreset;
+        profile.slotHeightOffset = DefaultSlotHeightOffset;
+        profile.boundsPadding = Vector3.zero;
+        profile.createPlacementBounds = true;
+        profile.createBlockingCollider = true;
+        profile.generateSlotsFromPlacementBounds = true;
+
+        AssetDatabase.CreateAsset(profile, source.ProfileAssetPath);
+        SetDirty(profile);
+
+        wasCreated = true;
+        return profile;
+    }
+
+    private static void InferTypeAndPreset(string modelId, out FurnitureType furnitureType, out SlotPreset slotPreset)
+    {
+        if (modelId.StartsWith("DF_WallShelf_", StringComparison.OrdinalIgnoreCase))
+        {
+            furnitureType = FurnitureType.WallShelf;
+            slotPreset = SlotPreset.WallShelfLeftCenterRight;
+            return;
+        }
+
+        if (modelId.StartsWith("DF_FloorPad_", StringComparison.OrdinalIgnoreCase))
+        {
+            furnitureType = FurnitureType.FloorPad;
+            slotPreset = SlotPreset.FloorLargeCenter;
+            return;
+        }
+
+        if (modelId.StartsWith("DF_Plith_", StringComparison.OrdinalIgnoreCase)
+            || modelId.StartsWith("DF_Plinth_", StringComparison.OrdinalIgnoreCase))
+        {
+            furnitureType = FurnitureType.Plinth;
+            slotPreset = SlotPreset.SingleCenter;
+            return;
+        }
+
+        if (modelId.StartsWith("DF_Shelf_", StringComparison.OrdinalIgnoreCase))
+        {
+            furnitureType = FurnitureType.Shelf;
+            slotPreset = SlotPreset.ShelfLeftCenterRight;
+            return;
+        }
+
+        furnitureType = FurnitureType.Custom;
+        slotPreset = SlotPreset.Custom;
+    }
+
+    private static List<DisplayFurnitureSourceEntry> DiscoverDisplayFurnitureSources()
+    {
+        List<DisplayFurnitureSourceEntry> sources = new List<DisplayFurnitureSourceEntry>();
+
+        if (!AssetDatabase.IsValidFolder(SourceModelFolder))
+        {
+            return sources;
+        }
+
+        string absoluteSourceFolder = ToAbsolutePath(SourceModelFolder);
+        if (!Directory.Exists(absoluteSourceFolder))
+        {
+            return sources;
+        }
+
+        string[] furnitureFolders = Directory.GetDirectories(absoluteSourceFolder, "DF_*", SearchOption.TopDirectoryOnly);
+        Array.Sort(furnitureFolders, StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < furnitureFolders.Length; i++)
+        {
+            if (TryCreateSourceEntryFromFolder(furnitureFolders[i], out DisplayFurnitureSourceEntry source))
+            {
+                sources.Add(source);
+            }
+        }
+
+        string[] rootLevelFbxFiles = Directory.GetFiles(absoluteSourceFolder, "*.fbx", SearchOption.TopDirectoryOnly);
+        Array.Sort(rootLevelFbxFiles, StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < rootLevelFbxFiles.Length; i++)
+        {
+            if (TryCreateSourceEntryFromFbx(rootLevelFbxFiles[i], out DisplayFurnitureSourceEntry source))
+            {
+                sources.Add(source);
+            }
+        }
+
+        return sources;
+    }
+
+    private static bool TryCreateSourceEntryFromFolder(
+        string folderAbsolutePath,
+        out DisplayFurnitureSourceEntry source)
+    {
+        source = null;
+
+        if (string.IsNullOrWhiteSpace(folderAbsolutePath) || !Directory.Exists(folderAbsolutePath))
+        {
+            return false;
+        }
+
+        string folderName = Path.GetFileName(folderAbsolutePath);
+        string preferredFbxName = $"{folderName}.fbx";
+        string[] rootLevelFbxFiles = Directory.GetFiles(folderAbsolutePath, "*.fbx", SearchOption.TopDirectoryOnly);
+        Array.Sort(rootLevelFbxFiles, StringComparer.OrdinalIgnoreCase);
+
+        string chosenFbxPath = FindPreferredFbxPath(rootLevelFbxFiles, preferredFbxName);
+        if (string.IsNullOrWhiteSpace(chosenFbxPath))
+        {
+            string[] descendantFbxFiles = Directory.GetFiles(folderAbsolutePath, "*.fbx", SearchOption.AllDirectories);
+            Array.Sort(descendantFbxFiles, StringComparer.OrdinalIgnoreCase);
+            chosenFbxPath = FindPreferredFbxPath(descendantFbxFiles, preferredFbxName);
+        }
+
+        if (string.IsNullOrWhiteSpace(chosenFbxPath))
+        {
+            Debug.LogWarning(
+                $"[MemoryDisplayFurnitureBuilderWindow] Skipped folder {folderName} because no main FBX could be resolved.");
+            return false;
+        }
+
+        string sourceFolderAssetPath = ToAssetPath(folderAbsolutePath);
+        return TryCreateSourceEntry(
+            chosenFbxPath,
+            sourceFolderAssetPath,
+            out source);
+    }
+
+    private static bool TryCreateSourceEntryFromFbx(
+        string fbxAbsolutePath,
+        out DisplayFurnitureSourceEntry source)
+    {
+        source = null;
+
+        if (string.IsNullOrWhiteSpace(fbxAbsolutePath) || !File.Exists(fbxAbsolutePath))
+        {
+            return false;
+        }
+
+        return TryCreateSourceEntry(
+            fbxAbsolutePath,
+            SourceModelFolder,
+            out source);
+    }
+
+    private static bool TryCreateSourceEntry(
+        string fbxAbsolutePath,
+        string sourceFolderAssetPath,
+        out DisplayFurnitureSourceEntry source)
+    {
+        source = null;
+
+        string sourceAssetPath = ToAssetPath(fbxAbsolutePath);
+        if (!sourceAssetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        string modelId = Path.GetFileNameWithoutExtension(sourceAssetPath);
+        string prefabAssetPath = $"{OutputPrefabFolder}/PF_{modelId}.prefab";
+        string normalizedSourceFolderAssetPath = NormalizeAssetPath(sourceFolderAssetPath);
+        string dataFolderAssetPath = $"{normalizedSourceFolderAssetPath}/{DataFolderName}";
+        string profileAssetPath = $"{dataFolderAssetPath}/{modelId}_BuildProfile.asset";
+        source = new DisplayFurnitureSourceEntry(
+            modelId,
+            sourceAssetPath,
+            normalizedSourceFolderAssetPath,
+            dataFolderAssetPath,
+            prefabAssetPath,
+            profileAssetPath);
+        return true;
+    }
+
+    private static string FindPreferredFbxPath(string[] candidatePaths, string preferredFileName)
+    {
+        if (candidatePaths == null || candidatePaths.Length == 0)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < candidatePaths.Length; i++)
+        {
+            if (string.Equals(
+                Path.GetFileName(candidatePaths[i]),
+                preferredFileName,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return candidatePaths[i];
+            }
+        }
+
+        if (candidatePaths.Length == 1)
+        {
+            return candidatePaths[0];
+        }
+
+        return null;
+    }
+
+    private static List<DisplayFurnitureSourceEntry> DiscoverSelectedDisplayFurnitureSources()
+    {
+        List<DisplayFurnitureSourceEntry> allSources = DiscoverDisplayFurnitureSources();
+        if (allSources.Count == 0)
+        {
+            return allSources;
+        }
+
+        Dictionary<string, DisplayFurnitureSourceEntry> sourcesByPath =
+            new Dictionary<string, DisplayFurnitureSourceEntry>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < allSources.Count; i++)
+        {
+            sourcesByPath[allSources[i].SourceAssetPath] = allSources[i];
+        }
+
+        List<DisplayFurnitureSourceEntry> selectedSources = new List<DisplayFurnitureSourceEntry>();
+        HashSet<string> seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < Selection.objects.Length; i++)
+        {
+            string assetPath = NormalizeAssetPath(AssetDatabase.GetAssetPath(Selection.objects[i]));
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                continue;
+            }
+
+            if (AssetDatabase.IsValidFolder(assetPath))
+            {
+                for (int sourceIndex = 0; sourceIndex < allSources.Count; sourceIndex++)
+                {
+                    DisplayFurnitureSourceEntry source = allSources[sourceIndex];
+                    bool matchesSelectedFolder =
+                        IsPathUnderFolder(source.SourceFolderAssetPath, assetPath)
+                        || IsPathUnderFolder(assetPath, source.SourceFolderAssetPath)
+                        || IsPathUnderFolder(source.SourceAssetPath, assetPath);
+                    if (matchesSelectedFolder && seenPaths.Add(source.SourceAssetPath))
+                    {
+                        selectedSources.Add(source);
+                    }
+                }
+
+                continue;
+            }
+
+            if (assetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)
+                && sourcesByPath.TryGetValue(assetPath, out DisplayFurnitureSourceEntry selectedSource)
+                && seenPaths.Add(selectedSource.SourceAssetPath))
+            {
+                selectedSources.Add(selectedSource);
+            }
+        }
+
+        return selectedSources;
+    }
+
+    private static List<DisplayFurnitureSourceEntry> FilterBatchSources(
+        List<DisplayFurnitureSourceEntry> sources,
+        BatchBuildFilter filter)
+    {
+        if (filter == BatchBuildFilter.All)
+        {
+            return new List<DisplayFurnitureSourceEntry>(sources);
+        }
+
+        List<DisplayFurnitureSourceEntry> filteredSources = new List<DisplayFurnitureSourceEntry>();
+
+        for (int i = 0; i < sources.Count; i++)
+        {
+            DisplayFurnitureSourceEntry source = sources[i];
+            bool prefabExists = File.Exists(ToAbsolutePath(source.PrefabAssetPath));
+
+            if (filter == BatchBuildFilter.MissingOnly && !prefabExists)
+            {
+                filteredSources.Add(source);
+            }
+            else if (filter == BatchBuildFilter.ExistingOnly && prefabExists)
+            {
+                filteredSources.Add(source);
+            }
+        }
+
+        return filteredSources;
+    }
+
+    private static bool HasSelectedBatchSource()
+    {
+        if (Selection.objects == null || Selection.objects.Length == 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < Selection.objects.Length; i++)
+        {
+            string assetPath = NormalizeAssetPath(AssetDatabase.GetAssetPath(Selection.objects[i]));
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                continue;
+            }
+
+            if (AssetDatabase.IsValidFolder(assetPath) && IsPathUnderFolder(assetPath, SourceModelFolder))
+            {
+                return true;
+            }
+
+            if (assetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)
+                && IsPathUnderFolder(assetPath, SourceModelFolder))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void SaveFurnitureAsPrefab(GameObject target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        string normalizedFolder = string.IsNullOrWhiteSpace(prefabFolder)
+            ? OutputPrefabFolder
+            : NormalizeAssetPath(prefabFolder).TrimEnd('/');
+
+        EnsureAssetFolder(normalizedFolder);
+        string prefabAssetPath = $"{normalizedFolder}/{target.name}.prefab";
+
+        if (EditorUtility.IsPersistent(target))
+        {
+            PrefabUtility.SaveAsPrefabAsset(target, prefabAssetPath);
+            return;
+        }
+
+        PrefabUtility.SaveAsPrefabAssetAndConnect(target, prefabAssetPath, InteractionMode.UserAction);
+    }
+
+    private static int EnsureRequiredFolders()
+    {
+        int createdFolders = 0;
+        createdFolders += EnsureAssetFolder(SourceModelFolder);
+        createdFolders += EnsureAssetFolder(OutputPrefabFolder);
+        return createdFolders;
+    }
+
+    private static int EnsureAssetFolder(string assetFolderPath)
+    {
+        string normalizedPath = NormalizeAssetPath(assetFolderPath).TrimEnd('/');
+        if (AssetDatabase.IsValidFolder(normalizedPath))
+        {
+            return 0;
+        }
+
+        if (!normalizedPath.StartsWith("Assets", StringComparison.Ordinal))
+        {
+            throw new IOException($"Folder must be inside Assets: {assetFolderPath}");
+        }
+
+        string[] parts = normalizedPath.Split('/');
+        string currentPath = parts[0];
+        int createdFolders = 0;
+
+        for (int i = 1; i < parts.Length; i++)
+        {
+            string nextPath = $"{currentPath}/{parts[i]}";
+            if (!AssetDatabase.IsValidFolder(nextPath))
+            {
+                AssetDatabase.CreateFolder(currentPath, parts[i]);
+                createdFolders++;
+            }
+
+            currentPath = nextPath;
+        }
+
+        return createdFolders;
+    }
+
+    private static T GetOrAddComponent<T>(GameObject target, bool useUndo) where T : Component
+    {
+        T component = target.GetComponent<T>();
+        if (component != null)
+        {
+            return component;
+        }
+
+        if (useUndo)
+        {
+            return Undo.AddComponent<T>(target);
+        }
+
+        return target.AddComponent<T>();
     }
 
     private static GameObject ResolveMemoryItemTarget(GameObject selectedObject)
@@ -729,66 +1633,136 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         return true;
     }
 
-    private void SaveFurnitureAsPrefab(GameObject target)
+    private static Vector3 ClampToNonNegative(Vector3 value)
     {
-        if (target == null)
-        {
-            return;
-        }
-
-        string normalizedFolder = string.IsNullOrWhiteSpace(prefabFolder)
-            ? DefaultPrefabFolder
-            : prefabFolder.Replace('\\', '/').TrimEnd('/');
-
-        EnsureAssetFolder(normalizedFolder);
-        string prefabAssetPath = $"{normalizedFolder}/{target.name}.prefab";
-
-        if (EditorUtility.IsPersistent(target))
-        {
-            PrefabUtility.SaveAsPrefabAsset(target, prefabAssetPath);
-            return;
-        }
-
-        PrefabUtility.SaveAsPrefabAssetAndConnect(target, prefabAssetPath, InteractionMode.UserAction);
+        return new Vector3(
+            Mathf.Max(0f, value.x),
+            Mathf.Max(0f, value.y),
+            Mathf.Max(0f, value.z));
     }
 
-    private static void EnsureAssetFolder(string assetFolderPath)
+    private static string NormalizeAssetPath(string path)
     {
-        if (AssetDatabase.IsValidFolder(assetFolderPath))
+        return string.IsNullOrWhiteSpace(path) ? string.Empty : path.Replace("\\", "/");
+    }
+
+    private static bool IsPathUnderFolder(string assetPath, string folderPath)
+    {
+        string normalizedAssetPath = NormalizeAssetPath(assetPath).TrimEnd('/');
+        string normalizedFolderPath = NormalizeAssetPath(folderPath).TrimEnd('/');
+
+        if (string.Equals(normalizedAssetPath, normalizedFolderPath, StringComparison.OrdinalIgnoreCase))
         {
-            return;
+            return true;
         }
 
-        string normalizedPath = assetFolderPath.Replace('\\', '/').TrimEnd('/');
-        if (!normalizedPath.StartsWith("Assets"))
+        return normalizedAssetPath.StartsWith(
+            normalizedFolderPath + "/",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ToAbsolutePath(string assetPath)
+    {
+        string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+        return Path.GetFullPath(Path.Combine(projectRoot, assetPath));
+    }
+
+    private static string ToAssetPath(string absolutePath)
+    {
+        string normalizedAbsolute = NormalizeAssetPath(absolutePath);
+        string normalizedDataPath = NormalizeAssetPath(Application.dataPath);
+
+        if (!normalizedAbsolute.StartsWith(normalizedDataPath, StringComparison.OrdinalIgnoreCase))
         {
-            throw new IOException($"Prefab folder must be inside Assets: {assetFolderPath}");
+            throw new InvalidOperationException($"Path is outside the Unity Assets folder: {absolutePath}");
         }
 
-        string[] parts = normalizedPath.Split('/');
-        string currentPath = parts[0];
+        return $"Assets{normalizedAbsolute.Substring(normalizedDataPath.Length)}";
+    }
 
-        for (int i = 1; i < parts.Length; i++)
+    private static void SetDirty(UnityEngine.Object target)
+    {
+        if (target != null)
         {
-            string nextPath = $"{currentPath}/{parts[i]}";
-            if (!AssetDatabase.IsValidFolder(nextPath))
-            {
-                AssetDatabase.CreateFolder(currentPath, parts[i]);
-            }
-
-            currentPath = nextPath;
+            EditorUtility.SetDirty(target);
         }
     }
 
-    private static T GetOrAddComponentWithUndo<T>(GameObject target) where T : Component
+    private static void ShowSummary(string title, string message)
     {
-        T component = target.GetComponent<T>();
-        if (component == null)
+        Debug.Log($"[MemoryDisplayFurnitureBuilderWindow] {message}");
+
+        if (!Application.isBatchMode)
         {
-            component = Undo.AddComponent<T>(target);
+            EditorUtility.DisplayDialog(title, message, "OK");
+        }
+    }
+
+    private static bool ConfirmRebuildExistingPrefabs(string subjectLabel)
+    {
+        if (Application.isBatchMode)
+        {
+            return true;
         }
 
-        return component;
+        return EditorUtility.DisplayDialog(
+            $"Rebuild {subjectLabel} Prefabs",
+            $"Rebuild will overwrite existing {subjectLabel.ToLowerInvariant()} prefabs. Any manual prefab adjustments may be lost.\n\nDo you want to continue?",
+            "Rebuild",
+            "Cancel");
+    }
+
+    private sealed class FurnitureBuildSettings
+    {
+        public string FurnitureId;
+        public FurnitureType FurnitureType;
+        public SlotPreset SlotPreset;
+        public float SlotHeightOffset;
+        public Vector3 BoundsPadding;
+        public bool ClearExistingSlots;
+        public bool CreatePlacementBounds;
+        public bool AutoFitBoundsFromRenderers;
+        public bool CreateBlockingCollider;
+        public bool GenerateSlotsFromPlacementBounds;
+    }
+
+    private sealed class BuildResult
+    {
+        public BuildResult(MemoryDisplayFurniture furniture, int slotCount)
+        {
+            Furniture = furniture;
+            SlotCount = slotCount;
+        }
+
+        public MemoryDisplayFurniture Furniture { get; }
+        public int SlotCount { get; }
+    }
+
+    private sealed class DisplayFurnitureSourceEntry
+    {
+        public DisplayFurnitureSourceEntry(
+            string modelId,
+            string sourceAssetPath,
+            string sourceFolderAssetPath,
+            string dataFolderAssetPath,
+            string prefabAssetPath,
+            string profileAssetPath)
+        {
+            ModelId = modelId;
+            SourceAssetPath = sourceAssetPath;
+            SourceFolderAssetPath = sourceFolderAssetPath;
+            DataFolderAssetPath = dataFolderAssetPath;
+            PrefabAssetPath = prefabAssetPath;
+            ProfileAssetPath = profileAssetPath;
+        }
+
+        public string ModelId { get; }
+        public string SourceAssetPath { get; }
+        public string SourceFolderAssetPath { get; }
+        public string DataFolderAssetPath { get; }
+        public string PrefabAssetPath { get; }
+        public string ProfileAssetPath { get; }
+        public string PrefabRootName => $"PF_{ModelId}";
     }
 
     private sealed class SlotDefinition
