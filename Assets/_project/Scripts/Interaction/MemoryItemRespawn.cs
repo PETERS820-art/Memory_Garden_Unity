@@ -65,6 +65,12 @@ public class MemoryItemRespawn : MonoBehaviour
         initialRotation = transform.rotation;
     }
 
+    public void SetRespawnPose(Vector3 position, Quaternion rotation)
+    {
+        initialPosition = position;
+        initialRotation = rotation;
+    }
+
     private Vector3 GetRespawnPosition()
     {
         return initialPosition + Vector3.up * Mathf.Max(0f, respawnHeightOffset);

@@ -341,6 +341,49 @@ public class MemoryObject : MonoBehaviour
         return slot.CanAccept(this);
     }
 
+    public void ClearCurrentSlotAssignment()
+    {
+        CancelActiveSnap();
+
+        if (currentSlot != null && currentSlot.OccupiedItem == gameObject)
+        {
+            currentSlot.ClearOccupied();
+        }
+
+        currentSlot = null;
+    }
+
+    public bool TryPlaceOnSlot(MemoryDisplaySlot targetSlot)
+    {
+        if (targetSlot == null || !enablePlacement)
+        {
+            return false;
+        }
+
+        ClearCurrentSlotAssignment();
+
+        if (!targetSlot.CanAccept(this))
+        {
+            return false;
+        }
+
+        Pose snapPose = targetSlot.GetSnapPose();
+        Quaternion targetRotation = alignToSlotRotation ? snapPose.rotation : transform.rotation;
+        Vector3 targetPosition = CalculatePlacementPosition(
+            snapPose.position,
+            targetRotation,
+            targetSlot.transform.up);
+
+        PrepareRigidbodyForSnap();
+        transform.SetPositionAndRotation(targetPosition, targetRotation);
+        Physics.SyncTransforms();
+        RestoreRigidbodyAfterSnap();
+
+        targetSlot.MarkOccupied(gameObject);
+        currentSlot = targetSlot;
+        return true;
+    }
+
     private void StartSnapAfterRelease()
     {
         if (!enablePlacement)
