@@ -309,6 +309,12 @@ MonoBehaviour:
   observeAnchor: {fileID: 0}
   useBoundsCenterForObservation: 1
   preferColliderBounds: 1
+  enablePlacement: 1
+  itemSizeMode: 0
+  manualItemSize: 1
+  allowedSlotTypes: 
+  preferredHeightOffset: 0
+  alignToSlotRotation: 1
 --- !u!114 &3028706299681244018
 MonoBehaviour:
   m_ObjectHideFlags: 0
