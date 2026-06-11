@@ -1,19 +1,14 @@
 fileFormatVersion: 2
-guid: ab0fa8f3b3f2d6c4e820347945ff5966
+guid: 485f1c755e690434c8f618e4e9327155
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects:
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: Terazzo White 2
-    second: {fileID: 2100000, guid: e83011b055f945d4ab14bbe809ada277, type: 2}
+  externalObjects: {}
   materials:
-    materialImportMode: 1
+    materialImportMode: 2
     materialName: 0
-    materialSearch: 0
-    materialLocation: 0
+    materialSearch: 1
+    materialLocation: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0

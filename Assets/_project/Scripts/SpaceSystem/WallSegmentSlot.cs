@@ -2,6 +2,7 @@ using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using System;
 
 public class WallSegmentSlot : MonoBehaviour
 {
@@ -389,6 +390,18 @@ public class WallSegmentSlot : MonoBehaviour
         return sideRotation * Quaternion.Euler(90f, 90f, 0f);
     }
 
+    private static Quaternion GetPlacementRotation(SpaceSegmentDefinition definition, CornerPlacement placement, WallSide wallSide)
+    {
+        if (definition != null
+            && definition.category == SegmentCategory.OpeningOverlay
+            && IsDoorwayDefinition(definition))
+        {
+            return GetSideRotation(wallSide) * Quaternion.Euler(-90f, 0f, 90f);
+        }
+
+        return GetSegmentRotation(definition != null ? definition.variant : SegmentVariant.Default, placement, wallSide);
+    }
+
     private Vector2 GetWallFaceOffset()
     {
         switch (side)
@@ -414,7 +427,7 @@ public class WallSegmentSlot : MonoBehaviour
         switch (definition.category)
         {
             case SegmentCategory.Wall:
-                instanceTransform.localRotation = GetSegmentRotation(definition.variant, cornerPlacement, side);
+                instanceTransform.localRotation = GetPlacementRotation(definition, cornerPlacement, side);
                 if (definition.variant == SegmentVariant.Corner && cornerPlacement != CornerPlacement.None)
                 {
                     AlignCornerToLocalBounds(instanceTransform, cornerPlacement);
@@ -431,9 +444,14 @@ public class WallSegmentSlot : MonoBehaviour
                 }
                 break;
             case SegmentCategory.OpeningOverlay:
-                instanceTransform.localRotation = GetSegmentRotation(definition.variant, cornerPlacement, side);
+                instanceTransform.localRotation = GetPlacementRotation(definition, cornerPlacement, side);
                 Vector2 overlayFaceOffset = GetWallFaceOffset();
-                AlignToLocalBounds(instanceTransform, overlayFaceOffset.x, 0f, overlayFaceOffset.y);
+                Vector2 overlaySpanOffset = GetOverlaySpanOffset(definition);
+                AlignToLocalBounds(
+                    instanceTransform,
+                    overlayFaceOffset.x + overlaySpanOffset.x,
+                    0f,
+                    overlayFaceOffset.y + overlaySpanOffset.y);
                 break;
             default:
                 instanceTransform.localPosition = Vector3.zero;
@@ -451,9 +469,22 @@ public class WallSegmentSlot : MonoBehaviour
 
         if (definition.category == SegmentCategory.OpeningOverlay || definition.category == SegmentCategory.Wall)
         {
-            instanceTransform.localRotation = GetSegmentRotation(definition.variant, cornerPlacement, side);
+            instanceTransform.localRotation = GetPlacementRotation(definition, cornerPlacement, side);
             Vector2 overlayFaceOffset = GetWallFaceOffset();
-            AlignToLocalBounds(instanceTransform, overlayFaceOffset.x, 0f, overlayFaceOffset.y);
+            if (definition.category == SegmentCategory.OpeningOverlay)
+            {
+                Vector2 overlaySpanOffset = GetOverlaySpanOffset(definition);
+                AlignToLocalBounds(
+                    instanceTransform,
+                    overlayFaceOffset.x + overlaySpanOffset.x,
+                    0f,
+                    overlayFaceOffset.y + overlaySpanOffset.y);
+            }
+            else
+            {
+                AlignToLocalBounds(instanceTransform, overlayFaceOffset.x, 0f, overlayFaceOffset.y);
+            }
+
             return;
         }
 
@@ -532,6 +563,143 @@ public class WallSegmentSlot : MonoBehaviour
             targetCenterX - localCenter.x,
             targetMaxY - localMaxY,
             targetCenterZ - localCenter.z);
+    }
+
+    private static void AlignCenterToLocalBounds(Transform instanceTransform, float targetCenterX, float targetCenterY, float targetCenterZ)
+    {
+        if (instanceTransform == null || instanceTransform.parent == null)
+        {
+            return;
+        }
+
+        instanceTransform.localPosition = Vector3.zero;
+        if (!TryGetLocalBounds(instanceTransform, out Vector3 localCenter, out Vector3 localSize))
+        {
+            return;
+        }
+
+        instanceTransform.localPosition = new Vector3(
+            targetCenterX - localCenter.x,
+            targetCenterY - localCenter.y,
+            targetCenterZ - localCenter.z);
+    }
+
+    private static float GetDefinitionPlacementHeight(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return 1f;
+        }
+
+        if (definition.height > 0f)
+        {
+            return definition.height;
+        }
+
+        if ((definition.category == SegmentCategory.OpeningOverlay || definition.category == SegmentCategory.Wall)
+            && TryExtractDefinitionSize(definition, out _, out float parsedHeight))
+        {
+            return Mathf.Max(1f, parsedHeight);
+        }
+
+        if (definition.category == SegmentCategory.OpeningOverlay && definition.sizeXZ.y > 1f)
+        {
+            return definition.sizeXZ.y;
+        }
+
+        return definition.category == SegmentCategory.Wall ? 1f : Mathf.Max(1f, definition.sizeXZ.y);
+    }
+
+    private float GetDefinitionPlacementWidth(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return 1f;
+        }
+
+        if (definition.sizeXZ.x > 1f)
+        {
+            return Mathf.Max(1f, definition.sizeXZ.x);
+        }
+
+        if (TryExtractDefinitionSize(definition, out float parsedWidth, out _))
+        {
+            return Mathf.Max(1f, parsedWidth);
+        }
+
+        return Mathf.Max(1f, definition.sizeXZ.x);
+    }
+
+    private Vector2 GetOverlaySpanOffset(SpaceSegmentDefinition definition)
+    {
+        SpaceSegmentPlacementMetadata metadata = GetComponent<SpaceSegmentPlacementMetadata>();
+        if (metadata == null || metadata.record == null || definition == null)
+        {
+            return Vector2.zero;
+        }
+
+        float wallWidth = Mathf.Max(1f, metadata.record.footprint.x);
+        float overlayWidth = GetDefinitionPlacementWidth(definition);
+        float lateralOffset = (overlayWidth - wallWidth) * 0.5f;
+
+        switch (side)
+        {
+            case WallSide.North:
+            case WallSide.South:
+                return new Vector2(lateralOffset, 0f);
+            case WallSide.East:
+            case WallSide.West:
+                return new Vector2(0f, lateralOffset);
+            default:
+                return Vector2.zero;
+        }
+    }
+
+    private static bool IsDoorwayDefinition(SpaceSegmentDefinition definition)
+    {
+        return definition != null
+            && !string.IsNullOrWhiteSpace(definition.segmentId)
+            && definition.segmentId.IndexOf("doorway", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private static bool TryExtractDefinitionSize(SpaceSegmentDefinition definition, out float sizeX, out float sizeY)
+    {
+        sizeX = 1f;
+        sizeY = 1f;
+        if (definition == null || string.IsNullOrWhiteSpace(definition.segmentId))
+        {
+            return false;
+        }
+
+        string[] tokens = definition.segmentId.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
+        for (int i = tokens.Length - 1; i >= 0; i--)
+        {
+            if (TryParseSizeToken(tokens[i], out sizeX, out sizeY))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryParseSizeToken(string token, out float sizeX, out float sizeY)
+    {
+        sizeX = 1f;
+        sizeY = 1f;
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        string[] parts = token.Split('x', 'X');
+        if (parts.Length != 2)
+        {
+            return false;
+        }
+
+        return float.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sizeX)
+            && float.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sizeY);
     }
 
     private static void AlignToLocalBounds(Transform instanceTransform, float targetCenterX, float targetMinY, float targetCenterZ)

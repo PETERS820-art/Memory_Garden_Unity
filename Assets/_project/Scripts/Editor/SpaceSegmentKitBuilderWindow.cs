@@ -401,14 +401,20 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
             warnings.Add($"Unrecognized naming prefix for asset {assetPath}. Expected 'SM_'.");
         }
 
-        if (styleStartIndex < rawTokens.Length && CategoryTokenMatches(rawTokens[styleStartIndex], primaryFolderName))
+        if (styleStartIndex < rawTokens.Length)
         {
-            styleStartIndex++;
-        }
-        else
-        {
-            recognizedName = false;
-            warnings.Add($"Category token does not match folder category for asset {assetPath}");
+            if (CategoryTokenMatches(rawTokens[styleStartIndex], primaryFolderName))
+            {
+                styleStartIndex++;
+            }
+            else if (TryResolveCategoryToken(rawTokens[styleStartIndex], out SegmentCategory fileNameCategory))
+            {
+                if (fileNameCategory != category)
+                {
+                    recognizedName = false;
+                    warnings.Add($"Category token does not match folder category for asset {assetPath}");
+                }
+            }
         }
 
         SegmentVariant variant = GetDefaultVariant(category);
@@ -422,15 +428,27 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         bool hasSize = false;
         float sizeX = 1f;
         float sizeY = 1f;
-        if (dataEndIndex >= styleStartIndex && TryParseSizeToken(rawTokens[dataEndIndex], out sizeX, out sizeY))
+        int sizeTokenIndex = -1;
+        for (int i = dataEndIndex; i >= styleStartIndex; i--)
         {
+            if (!TryParseSizeToken(rawTokens[i], out sizeX, out sizeY))
+            {
+                continue;
+            }
+
             hasSize = true;
-            dataEndIndex--;
+            sizeTokenIndex = i;
+            break;
         }
 
         List<string> styleTokens = new List<string>();
         for (int i = styleStartIndex; i <= dataEndIndex; i++)
         {
+            if (i == sizeTokenIndex)
+            {
+                continue;
+            }
+
             styleTokens.Add(rawTokens[i]);
         }
 
@@ -456,6 +474,14 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
             {
                 validWallSize = false;
                 warnings.Add($"Missing or invalid wall size for asset {assetPath}. Expected patterns like 1x2.5.");
+            }
+        }
+        else if (category == SegmentCategory.OpeningOverlay)
+        {
+            if (hasSize)
+            {
+                sizeXZ = new Vector2(sizeX, 1f);
+                height = sizeY;
             }
         }
         else
@@ -686,6 +712,12 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         }
 
         return false;
+    }
+
+    private static bool TryResolveCategoryToken(string token, out SegmentCategory category)
+    {
+        category = ParseCategory(token, out bool supportedFolderCategory);
+        return supportedFolderCategory;
     }
 
     private static bool TryParseVariant(string token, out SegmentVariant variant)

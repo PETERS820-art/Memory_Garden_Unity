@@ -203,8 +203,9 @@ public class WallSegmentSlotEditor : Editor
         string style = string.IsNullOrWhiteSpace(definition.styleId)
             ? "default"
             : $"{category}_{definition.styleId}".ToLowerInvariant();
+        string size = GetDefinitionSizeFolder(definition);
         string leaf = GetDefinitionLeafName(definition);
-        return $"{category}/{style}/{leaf}";
+        return $"{category}/{style}/{size}/{leaf}";
     }
 
     private static string GetDefinitionLeafName(SpaceSegmentDefinition definition)
@@ -216,10 +217,54 @@ public class WallSegmentSlotEditor : Editor
 
         if (definition.variant == SegmentVariant.Default || definition.variant == SegmentVariant.Solid)
         {
+            if (definition.category == SegmentCategory.OpeningOverlay
+                && definition.segmentId != null
+                && definition.segmentId.IndexOf("doorway", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return "doorway";
+            }
+
             return "solid";
         }
 
         return definition.variant.ToString().ToLowerInvariant();
+    }
+
+    private static string GetDefinitionSizeFolder(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return "1x1";
+        }
+
+        float width = Mathf.Max(1f, definition.sizeXZ.x);
+        float height = GetDefinitionDisplayHeight(definition);
+        return $"{FormatNumber(width)}x{FormatNumber(height)}";
+    }
+
+    private static float GetDefinitionDisplayHeight(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return 1f;
+        }
+
+        if (definition.height > 0f)
+        {
+            return definition.height;
+        }
+
+        if (definition.category == SegmentCategory.OpeningOverlay && definition.sizeXZ.y > 1f)
+        {
+            return definition.sizeXZ.y;
+        }
+
+        return definition.category == SegmentCategory.Wall ? 1f : Mathf.Max(1f, definition.sizeXZ.y);
+    }
+
+    private static string FormatNumber(float value)
+    {
+        return value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     private static void ApplyDefinition(WallSegmentSlot slot, SpaceSegmentDefinition definition)

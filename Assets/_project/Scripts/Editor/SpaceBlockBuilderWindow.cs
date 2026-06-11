@@ -36,6 +36,21 @@ public class SpaceBlockBuilderWindow : EditorWindow
         public Transform Debug;
     }
 
+    private struct ScenePlacementPreview
+    {
+        public bool HasPreview;
+        public bool CanPlace;
+        public bool IsDeletePreview;
+        public bool IsOverlayPreview;
+        public Vector3 LocalCenter;
+        public Vector3 LocalSize;
+        public SpaceSegmentPlacementRecord Record;
+        public SpaceSegmentDefinition Definition;
+        public string Message;
+        public List<SpaceSegmentPlacementMetadata> Overlaps;
+        public SpaceSegmentPlacementMetadata TargetPlacement;
+    }
+
     [SerializeField] private BuilderMode builderMode = BuilderMode.QuickRectangularBlock;
 
     [SerializeField] private SpaceSegmentKit selectedSegmentKit;
@@ -57,8 +72,12 @@ public class SpaceBlockBuilderWindow : EditorWindow
     [SerializeField] private bool replaceExistingPlacement;
     [SerializeField] private bool markConnectorCandidate;
     [SerializeField] private SpaceBlockDefinition selectedBlockDefinitionAsset;
+    [SerializeField] private bool scenePlacementEnabled = true;
+    [SerializeField] private bool sceneAutoPickWallSide = true;
+    [SerializeField] private bool sceneDeleteMode;
 
     private readonly List<SegmentPaletteEntry> segmentPaletteEntries = new List<SegmentPaletteEntry>();
+    private bool deferredRepaintQueued;
 
     [MenuItem(MenuItemPath)]
     public static void OpenWindow()
@@ -148,34 +167,42 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Segment Palette", EditorStyles.boldLabel);
-        placementCategoryFilter = DrawPlacementCategoryFilter(placementCategoryFilter);
+        SegmentCategory nextCategoryFilter = DrawPlacementCategoryFilter(placementCategoryFilter);
+        if (nextCategoryFilter != placementCategoryFilter)
+        {
+            placementCategoryFilter = nextCategoryFilter;
+            selectedGridSegmentDefinition = null;
+            selectedPaletteIndex = 0;
+            SceneView.RepaintAll();
+        }
+
         RebuildSegmentPalette();
 
-        selectedGridSegmentDefinition = (SpaceSegmentDefinition)EditorGUILayout.ObjectField(
+        EditorGUI.BeginChangeCheck();
+        SpaceSegmentDefinition nextSelectedDefinition = (SpaceSegmentDefinition)EditorGUILayout.ObjectField(
             "Selected Segment",
             selectedGridSegmentDefinition,
             typeof(SpaceSegmentDefinition),
             false);
-
-        if (selectedGridSegmentDefinition != null)
+        if (EditorGUI.EndChangeCheck())
         {
-            placementCategoryFilter = GetSupportedPlacementCategory(selectedGridSegmentDefinition.category);
+            selectedGridSegmentDefinition = nextSelectedDefinition;
+            if (selectedGridSegmentDefinition != null)
+            {
+                placementCategoryFilter = GetSupportedPlacementCategory(selectedGridSegmentDefinition.category);
+                RebuildSegmentPalette();
+            }
+
+            SceneView.RepaintAll();
         }
 
         if (segmentPaletteEntries.Count > 0)
         {
             selectedPaletteIndex = Mathf.Clamp(selectedPaletteIndex, 0, segmentPaletteEntries.Count - 1);
-            string[] labels = new string[segmentPaletteEntries.Count];
-            for (int i = 0; i < segmentPaletteEntries.Count; i++)
+            string currentPaletteLabel = segmentPaletteEntries[selectedPaletteIndex].Label;
+            if (GUILayout.Button($"Palette: {currentPaletteLabel}", EditorStyles.popup))
             {
-                labels[i] = segmentPaletteEntries[i].Label;
-            }
-
-            int nextIndex = EditorGUILayout.Popup("Palette", selectedPaletteIndex, labels);
-            if (nextIndex != selectedPaletteIndex)
-            {
-                selectedPaletteIndex = nextIndex;
-                selectedGridSegmentDefinition = segmentPaletteEntries[selectedPaletteIndex].Definition;
+                ShowSegmentPaletteMenu();
             }
 
             if (selectedGridSegmentDefinition == null && selectedPaletteIndex >= 0 && selectedPaletteIndex < segmentPaletteEntries.Count)
@@ -200,6 +227,13 @@ public class SpaceBlockBuilderWindow : EditorWindow
         placeRotationY = NormalizeRotation(EditorGUILayout.IntField("Rotation Y", placeRotationY));
         replaceExistingPlacement = EditorGUILayout.Toggle("Replace Overlap", replaceExistingPlacement);
         markConnectorCandidate = EditorGUILayout.Toggle("Connector Candidate", markConnectorCandidate);
+        scenePlacementEnabled = EditorGUILayout.Toggle("Scene Placement", scenePlacementEnabled);
+        sceneAutoPickWallSide = EditorGUILayout.Toggle("Auto Pick Wall Side", sceneAutoPickWallSide);
+        sceneDeleteMode = EditorGUILayout.Toggle("Scene Delete Mode", sceneDeleteMode);
+
+        EditorGUILayout.HelpBox(
+            "Scene controls: hover the grid to preview, left-click to place, press R to rotate 90 degrees, and Shift+Click or enable Scene Delete Mode to remove a placed segment.",
+            MessageType.None);
 
         EditorGUILayout.Space();
 
@@ -259,8 +293,64 @@ public class SpaceBlockBuilderWindow : EditorWindow
             return;
         }
 
-        Handles.zTest = UnityEngine.Rendering.CompareFunction.LessEqual;
-        DrawAuthoringGrid(block.transform, gridWidth, gridDepth, gridSize);
+        sceneView.wantsMouseMove = scenePlacementEnabled || sceneDeleteMode;
+        Event current = Event.current;
+        RequestLiveScenePreviewRefresh(current);
+        bool isRepaintEvent = current != null && current.type == EventType.Repaint;
+        if (isRepaintEvent)
+        {
+            Handles.zTest = UnityEngine.Rendering.CompareFunction.LessEqual;
+            DrawAuthoringGrid(block.transform, gridWidth, gridDepth, gridSize);
+        }
+
+        HandleSceneHotkeys(current);
+
+        ScenePlacementPreview preview;
+        if (TryBuildDeletePreview(block, current, out preview))
+        {
+            if (isRepaintEvent)
+            {
+                DrawScenePlacementPreview(block.transform, preview);
+            }
+
+            if (TryHandleDeletePreviewClick(current, preview))
+            {
+                QueueDeferredRepaint();
+            }
+
+            return;
+        }
+
+        if (!scenePlacementEnabled)
+        {
+            return;
+        }
+
+        if (TryBuildScenePlacementPreview(block, current, out preview))
+        {
+            if (isRepaintEvent)
+            {
+                DrawScenePlacementPreview(block.transform, preview);
+            }
+
+            if (TryHandleScenePlacementClick(current, block, preview))
+            {
+                QueueDeferredRepaint();
+            }
+        }
+    }
+
+    private void RequestLiveScenePreviewRefresh(Event current)
+    {
+        if (current == null)
+        {
+            return;
+        }
+
+        if (current.type == EventType.MouseMove || current.type == EventType.MouseDrag)
+        {
+            QueueDeferredRepaint();
+        }
     }
 
     private void DrawAuthoringGrid(Transform root, int width, int depth, float size)
@@ -289,6 +379,281 @@ public class SpaceBlockBuilderWindow : EditorWindow
             Vector3 to = root.TransformPoint(new Vector3(halfWidth, 0f, localZ));
             Handles.DrawLine(from, to);
         }
+    }
+
+    private void HandleSceneHotkeys(Event current)
+    {
+        if (current == null || current.type != EventType.KeyDown)
+        {
+            return;
+        }
+
+        if (current.keyCode == KeyCode.R)
+        {
+            placeRotationY = NormalizeRotation(placeRotationY + 90);
+            current.Use();
+            QueueDeferredRepaint();
+        }
+    }
+
+    private void QueueDeferredRepaint()
+    {
+        if (deferredRepaintQueued)
+        {
+            return;
+        }
+
+        deferredRepaintQueued = true;
+        EditorApplication.delayCall += DeferredRepaint;
+    }
+
+    private void DeferredRepaint()
+    {
+        deferredRepaintQueued = false;
+
+        if (this == null)
+        {
+            return;
+        }
+
+        Repaint();
+        SceneView.RepaintAll();
+    }
+
+    private bool TryBuildDeletePreview(MemorySpaceBlock block, Event current, out ScenePlacementPreview preview)
+    {
+        preview = default;
+        if (block == null || (!sceneDeleteMode && (current == null || !current.shift)) || current == null || current.alt)
+        {
+            return false;
+        }
+
+        if (!TryRaycastAuthoringPlane(block.transform, current.mousePosition, out Vector3 localPoint))
+        {
+            return false;
+        }
+
+        if (!TryFindNearestPlacementMetadata(block, localPoint, wallOnly: false, out SpaceSegmentPlacementMetadata metadata) || metadata == null)
+        {
+            return false;
+        }
+
+        if (!TryGetPlacementPreviewBounds(metadata.gameObject, out Vector3 localCenter, out Vector3 localSize))
+        {
+            localCenter = block != null ? block.transform.InverseTransformPoint(metadata.transform.position) : metadata.transform.localPosition;
+            localSize = Vector3.one * gridSize;
+        }
+
+        preview.HasPreview = true;
+        preview.CanPlace = false;
+        preview.IsDeletePreview = true;
+        preview.TargetPlacement = metadata;
+        preview.LocalCenter = localCenter;
+        preview.LocalSize = localSize;
+        preview.Message = $"Delete {metadata.record.segmentId}";
+        return true;
+    }
+
+    private bool TryBuildScenePlacementPreview(MemorySpaceBlock block, Event current, out ScenePlacementPreview preview)
+    {
+        preview = default;
+        if (block == null || current == null || current.alt || selectedGridSegmentDefinition == null)
+        {
+            return false;
+        }
+
+        if (GetSupportedPlacementCategory(selectedGridSegmentDefinition.category) == SegmentCategory.OpeningOverlay)
+        {
+            return TryBuildOverlayPreview(block, current, out preview);
+        }
+
+        if (!TryRaycastAuthoringPlane(block.transform, current.mousePosition, out Vector3 localPoint))
+        {
+            return false;
+        }
+
+        if (!TryBuildRecordFromScenePoint(localPoint, selectedGridSegmentDefinition, out SpaceSegmentPlacementRecord record, out string message))
+        {
+            preview.HasPreview = true;
+            preview.CanPlace = false;
+            preview.Definition = selectedGridSegmentDefinition;
+            preview.Message = message;
+            preview.LocalCenter = localPoint;
+            preview.LocalSize = Vector3.one * gridSize;
+            return true;
+        }
+
+        List<SpaceSegmentPlacementMetadata> overlaps = FindOverlappingPlacements(block, record);
+        List<string> validationMessages = ValidatePlacementRecord(record, selectedGridSegmentDefinition, block, selectedSegmentKit != null ? selectedSegmentKit : block.segmentKit);
+
+        preview.HasPreview = true;
+        preview.Definition = selectedGridSegmentDefinition;
+        preview.Record = record;
+        preview.Overlaps = overlaps;
+        preview.LocalCenter = GetScenePreviewLocalCenter(record, selectedGridSegmentDefinition);
+        preview.LocalSize = GetScenePreviewSize(record);
+        preview.CanPlace = validationMessages.Count == 0 && (overlaps.Count == 0 || replaceExistingPlacement);
+
+        if (validationMessages.Count > 0)
+        {
+            preview.Message = string.Join(" | ", validationMessages.ToArray());
+        }
+        else if (overlaps.Count > 0 && !replaceExistingPlacement)
+        {
+            preview.Message = $"Overlap with {overlaps.Count} existing placement(s)";
+        }
+        else if (overlaps.Count > 0)
+        {
+            preview.Message = $"Replace {overlaps.Count} existing placement(s)";
+        }
+        else
+        {
+            preview.Message = $"{record.segmentId} @ ({record.gridX}, {record.gridZ})";
+        }
+
+        return true;
+    }
+
+    private bool TryBuildOverlayPreview(MemorySpaceBlock block, Event current, out ScenePlacementPreview preview)
+    {
+        preview = default;
+        if (block == null || current == null || selectedGridSegmentDefinition == null)
+        {
+            return false;
+        }
+
+        if (!TryRaycastAuthoringPlane(block.transform, current.mousePosition, out Vector3 localPoint))
+        {
+            return false;
+        }
+
+        if (!TryFindNearestPlacementMetadata(block, localPoint, wallOnly: true, out SpaceSegmentPlacementMetadata metadata) || metadata == null)
+        {
+            return false;
+        }
+
+        WallSegmentSlot wallSlot = metadata.GetComponent<WallSegmentSlot>();
+        if (wallSlot == null || metadata.record == null || metadata.record.category != SegmentCategory.Wall)
+        {
+            return false;
+        }
+
+        if (!CanAttachOverlayToWall(metadata, selectedGridSegmentDefinition, out string reason))
+        {
+            preview.HasPreview = true;
+            preview.CanPlace = false;
+            preview.IsOverlayPreview = true;
+            preview.Definition = selectedGridSegmentDefinition;
+            preview.TargetPlacement = metadata;
+            preview.Record = CloneRecord(metadata.record);
+            preview.LocalCenter = GetOverlayPreviewLocalCenter(block, metadata, selectedGridSegmentDefinition);
+            preview.LocalSize = GetOverlayPreviewSize(metadata.record, selectedGridSegmentDefinition);
+            preview.Message = reason;
+            return true;
+        }
+
+        preview.HasPreview = true;
+        preview.CanPlace = true;
+        preview.IsOverlayPreview = true;
+        preview.Definition = selectedGridSegmentDefinition;
+        preview.TargetPlacement = metadata;
+        preview.Record = CloneRecord(metadata.record);
+        preview.Record.overlaySegmentId = selectedGridSegmentDefinition.segmentId;
+        preview.LocalCenter = GetOverlayPreviewLocalCenter(block, metadata, selectedGridSegmentDefinition);
+        preview.LocalSize = GetOverlayPreviewSize(metadata.record, selectedGridSegmentDefinition);
+        preview.Message = $"Attach overlay {selectedGridSegmentDefinition.segmentId}";
+        return true;
+    }
+
+    private bool TryHandleScenePlacementClick(Event current, MemorySpaceBlock block, ScenePlacementPreview preview)
+    {
+        if (current == null
+            || current.type != EventType.MouseDown
+            || current.button != 0
+            || current.alt
+            || !preview.HasPreview)
+        {
+            return false;
+        }
+
+        if (preview.IsOverlayPreview)
+        {
+            AttachOverlayToPlacement(block, preview.TargetPlacement, selectedGridSegmentDefinition);
+            current.Use();
+            return true;
+        }
+
+        if (!preview.CanPlace)
+        {
+            current.Use();
+            return true;
+        }
+
+        SpaceSegmentKit kit = selectedSegmentKit != null ? selectedSegmentKit : block.segmentKit;
+        if (TryPlaceSegmentRecord(block, kit, preview.Record, preview.Definition, showDialogs: false))
+        {
+            placeGridX = preview.Record.gridX;
+            placeGridZ = preview.Record.gridZ;
+            placeWallSide = preview.Record.side;
+            current.Use();
+            return true;
+        }
+
+        current.Use();
+        return true;
+    }
+
+    private bool TryHandleDeletePreviewClick(Event current, ScenePlacementPreview preview)
+    {
+        if (current == null
+            || current.type != EventType.MouseDown
+            || current.button != 0
+            || current.alt
+            || !preview.IsDeletePreview
+            || preview.TargetPlacement == null)
+        {
+            return false;
+        }
+
+        DeletePlacementMetadata(preview.TargetPlacement);
+        current.Use();
+        return true;
+    }
+
+    private void DrawScenePlacementPreview(Transform blockRoot, ScenePlacementPreview preview)
+    {
+        if (blockRoot == null || !preview.HasPreview)
+        {
+            return;
+        }
+
+        Handles.matrix = blockRoot.localToWorldMatrix;
+        Handles.color = GetPreviewColor(preview);
+        Handles.DrawWireCube(preview.LocalCenter, preview.LocalSize);
+        Handles.matrix = Matrix4x4.identity;
+
+        Vector3 worldLabelPosition = blockRoot.TransformPoint(preview.LocalCenter + Vector3.up * 0.2f);
+        Handles.Label(worldLabelPosition, preview.Message);
+    }
+
+    private static Color GetPreviewColor(ScenePlacementPreview preview)
+    {
+        if (preview.IsDeletePreview)
+        {
+            return new Color(1f, 0.35f, 0.35f, 0.95f);
+        }
+
+        if (!preview.CanPlace)
+        {
+            return new Color(1f, 0.45f, 0.2f, 0.95f);
+        }
+
+        if (preview.Overlaps != null && preview.Overlaps.Count > 0)
+        {
+            return new Color(1f, 0.85f, 0.2f, 0.95f);
+        }
+
+        return new Color(0.35f, 1f, 0.55f, 0.95f);
     }
 
     private SegmentCategory DrawPlacementCategoryFilter(SegmentCategory currentValue)
@@ -350,7 +715,7 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
             segmentPaletteEntries.Add(new SegmentPaletteEntry
             {
-                Label = BuildSegmentPaletteLabel(definition),
+                Label = BuildSegmentPalettePath(definition),
                 Definition = definition
             });
         }
@@ -375,12 +740,41 @@ public class SpaceBlockBuilderWindow : EditorWindow
         }
     }
 
-    private static string BuildSegmentPaletteLabel(SpaceSegmentDefinition definition)
+    private void ShowSegmentPaletteMenu()
     {
-        string style = string.IsNullOrWhiteSpace(definition.styleId) ? "default" : definition.styleId;
-        string size = $"{definition.sizeXZ.x:0.##}x{definition.sizeXZ.y:0.##}";
-        string variant = definition.variant.ToString().ToLowerInvariant();
-        return $"{definition.category.ToString().ToLowerInvariant()}/{style}/{variant} [{size}]";
+        GenericMenu menu = new GenericMenu();
+        for (int i = 0; i < segmentPaletteEntries.Count; i++)
+        {
+            int entryIndex = i;
+            SegmentPaletteEntry entry = segmentPaletteEntries[i];
+            bool isSelected = entry.Definition == selectedGridSegmentDefinition;
+            menu.AddItem(
+                new GUIContent(entry.Label),
+                isSelected,
+                () =>
+                {
+                    selectedPaletteIndex = entryIndex;
+                    selectedGridSegmentDefinition = entry.Definition;
+                    SceneView.RepaintAll();
+                    Repaint();
+                });
+        }
+
+        menu.ShowAsContext();
+    }
+
+    private static string BuildSegmentPalettePath(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return "none";
+        }
+
+        string category = definition.category.ToString().ToLowerInvariant();
+        string style = BuildPaletteStyleFolder(definition);
+        string size = GetDefinitionDisplaySizeLabel(definition);
+        string leaf = GetPaletteLeafLabel(definition);
+        return $"{category}/{style}/{size}/{leaf}";
     }
 
     private static SegmentCategory GetSupportedPlacementCategory(SegmentCategory rawCategory)
@@ -397,6 +791,154 @@ public class SpaceBlockBuilderWindow : EditorWindow
             default:
                 return SegmentCategory.Floor;
         }
+    }
+
+    private static string BuildPaletteStyleFolder(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return "default";
+        }
+
+        string style = string.IsNullOrWhiteSpace(definition.styleId) ? "default" : definition.styleId.ToLowerInvariant();
+        if (definition.category == SegmentCategory.Wall && !style.StartsWith("wall_", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"wall_{style}";
+        }
+
+        return style;
+    }
+
+    private static string GetPaletteLeafLabel(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return "none";
+        }
+
+        if (definition.category == SegmentCategory.OpeningOverlay
+            && IsDoorwayDefinition(definition))
+        {
+            return "doorway";
+        }
+
+        if (definition.variant == SegmentVariant.Default || definition.variant == SegmentVariant.Solid)
+        {
+            return "solid";
+        }
+
+        return definition.variant.ToString().ToLowerInvariant();
+    }
+
+    private static string GetDefinitionDisplaySizeLabel(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return "1x1";
+        }
+
+        float width = GetDefinitionDisplayWidth(definition);
+        float height = GetDefinitionDisplayHeight(definition);
+        return $"{FormatDefinitionNumber(width)}x{FormatDefinitionNumber(height)}";
+    }
+
+    private static float GetDefinitionDisplayWidth(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return 1f;
+        }
+
+        if (definition.sizeXZ.x > 1f)
+        {
+            return Mathf.Max(1f, definition.sizeXZ.x);
+        }
+
+        if (TryExtractDefinitionSize(definition, out float width, out _))
+        {
+            return Mathf.Max(1f, width);
+        }
+
+        return Mathf.Max(1f, definition.sizeXZ.x);
+    }
+
+    private static float GetDefinitionDisplayHeight(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return 1f;
+        }
+
+        if (definition.height > 0f)
+        {
+            return definition.height;
+        }
+
+        if ((definition.category == SegmentCategory.OpeningOverlay || definition.category == SegmentCategory.Wall)
+            && TryExtractDefinitionSize(definition, out _, out float parsedHeight))
+        {
+            return Mathf.Max(1f, parsedHeight);
+        }
+
+        if (definition.category == SegmentCategory.OpeningOverlay && definition.sizeXZ.y > 1f)
+        {
+            return definition.sizeXZ.y;
+        }
+
+        return definition.category == SegmentCategory.Wall ? 1f : Mathf.Max(1f, definition.sizeXZ.y);
+    }
+
+    private static bool TryExtractDefinitionSize(SpaceSegmentDefinition definition, out float sizeX, out float sizeY)
+    {
+        sizeX = 1f;
+        sizeY = 1f;
+
+        if (definition == null || string.IsNullOrWhiteSpace(definition.segmentId))
+        {
+            return false;
+        }
+
+        string[] tokens = definition.segmentId.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
+        for (int i = tokens.Length - 1; i >= 0; i--)
+        {
+            if (TryParseDefinitionSizeToken(tokens[i], out sizeX, out sizeY))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryParseDefinitionSizeToken(string token, out float sizeX, out float sizeY)
+    {
+        sizeX = 1f;
+        sizeY = 1f;
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        string[] parts = token.Split('x', 'X');
+        if (parts.Length != 2)
+        {
+            return false;
+        }
+
+        return float.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sizeX)
+            && float.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sizeY);
+    }
+
+    private static string FormatDefinitionNumber(float value)
+    {
+        return value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static bool IsDoorwayDefinition(SpaceSegmentDefinition definition)
+    {
+        return definition != null
+            && definition.segmentId != null
+            && definition.segmentId.IndexOf("doorway", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     private void CreateNewEditableBlock()
@@ -470,31 +1012,10 @@ public class SpaceBlockBuilderWindow : EditorWindow
             }
 
             SpaceSegmentPlacementRecord record = BuildPlacementRecord(selectedGridSegmentDefinition);
-            List<string> validationMessages = ValidatePlacementRecord(record, selectedGridSegmentDefinition, block, kit);
-            if (validationMessages.Count > 0)
+            if (TryPlaceSegmentRecord(block, kit, record, selectedGridSegmentDefinition, showDialogs: true))
             {
-                ShowMessages("Place Selected Segment", validationMessages);
-                return;
+                ShowSummary($"Placed {selectedGridSegmentDefinition.segmentId}.");
             }
-
-            List<SpaceSegmentPlacementMetadata> overlaps = FindOverlappingPlacements(block, record);
-            if (overlaps.Count > 0 && !replaceExistingPlacement)
-            {
-                ShowSummary($"Placement overlaps {overlaps.Count} existing segment(s). Enable Replace Overlap to replace them.");
-                return;
-            }
-
-            Undo.RegisterFullObjectHierarchyUndo(block.gameObject, "Place Space Segment");
-            for (int i = 0; i < overlaps.Count; i++)
-            {
-                Undo.DestroyObjectImmediate(overlaps[i].gameObject);
-            }
-
-            CreatePlacementInstance(block, record, selectedGridSegmentDefinition, kit, editable: true);
-            block.NormalizeWallSlotRoots();
-            EditorUtility.SetDirty(block);
-            Selection.activeGameObject = block.gameObject;
-            ShowSummary($"Placed {selectedGridSegmentDefinition.segmentId}.");
         }
         catch (Exception exception)
         {
@@ -539,13 +1060,76 @@ public class SpaceBlockBuilderWindow : EditorWindow
                 return;
             }
 
-            Undo.DestroyObjectImmediate(metadata.gameObject);
-            EditorUtility.SetDirty(block);
+            DeletePlacementMetadata(metadata);
             ShowSummary("Deleted selected placed segment.");
         }
         catch (Exception exception)
         {
             ReportException("Delete Selected Segment", exception);
+        }
+    }
+
+    private bool TryPlaceSegmentRecord(
+        MemorySpaceBlock block,
+        SpaceSegmentKit kit,
+        SpaceSegmentPlacementRecord record,
+        SpaceSegmentDefinition definition,
+        bool showDialogs)
+    {
+        if (block == null || kit == null || record == null || definition == null)
+        {
+            return false;
+        }
+
+        List<string> validationMessages = ValidatePlacementRecord(record, definition, block, kit);
+        if (validationMessages.Count > 0)
+        {
+            if (showDialogs)
+            {
+                ShowMessages("Place Selected Segment", validationMessages);
+            }
+
+            return false;
+        }
+
+        List<SpaceSegmentPlacementMetadata> overlaps = FindOverlappingPlacements(block, record);
+        if (overlaps.Count > 0 && !replaceExistingPlacement)
+        {
+            if (showDialogs)
+            {
+                ShowSummary($"Placement overlaps {overlaps.Count} existing segment(s). Enable Replace Overlap to replace them.");
+            }
+
+            return false;
+        }
+
+        Undo.RegisterFullObjectHierarchyUndo(block.gameObject, "Place Space Segment");
+        for (int i = 0; i < overlaps.Count; i++)
+        {
+            Undo.DestroyObjectImmediate(overlaps[i].gameObject);
+        }
+
+        CreatePlacementInstance(block, record, definition, kit, editable: true);
+        block.NormalizeWallSlotRoots();
+        EditorUtility.SetDirty(block);
+        Selection.activeGameObject = block.gameObject;
+        return true;
+    }
+
+    private void DeletePlacementMetadata(SpaceSegmentPlacementMetadata metadata)
+    {
+        if (metadata == null)
+        {
+            return;
+        }
+
+        MemorySpaceBlock block = metadata.GetComponentInParent<MemorySpaceBlock>();
+        Undo.RegisterFullObjectHierarchyUndo(metadata.gameObject, "Delete Space Segment");
+        Undo.DestroyObjectImmediate(metadata.gameObject);
+        if (block != null)
+        {
+            EditorUtility.SetDirty(block);
+            Selection.activeGameObject = block.gameObject;
         }
     }
 
@@ -698,8 +1282,8 @@ public class SpaceBlockBuilderWindow : EditorWindow
                 MemorySpaceBlock bakedBlock = bakeRoot.AddComponent<MemorySpaceBlock>();
                 bakedBlock.spaceBlockId = blockId;
                 bakedBlock.spaceBlockType = SpaceBlockType.Custom;
-                bakedBlock.widthUnits = gridWidth;
-                bakedBlock.depthUnits = gridDepth;
+                bakedBlock.widthUnits = sourceBlock.widthUnits;
+                bakedBlock.depthUnits = sourceBlock.depthUnits;
                 bakedBlock.segmentKit = kit;
                 bakedBlock.blockDefinition = selectedBlockDefinitionAsset;
 
@@ -792,18 +1376,74 @@ public class SpaceBlockBuilderWindow : EditorWindow
             return;
         }
 
+        if (!CanAttachOverlayToWall(metadata, selectedGridSegmentDefinition, out string reason))
+        {
+            ShowSummary(reason);
+            return;
+        }
+
+        AttachOverlayToPlacement(block, metadata, selectedGridSegmentDefinition);
+        ShowSummary($"Attached overlay {selectedGridSegmentDefinition.segmentId}.");
+    }
+
+    private void AttachOverlayToPlacement(
+        MemorySpaceBlock block,
+        SpaceSegmentPlacementMetadata metadata,
+        SpaceSegmentDefinition overlayDefinition)
+    {
+        if (block == null || metadata == null || overlayDefinition == null)
+        {
+            return;
+        }
+
+        WallSegmentSlot wallSlot = metadata.GetComponent<WallSegmentSlot>();
+        if (wallSlot == null)
+        {
+            return;
+        }
+
         Undo.RegisterFullObjectHierarchyUndo(metadata.gameObject, "Place Opening Overlay");
-        wallSlot.SetOverlay(selectedGridSegmentDefinition);
-        metadata.record.overlaySegmentId = selectedGridSegmentDefinition.segmentId;
-        metadata.overlayDefinition = selectedGridSegmentDefinition;
-        metadata.record.isConnectorCandidate = markConnectorCandidate;
+        wallSlot.SetOverlay(overlayDefinition);
+        metadata.record.overlaySegmentId = overlayDefinition.segmentId;
+        metadata.overlayDefinition = overlayDefinition;
+        metadata.record.isConnectorCandidate = markConnectorCandidate || IsDoorwayDefinition(overlayDefinition);
         EditorUtility.SetDirty(metadata);
         EditorUtility.SetDirty(block);
-        ShowSummary($"Attached overlay {selectedGridSegmentDefinition.segmentId}.");
+    }
+
+    private bool CanAttachOverlayToWall(
+        SpaceSegmentPlacementMetadata wallPlacement,
+        SpaceSegmentDefinition overlayDefinition,
+        out string reason)
+    {
+        reason = string.Empty;
+        if (wallPlacement == null || wallPlacement.record == null || overlayDefinition == null)
+        {
+            reason = "Overlay target is missing.";
+            return false;
+        }
+
+        if (wallPlacement.record.category != SegmentCategory.Wall)
+        {
+            reason = "Opening overlays can only be attached to wall placements.";
+            return false;
+        }
+
+        float overlayWidth = GetDefinitionDisplayWidth(overlayDefinition);
+        float wallWidth = Mathf.Max(1f, wallPlacement.record.footprint.x);
+
+        if (overlayWidth - wallWidth > 0.001f)
+        {
+            reason = $"Overlay width {FormatDefinitionNumber(overlayWidth)} exceeds wall width {FormatDefinitionNumber(wallWidth)}.";
+            return false;
+        }
+
+        return true;
     }
 
     private SpaceSegmentPlacementRecord BuildPlacementRecord(SpaceSegmentDefinition definition)
     {
+        int normalizedRotation = NormalizeRotation(placeRotationY);
         return new SpaceSegmentPlacementRecord
         {
             placementId = $"PL_{Guid.NewGuid():N}".Substring(0, 11),
@@ -812,8 +1452,8 @@ public class SpaceBlockBuilderWindow : EditorWindow
             gridX = placeGridX,
             gridZ = placeGridZ,
             side = placeWallSide,
-            rotationY = NormalizeRotation(placeRotationY),
-            footprint = GetDefinitionFootprint(definition),
+            rotationY = normalizedRotation,
+            footprint = GetPlacementFootprint(definition, normalizedRotation),
             overlaySegmentId = string.Empty,
             isConnectorCandidate = markConnectorCandidate
         };
@@ -837,17 +1477,152 @@ public class SpaceBlockBuilderWindow : EditorWindow
             return Vector2Int.one;
         }
 
+        float width = GetDefinitionDisplayWidth(definition);
+        float height = GetDefinitionDisplayHeight(definition);
+
         switch (definition.category)
         {
             case SegmentCategory.Floor:
             case SegmentCategory.Ceiling:
             case SegmentCategory.Threshold:
                 return new Vector2Int(
-                    Mathf.Max(1, Mathf.RoundToInt(Mathf.Max(1f, definition.sizeXZ.x))),
-                    Mathf.Max(1, Mathf.RoundToInt(Mathf.Max(1f, definition.sizeXZ.y))));
+                    Mathf.Max(1, Mathf.RoundToInt(width)),
+                    Mathf.Max(1, Mathf.RoundToInt(height)));
             default:
-                return new Vector2Int(Mathf.Max(1, Mathf.RoundToInt(Mathf.Max(1f, definition.sizeXZ.x))), 1);
+                return new Vector2Int(Mathf.Max(1, Mathf.RoundToInt(width)), 1);
         }
+    }
+
+    private static Vector2Int GetPlacementFootprint(SpaceSegmentDefinition definition, int rotationY)
+    {
+        Vector2Int baseFootprint = GetDefinitionFootprint(definition);
+        if (definition == null)
+        {
+            return baseFootprint;
+        }
+
+        int normalizedRotation = NormalizeRotation(rotationY);
+        bool swapAxes = normalizedRotation == 90 || normalizedRotation == 270;
+        switch (definition.category)
+        {
+            case SegmentCategory.Floor:
+            case SegmentCategory.Ceiling:
+            case SegmentCategory.Threshold:
+            case SegmentCategory.Beam:
+                return swapAxes
+                    ? new Vector2Int(baseFootprint.y, baseFootprint.x)
+                    : baseFootprint;
+            default:
+                return baseFootprint;
+        }
+    }
+
+    private bool TryBuildRecordFromScenePoint(
+        Vector3 localPoint,
+        SpaceSegmentDefinition definition,
+        out SpaceSegmentPlacementRecord record,
+        out string message)
+    {
+        record = default;
+        message = string.Empty;
+        if (definition == null)
+        {
+            message = "Select a segment definition first.";
+            return false;
+        }
+
+        float halfWidth = gridWidth * gridSize * 0.5f;
+        float halfDepth = gridDepth * gridSize * 0.5f;
+        float normalizedX = (localPoint.x + halfWidth) / gridSize;
+        float normalizedZ = (localPoint.z + halfDepth) / gridSize;
+        int cellX = Mathf.FloorToInt(normalizedX);
+        int cellZ = Mathf.FloorToInt(normalizedZ);
+
+        if (cellX < 0 || cellZ < 0 || cellX >= gridWidth || cellZ >= gridDepth)
+        {
+            message = "Cursor is outside the authoring grid.";
+            return false;
+        }
+
+        int normalizedRotation = NormalizeRotation(placeRotationY);
+        record = new SpaceSegmentPlacementRecord
+        {
+            placementId = $"PL_{Guid.NewGuid():N}".Substring(0, 11),
+            segmentId = definition.segmentId,
+            category = GetSupportedPlacementCategory(definition.category),
+            gridX = cellX,
+            gridZ = cellZ,
+            side = placeWallSide,
+            rotationY = normalizedRotation,
+            footprint = GetPlacementFootprint(definition, normalizedRotation),
+            overlaySegmentId = string.Empty,
+            isConnectorCandidate = markConnectorCandidate
+        };
+
+        if (record.category == SegmentCategory.Wall)
+        {
+            record.side = sceneAutoPickWallSide
+                ? GetNearestWallSide(localPoint, cellX, cellZ)
+                : placeWallSide;
+
+            int wallLength = Mathf.Max(1, record.footprint.x);
+            switch (record.side)
+            {
+                case WallSide.North:
+                case WallSide.South:
+                    record.gridX = Mathf.Clamp(cellX, 0, Mathf.Max(0, gridWidth - wallLength));
+                    record.gridZ = Mathf.Clamp(cellZ, 0, gridDepth - 1);
+                    break;
+                case WallSide.East:
+                case WallSide.West:
+                    record.gridX = Mathf.Clamp(cellX, 0, gridWidth - 1);
+                    record.gridZ = Mathf.Clamp(cellZ, 0, Mathf.Max(0, gridDepth - wallLength));
+                    break;
+            }
+
+            return true;
+        }
+
+        record.gridX = Mathf.Clamp(cellX, 0, Mathf.Max(0, gridWidth - Mathf.Max(1, record.footprint.x)));
+        record.gridZ = Mathf.Clamp(cellZ, 0, Mathf.Max(0, gridDepth - Mathf.Max(1, record.footprint.y)));
+        return true;
+    }
+
+    private WallSide GetNearestWallSide(Vector3 localPoint, int cellX, int cellZ)
+    {
+        float halfWidth = gridWidth * gridSize * 0.5f;
+        float halfDepth = gridDepth * gridSize * 0.5f;
+        float minX = -halfWidth + (cellX * gridSize);
+        float maxX = minX + gridSize;
+        float minZ = -halfDepth + (cellZ * gridSize);
+        float maxZ = minZ + gridSize;
+
+        float westDistance = Mathf.Abs(localPoint.x - minX);
+        float eastDistance = Mathf.Abs(localPoint.x - maxX);
+        float southDistance = Mathf.Abs(localPoint.z - minZ);
+        float northDistance = Mathf.Abs(localPoint.z - maxZ);
+
+        float bestDistance = northDistance;
+        WallSide side = WallSide.North;
+
+        if (southDistance < bestDistance)
+        {
+            bestDistance = southDistance;
+            side = WallSide.South;
+        }
+
+        if (eastDistance < bestDistance)
+        {
+            bestDistance = eastDistance;
+            side = WallSide.East;
+        }
+
+        if (westDistance < bestDistance)
+        {
+            side = WallSide.West;
+        }
+
+        return side;
     }
 
     private List<string> ValidatePlacementRecord(
@@ -977,35 +1752,20 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
     private static bool DoWallEdgesOverlap(SpaceSegmentPlacementRecord a, SpaceSegmentPlacementRecord b)
     {
-        if (a.side != b.side)
+        List<string> aKeys = GetWallEdgeKeys(a);
+        List<string> bKeys = GetWallEdgeKeys(b);
+        for (int i = 0; i < aKeys.Count; i++)
         {
-            return false;
-        }
-
-        if (a.side == WallSide.North || a.side == WallSide.South)
-        {
-            if (a.gridZ != b.gridZ)
+            for (int j = 0; j < bKeys.Count; j++)
             {
-                return false;
+                if (string.Equals(aKeys[i], bKeys[j], StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
             }
-
-            int aMin = a.gridX;
-            int aMax = a.gridX + Mathf.Max(1, a.footprint.x);
-            int bMin = b.gridX;
-            int bMax = b.gridX + Mathf.Max(1, b.footprint.x);
-            return aMin < bMax && aMax > bMin;
         }
 
-        if (a.gridX != b.gridX)
-        {
-            return false;
-        }
-
-        int aMinZ = a.gridZ;
-        int aMaxZ = a.gridZ + Mathf.Max(1, a.footprint.x);
-        int bMinZ = b.gridZ;
-        int bMaxZ = b.gridZ + Mathf.Max(1, b.footprint.x);
-        return aMinZ < bMaxZ && aMaxZ > bMinZ;
+        return false;
     }
 
     private void CreatePlacementInstance(
@@ -1097,7 +1857,7 @@ public class SpaceBlockBuilderWindow : EditorWindow
                 AlignInstanceToLocalBounds(instanceTransform, 0f, 0f, 0f);
                 break;
             case SegmentCategory.Ceiling:
-                instanceTransform.localRotation = Quaternion.Euler(-90f, record.rotationY, 0f);
+                instanceTransform.localRotation = Quaternion.Euler(90f, record.rotationY, 0f);
                 AlignInstanceToBoundsAtHeight(instanceTransform, 0f, GetAuthoringCeilingHeight(), 0f);
                 break;
             case SegmentCategory.Threshold:
@@ -1130,6 +1890,224 @@ public class SpaceBlockBuilderWindow : EditorWindow
                     0f,
                     -halfDepth + ((record.gridZ + (record.footprint.y * 0.5f)) * gridSize));
         }
+    }
+
+    private Vector3 GetScenePreviewSize(SpaceSegmentPlacementRecord record)
+    {
+        switch (record.category)
+        {
+            case SegmentCategory.Wall:
+            {
+                float length = Mathf.Max(1, record.footprint.x) * gridSize;
+                bool horizontal = record.side == WallSide.North || record.side == WallSide.South;
+                return horizontal
+                    ? new Vector3(length, Mathf.Max(0.2f, GetAuthoringCeilingHeight()), 0.08f)
+                    : new Vector3(0.08f, Mathf.Max(0.2f, GetAuthoringCeilingHeight()), length);
+            }
+            case SegmentCategory.Ceiling:
+            case SegmentCategory.Beam:
+                return new Vector3(
+                    Mathf.Max(1, record.footprint.x) * gridSize,
+                    0.08f,
+                    Mathf.Max(1, record.footprint.y) * gridSize);
+            default:
+                return new Vector3(
+                    Mathf.Max(1, record.footprint.x) * gridSize,
+                    0.04f,
+                    Mathf.Max(1, record.footprint.y) * gridSize);
+        }
+    }
+
+    private Vector3 GetOverlayPreviewSize(SpaceSegmentPlacementRecord wallRecord, SpaceSegmentDefinition overlayDefinition)
+    {
+        float width = Mathf.Max(1f, GetDefinitionDisplayWidth(overlayDefinition)) * gridSize;
+        float height = Mathf.Max(0.2f, GetDefinitionDisplayHeight(overlayDefinition));
+        bool horizontal = wallRecord != null && (wallRecord.side == WallSide.North || wallRecord.side == WallSide.South);
+        return horizontal
+            ? new Vector3(width, height, 0.08f)
+            : new Vector3(0.08f, height, width);
+    }
+
+    private Vector3 GetScenePreviewLocalCenter(SpaceSegmentPlacementRecord record, SpaceSegmentDefinition definition)
+    {
+        Vector3 center = GetPlacementLocalPosition(record, definition);
+        switch (record.category)
+        {
+            case SegmentCategory.Wall:
+                center.y = GetAuthoringCeilingHeight() * 0.5f;
+                break;
+            case SegmentCategory.Ceiling:
+            case SegmentCategory.Beam:
+                center.y = GetAuthoringCeilingHeight();
+                break;
+            default:
+                center.y = 0.02f;
+                break;
+        }
+
+        return center;
+    }
+
+    private Vector3 GetOverlayPreviewLocalCenter(
+        MemorySpaceBlock block,
+        SpaceSegmentPlacementMetadata metadata,
+        SpaceSegmentDefinition overlayDefinition)
+    {
+        Vector3 center = block != null
+            ? block.transform.InverseTransformPoint(metadata.transform.position)
+            : metadata.transform.localPosition;
+        center += GetWallOverlayPlacementOffset(metadata != null ? metadata.record : null, overlayDefinition);
+        center.y = GetDefinitionDisplayHeight(overlayDefinition) * 0.5f;
+        return center;
+    }
+
+    private Vector3 GetWallOverlayPlacementOffset(
+        SpaceSegmentPlacementRecord wallRecord,
+        SpaceSegmentDefinition overlayDefinition)
+    {
+        if (wallRecord == null || overlayDefinition == null)
+        {
+            return Vector3.zero;
+        }
+
+        float wallWidth = Mathf.Max(1f, wallRecord.footprint.x) * gridSize;
+        float overlayWidth = Mathf.Max(1f, GetDefinitionDisplayWidth(overlayDefinition)) * gridSize;
+        float lateralOffset = (overlayWidth - wallWidth) * 0.5f;
+
+        switch (wallRecord.side)
+        {
+            case WallSide.North:
+            case WallSide.South:
+                return new Vector3(lateralOffset, 0f, 0f);
+            case WallSide.East:
+            case WallSide.West:
+                return new Vector3(0f, 0f, lateralOffset);
+            default:
+                return Vector3.zero;
+        }
+    }
+
+    private bool TryRaycastAuthoringPlane(Transform blockRoot, Vector2 mousePosition, out Vector3 localPoint)
+    {
+        localPoint = Vector3.zero;
+        if (blockRoot == null)
+        {
+            return false;
+        }
+
+        Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
+        Plane plane = new Plane(blockRoot.up, blockRoot.position);
+        if (!plane.Raycast(ray, out float distance))
+        {
+            return false;
+        }
+
+        Vector3 worldPoint = ray.GetPoint(distance);
+        localPoint = blockRoot.InverseTransformPoint(worldPoint);
+        return true;
+    }
+
+    private bool IsLocalPointWithinGrid(Vector3 localPoint)
+    {
+        float halfWidth = gridWidth * gridSize * 0.5f;
+        float halfDepth = gridDepth * gridSize * 0.5f;
+        return localPoint.x >= -halfWidth
+            && localPoint.x <= halfWidth
+            && localPoint.z >= -halfDepth
+            && localPoint.z <= halfDepth;
+    }
+
+    private bool TryFindNearestPlacementMetadata(
+        MemorySpaceBlock block,
+        Vector3 localPoint,
+        bool wallOnly,
+        out SpaceSegmentPlacementMetadata metadata)
+    {
+        metadata = null;
+        if (block == null)
+        {
+            return false;
+        }
+
+        SpaceSegmentPlacementMetadata[] placements = block.GetComponentsInChildren<SpaceSegmentPlacementMetadata>(true);
+        float bestDistanceSqr = float.MaxValue;
+        float maxDistance = gridSize * 0.75f;
+        float maxDistanceSqr = maxDistance * maxDistance;
+
+        for (int i = 0; i < placements.Length; i++)
+        {
+            SpaceSegmentPlacementMetadata candidate = placements[i];
+            if (candidate == null || candidate.record == null)
+            {
+                continue;
+            }
+
+            if (wallOnly && candidate.record.category != SegmentCategory.Wall)
+            {
+                continue;
+            }
+
+            Vector3 candidateLocalCenter;
+            Vector3 candidateLocalSize;
+            if (!TryGetPlacementPreviewBounds(candidate.gameObject, out candidateLocalCenter, out candidateLocalSize))
+            {
+                candidateLocalCenter = block.transform.InverseTransformPoint(candidate.transform.position);
+                candidateLocalSize = Vector3.one * gridSize;
+            }
+
+            Vector2 localPointXZ = new Vector2(localPoint.x, localPoint.z);
+            Vector2 candidateXZ = new Vector2(candidateLocalCenter.x, candidateLocalCenter.z);
+            Vector2 halfSizeXZ = new Vector2(candidateLocalSize.x * 0.5f, candidateLocalSize.z * 0.5f);
+
+            float clampedX = Mathf.Clamp(localPointXZ.x, candidateXZ.x - halfSizeXZ.x, candidateXZ.x + halfSizeXZ.x);
+            float clampedZ = Mathf.Clamp(localPointXZ.y, candidateXZ.y - halfSizeXZ.y, candidateXZ.y + halfSizeXZ.y);
+            float distanceSqr = (localPointXZ - new Vector2(clampedX, clampedZ)).sqrMagnitude;
+            if (distanceSqr > maxDistanceSqr || distanceSqr >= bestDistanceSqr)
+            {
+                continue;
+            }
+
+            bestDistanceSqr = distanceSqr;
+            metadata = candidate;
+        }
+
+        return metadata != null;
+    }
+
+    private bool TryGetPlacementPreviewBounds(GameObject placementObject, out Vector3 localCenter, out Vector3 localSize)
+    {
+        localCenter = Vector3.zero;
+        localSize = Vector3.one * gridSize;
+        if (placementObject == null)
+        {
+            return false;
+        }
+
+        Renderer[] renderers = placementObject.GetComponentsInChildren<Renderer>(true);
+        if (renderers == null || renderers.Length == 0)
+        {
+            return false;
+        }
+
+        Bounds bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            bounds.Encapsulate(renderers[i].bounds);
+        }
+
+        MemorySpaceBlock block = placementObject.GetComponentInParent<MemorySpaceBlock>();
+        if (block == null)
+        {
+            return false;
+        }
+
+        localCenter = block.transform.InverseTransformPoint(bounds.center);
+        Vector3 localSizeVector = block.transform.InverseTransformVector(bounds.size);
+        localSize = new Vector3(
+            Mathf.Max(0.08f, Mathf.Abs(localSizeVector.x)),
+            Mathf.Max(0.08f, Mathf.Abs(localSizeVector.y)),
+            Mathf.Max(0.08f, Mathf.Abs(localSizeVector.z)));
+        return true;
     }
 
     private Vector3 GetWallPlacementLocalPosition(SpaceSegmentPlacementRecord record, float halfWidth, float halfDepth)
@@ -1189,8 +2167,8 @@ public class SpaceBlockBuilderWindow : EditorWindow
     private void PopulateDefinitionFromBlock(SpaceBlockDefinition definition, MemorySpaceBlock block)
     {
         definition.blockId = string.IsNullOrWhiteSpace(block.spaceBlockId) ? block.name : block.spaceBlockId;
-        definition.gridWidth = gridWidth;
-        definition.gridDepth = gridDepth;
+        definition.gridWidth = Mathf.Max(1, block.widthUnits);
+        definition.gridDepth = Mathf.Max(1, block.depthUnits);
         definition.gridSize = gridSize;
         definition.placements.Clear();
 
@@ -1357,24 +2335,46 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
     private void AddWallOccupancy(SpaceSegmentPlacementRecord record, HashSet<string> occupiedEdges, List<string> messages)
     {
-        int segmentLength = Mathf.Max(1, record.footprint.x);
-        for (int step = 0; step < segmentLength; step++)
+        List<string> wallEdgeKeys = GetWallEdgeKeys(record);
+        for (int i = 0; i < wallEdgeKeys.Count; i++)
         {
-            string key;
-            if (record.side == WallSide.North || record.side == WallSide.South)
-            {
-                key = $"{record.side}:{record.gridX + step}:{record.gridZ}";
-            }
-            else
-            {
-                key = $"{record.side}:{record.gridX}:{record.gridZ + step}";
-            }
-
+            string key = wallEdgeKeys[i];
             if (!occupiedEdges.Add(key))
             {
                 messages.Add($"Overlapping wall edge at {key}.");
             }
         }
+    }
+
+    private static List<string> GetWallEdgeKeys(SpaceSegmentPlacementRecord record)
+    {
+        List<string> keys = new List<string>();
+        if (record == null)
+        {
+            return keys;
+        }
+
+        int segmentLength = Mathf.Max(1, record.footprint.x);
+        for (int step = 0; step < segmentLength; step++)
+        {
+            switch (record.side)
+            {
+                case WallSide.North:
+                    keys.Add($"H:{record.gridX + step}:{record.gridZ + 1}");
+                    break;
+                case WallSide.South:
+                    keys.Add($"H:{record.gridX + step}:{record.gridZ}");
+                    break;
+                case WallSide.East:
+                    keys.Add($"V:{record.gridX + 1}:{record.gridZ + step}");
+                    break;
+                case WallSide.West:
+                    keys.Add($"V:{record.gridX}:{record.gridZ + step}");
+                    break;
+            }
+        }
+
+        return keys;
     }
 
     private float GetAuthoringCeilingHeight()
