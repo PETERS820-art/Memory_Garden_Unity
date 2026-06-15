@@ -122,7 +122,7 @@ public static class MemoryItemDataAssetBuilder
         serializedObject.FindProperty("itemId").stringValue = itemId;
         serializedObject.FindProperty("itemName").stringValue = itemId;
         serializedObject.FindProperty("shortDescription").stringValue = "Imported memory item.";
-        serializedObject.FindProperty("emotionType").stringValue = "neutral";
+        serializedObject.FindProperty("emotionType").stringValue = EmotionMaterialLogEditorUtility.GetDefaultEmotionType();
         serializedObject.FindProperty("storyText").stringValue = string.Empty;
         serializedObject.ApplyModifiedPropertiesWithoutUndo();
 

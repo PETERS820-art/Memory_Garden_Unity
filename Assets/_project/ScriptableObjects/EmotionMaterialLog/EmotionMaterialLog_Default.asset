@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af82808f7c584c33ac706bf6e9f9894b, type: 3}
+  m_Name: EmotionMaterialLog_Default
+  m_EditorClassIdentifier: 
+  fallbackMaterial: {fileID: 2100000, guid: 9fefda16e0eeb5a4e8eead9be3584491, type: 2}
+  entries:
+  - emotionType: neutral
+    memoryMaterial: {fileID: 2100000, guid: 9fefda16e0eeb5a4e8eead9be3584491, type: 2}
+  - emotionType: nostalgic
+    memoryMaterial: {fileID: 2100000, guid: 9a5c022927659b34695e03fec454cf11, type: 2}
+  - emotionType: melancholic
+    memoryMaterial: {fileID: 2100000, guid: 21854fd5d91c04d469d7fde5ac549901, type: 2}
+  - emotionType: hopeful
+    memoryMaterial: {fileID: 2100000, guid: 221b44c815cbfc84d8641b6f25f759d6, type: 2}
+  - emotionType: warm
+    memoryMaterial: {fileID: 2100000, guid: 47898e2e914208b41ac14b226165ca23, type: 2}

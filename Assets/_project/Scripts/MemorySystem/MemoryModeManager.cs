@@ -1,8 +1,12 @@
+using System;
 using UnityEngine;
 
 public class MemoryModeManager : MonoBehaviour
 {
     public static MemoryModeManager Instance { get; private set; }
+
+    public event Action<MemoryObject> OnMemoryModeEntered;
+    public event Action<MemoryObject> OnMemoryModeExited;
 
     [Header("Memory Mode Lighting")]
     [SerializeField] private MemoryModeLightingController lightingController;
@@ -76,6 +80,8 @@ public class MemoryModeManager : MonoBehaviour
         Debug.Log(
             $"[MemoryModeManager] EnterMemoryMode -> Id: {safeItemId}, Name: {safeItemName}, Description: {safeDescription}, Emotion: {safeEmotion}",
             this);
+
+        OnMemoryModeEntered?.Invoke(currentMemoryObject);
     }
 
     public void ExitMemoryMode()
@@ -84,6 +90,8 @@ public class MemoryModeManager : MonoBehaviour
         {
             return;
         }
+
+        MemoryObject exitingMemoryObject = currentMemoryObject;
 
         IsInMemoryMode = false;
         currentMemoryObject = null;
@@ -100,6 +108,8 @@ public class MemoryModeManager : MonoBehaviour
         HideMemoryModeUI();
 
         Debug.Log("[MemoryModeManager] Exiting memory mode.", this);
+
+        OnMemoryModeExited?.Invoke(exitingMemoryObject);
     }
 
     private void TryAutoAssignLightingController()
