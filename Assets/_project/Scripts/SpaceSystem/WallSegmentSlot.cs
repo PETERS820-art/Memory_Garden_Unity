@@ -17,6 +17,10 @@ public class WallSegmentSlot : MonoBehaviour
     public Transform overlayRoot;
     public bool allowConnection;
     public CornerPlacement cornerPlacement;
+    public bool preserveOverlayTransform;
+    public Vector3 preservedOverlayLocalPosition;
+    public Vector3 preservedOverlayLocalEulerAngles;
+    public Vector3 preservedOverlayLocalScale = Vector3.one;
 
 #if UNITY_EDITOR
     [System.NonSerialized] private bool editorRefreshQueued;
@@ -82,6 +86,27 @@ public class WallSegmentSlot : MonoBehaviour
         EnsureRoots();
         ClearChildren(overlayRoot);
         overlayId = string.Empty;
+        preserveOverlayTransform = false;
+        preservedOverlayLocalPosition = Vector3.zero;
+        preservedOverlayLocalEulerAngles = Vector3.zero;
+        preservedOverlayLocalScale = Vector3.one;
+    }
+
+    public void SetOverlayTransformOverride(Transform overlayTransform)
+    {
+        if (overlayTransform == null)
+        {
+            preserveOverlayTransform = false;
+            preservedOverlayLocalPosition = Vector3.zero;
+            preservedOverlayLocalEulerAngles = Vector3.zero;
+            preservedOverlayLocalScale = Vector3.one;
+            return;
+        }
+
+        preserveOverlayTransform = true;
+        preservedOverlayLocalPosition = overlayTransform.localPosition;
+        preservedOverlayLocalEulerAngles = overlayTransform.localEulerAngles;
+        preservedOverlayLocalScale = overlayTransform.localScale;
     }
 
     private void OnDrawGizmos()
@@ -479,6 +504,7 @@ public class WallSegmentSlot : MonoBehaviour
                     overlayFaceOffset.x + overlaySpanOffset.x,
                     0f,
                     overlayFaceOffset.y + overlaySpanOffset.y);
+                ApplyPreservedOverlayTransform(instanceTransform, definition);
             }
             else
             {
@@ -490,6 +516,18 @@ public class WallSegmentSlot : MonoBehaviour
 
         instanceTransform.localPosition = Vector3.zero;
         instanceTransform.localRotation = Quaternion.identity;
+    }
+
+    private void ApplyPreservedOverlayTransform(Transform instanceTransform, SpaceSegmentDefinition definition)
+    {
+        if (!preserveOverlayTransform || instanceTransform == null || !IsDoorwayDefinition(definition))
+        {
+            return;
+        }
+
+        instanceTransform.localPosition = preservedOverlayLocalPosition;
+        instanceTransform.localRotation = Quaternion.Euler(preservedOverlayLocalEulerAngles);
+        instanceTransform.localScale = preservedOverlayLocalScale;
     }
 
     private static void AlignCornerToLocalBounds(Transform instanceTransform, CornerPlacement placement)

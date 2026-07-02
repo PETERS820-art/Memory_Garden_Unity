@@ -24,11 +24,28 @@ public class MemoryModeShaderManager : MonoBehaviour
     private static readonly int GrowthSoftnessId = Shader.PropertyToID("_GrowthSoftness");
     private static readonly int GrowthNoiseStrengthId = Shader.PropertyToID("_GrowthNoiseStrength");
     private static readonly int GrowthBlendId = Shader.PropertyToID("_GrowthBlend");
+    private static readonly int RuntimeTransitionActiveId = Shader.PropertyToID("_RuntimeTransitionActive");
+    private static readonly int MemoryBlendId = Shader.PropertyToID("_MemoryBlend");
+    private static readonly int BumpMapId = Shader.PropertyToID("_BumpMap");
+    private static readonly int BumpScaleId = Shader.PropertyToID("_BumpScale");
+    private static readonly int MetallicGlossMapId = Shader.PropertyToID("_MetallicGlossMap");
+    private static readonly int MetallicId = Shader.PropertyToID("_Metallic");
+    private static readonly int SmoothnessId = Shader.PropertyToID("_Smoothness");
+    private static readonly int OcclusionMapId = Shader.PropertyToID("_OcclusionMap");
+    private static readonly int OcclusionStrengthId = Shader.PropertyToID("_OcclusionStrength");
+    private static readonly int EmissionMapId = Shader.PropertyToID("_EmissionMap");
+    private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+    private static readonly int PainterlyScaleId = Shader.PropertyToID("_PainterlyScale");
     private static readonly int BrushRampTexId = Shader.PropertyToID("_BrushRampTex");
     private static readonly int BrushGrainTexId = Shader.PropertyToID("_BrushGrainTex");
     private static readonly int DryBrushTexId = Shader.PropertyToID("_DryBrushTex");
     private static readonly int WatercolorTexId = Shader.PropertyToID("_WatercolorTex");
     private static readonly int EdgeBreakTexId = Shader.PropertyToID("_EdgeBreakTex");
+
+    private const string BaseMapPropertyName = "_BaseMap";
+    private const string MainTexPropertyName = "_MainTex";
+    private const string BaseColorPropertyName = "_BaseColor";
+    private const string ColorPropertyName = "_Color";
 
     private static readonly string[] AutoExcludedNameKeywords =
     {
@@ -53,6 +70,7 @@ public class MemoryModeShaderManager : MonoBehaviour
         public float viewProjectionBlend;
         public float viewBrushStrength;
         public float shadowEdgeBreakStrength;
+        public float memoryBlend;
         public Vector3 growthOrigin;
         public float growthRadius;
         public float growthMaxRadius;
@@ -237,8 +255,9 @@ public class MemoryModeShaderManager : MonoBehaviour
         PrewarmRuntimeMaterialSources();
 
         activeGrowthOrigin = focusedObject.GetObservationCenter();
+        Material runtimeTemplateMaterial = ResolveRuntimeTemplateMaterial(targetEmotionMaterial);
 
-        CollectStylizableRenderers(focusedObject, targetEmotionMaterial);
+        CollectStylizableRenderers(focusedObject, runtimeTemplateMaterial);
 
         if (activeRendererStates.Count == 0)
         {
@@ -248,12 +267,14 @@ public class MemoryModeShaderManager : MonoBehaviour
 
         activeGrowthMaxRadius = ResolveGrowthMaxRadius(activeGrowthOrigin);
 
-        Material baselineMaterial = memoryPainterlyTemplate != null ? memoryPainterlyTemplate : targetEmotionMaterial;
+        Material baselineMaterial = runtimeTemplateMaterial;
         activeEmotionMaterial = targetEmotionMaterial;
         activeRestoreBaselineMaterial = baselineMaterial;
         ShaderState fromState = ApplyGrowthTargets(ReadStateFromMaterial(baselineMaterial), activeGrowthOrigin, 0f, 0f);
         ShaderState toState = ApplyGrowthTargets(ApplyTransitionTargets(ReadStateFromMaterial(targetEmotionMaterial)), activeGrowthOrigin, activeGrowthMaxRadius, 1f);
+        fromState.memoryBlend = 0f;
 
+        CopyMaterialPropertiesToAllRuntimeMaterials(activeEmotionMaterial);
         ApplyStateToAllMaterials(fromState);
         SetAllRendererAssignments(true);
         shaderTransitionCoroutine = StartCoroutine(AnimateShaderState(fromState, toState, false));
@@ -284,6 +305,8 @@ public class MemoryModeShaderManager : MonoBehaviour
             : (memoryPainterlyTemplate != null ? memoryPainterlyTemplate : sampleMaterial);
         ShaderState fromState = ApplyGrowthTargets(ReadStateFromMaterial(sampleMaterial), activeGrowthOrigin, activeGrowthMaxRadius, 1f);
         ShaderState toState = ApplyGrowthTargets(ReadStateFromMaterial(restoreBaseline), activeGrowthOrigin, 0f, 0f);
+        fromState.memoryBlend = 1f;
+        toState.memoryBlend = 0f;
         shaderTransitionCoroutine = StartCoroutine(AnimateShaderState(fromState, toState, true));
     }
 
@@ -451,6 +474,7 @@ public class MemoryModeShaderManager : MonoBehaviour
         state.viewProjectionBlend = targetViewProjectionBlend;
         state.viewBrushStrength = targetViewBrushStrength;
         state.shadowEdgeBreakStrength = targetShadowEdgeBreakStrength;
+        state.memoryBlend = 1f;
         return state;
     }
 
@@ -516,6 +540,7 @@ public class MemoryModeShaderManager : MonoBehaviour
             viewProjectionBlend = Mathf.LerpUnclamped(fromState.viewProjectionBlend, toState.viewProjectionBlend, t),
             viewBrushStrength = Mathf.LerpUnclamped(fromState.viewBrushStrength, toState.viewBrushStrength, t),
             shadowEdgeBreakStrength = Mathf.LerpUnclamped(fromState.shadowEdgeBreakStrength, toState.shadowEdgeBreakStrength, t),
+            memoryBlend = Mathf.LerpUnclamped(fromState.memoryBlend, toState.memoryBlend, t),
             growthOrigin = Vector3.LerpUnclamped(fromState.growthOrigin, toState.growthOrigin, t),
             growthRadius = Mathf.LerpUnclamped(fromState.growthRadius, toState.growthRadius, t),
             growthMaxRadius = Mathf.LerpUnclamped(fromState.growthMaxRadius, toState.growthMaxRadius, t),
@@ -546,6 +571,7 @@ public class MemoryModeShaderManager : MonoBehaviour
         state.viewProjectionBlend = GetFloat(material, ViewProjectionBlendId, 0f);
         state.viewBrushStrength = GetFloat(material, ViewBrushStrengthId, 0f);
         state.shadowEdgeBreakStrength = GetFloat(material, ShadowEdgeBreakStrengthId, 0f);
+        state.memoryBlend = GetFloat(material, MemoryBlendId, 0f);
         state.growthOrigin = GetVector(material, GrowthOriginId, Vector3.zero);
         state.growthRadius = GetFloat(material, GrowthRadiusId, 0f);
         state.growthMaxRadius = GetFloat(material, GrowthMaxRadiusId, growthMaxRadius);
@@ -799,11 +825,8 @@ public class MemoryModeShaderManager : MonoBehaviour
                 }
 
                 runtimeMaterial.CopyPropertiesFromMaterial(sourceMaterial);
-                CopyTextureIfPresent(sourceMaterial, runtimeMaterial, BrushRampTexId);
-                CopyTextureIfPresent(sourceMaterial, runtimeMaterial, BrushGrainTexId);
-                CopyTextureIfPresent(sourceMaterial, runtimeMaterial, DryBrushTexId);
-                CopyTextureIfPresent(sourceMaterial, runtimeMaterial, WatercolorTexId);
-                CopyTextureIfPresent(sourceMaterial, runtimeMaterial, EdgeBreakTexId);
+                Material originalMaterial = GetOriginalMaterialForSlot(activeRendererStates[i], j);
+                CopyPreservedItemProperties(originalMaterial, runtimeMaterial);
             }
         }
     }
@@ -832,7 +855,6 @@ public class MemoryModeShaderManager : MonoBehaviour
             return;
         }
 
-        SetColorIfPresent(runtimeMaterial, BaseColorId, state.baseColor);
         SetColorIfPresent(runtimeMaterial, ShadowColorId, state.shadowColor);
         SetColorIfPresent(runtimeMaterial, LightTintColorId, state.lightTintColor);
         SetColorIfPresent(runtimeMaterial, AccentColorId, state.accentColor);
@@ -844,12 +866,65 @@ public class MemoryModeShaderManager : MonoBehaviour
         SetFloatIfPresent(runtimeMaterial, ViewProjectionBlendId, state.viewProjectionBlend);
         SetFloatIfPresent(runtimeMaterial, ViewBrushStrengthId, state.viewBrushStrength);
         SetFloatIfPresent(runtimeMaterial, ShadowEdgeBreakStrengthId, state.shadowEdgeBreakStrength);
+        SetFloatIfPresent(runtimeMaterial, MemoryBlendId, state.memoryBlend);
         SetVectorIfPresent(runtimeMaterial, GrowthOriginId, state.growthOrigin);
         SetFloatIfPresent(runtimeMaterial, GrowthRadiusId, state.growthRadius);
         SetFloatIfPresent(runtimeMaterial, GrowthMaxRadiusId, state.growthMaxRadius);
         SetFloatIfPresent(runtimeMaterial, GrowthSoftnessId, state.growthSoftness);
         SetFloatIfPresent(runtimeMaterial, GrowthNoiseStrengthId, state.growthNoiseStrength);
         SetFloatIfPresent(runtimeMaterial, GrowthBlendId, state.growthBlend);
+        SetFloatIfPresent(runtimeMaterial, RuntimeTransitionActiveId, 1f);
+
+        if (!runtimeMaterial.HasProperty(MemoryBlendId))
+        {
+            SetColorIfPresent(runtimeMaterial, BaseColorId, state.baseColor);
+        }
+    }
+
+    private Material ResolveRuntimeTemplateMaterial(Material targetEmotionMaterial)
+    {
+        if (targetEmotionMaterial != null)
+        {
+            return targetEmotionMaterial;
+        }
+
+        return memoryPainterlyTemplate;
+    }
+
+    private static Material GetOriginalMaterialForSlot(RendererState rendererState, int slotIndex)
+    {
+        if (rendererState == null || rendererState.originalSharedMaterials == null || rendererState.originalSharedMaterials.Length == 0)
+        {
+            return null;
+        }
+
+        if (slotIndex >= 0 && slotIndex < rendererState.originalSharedMaterials.Length)
+        {
+            return rendererState.originalSharedMaterials[slotIndex];
+        }
+
+        return rendererState.originalSharedMaterials[0];
+    }
+
+    private static void CopyPreservedItemProperties(Material originalMaterial, Material runtimeMaterial)
+    {
+        if (originalMaterial == null || runtimeMaterial == null)
+        {
+            return;
+        }
+
+        CopyBaseMapWithTransform(originalMaterial, runtimeMaterial);
+        CopyBaseColor(originalMaterial, runtimeMaterial);
+        CopyTextureIfPresent(originalMaterial, runtimeMaterial, BumpMapId);
+        CopyFloatIfPresent(originalMaterial, runtimeMaterial, BumpScaleId);
+        CopyTextureIfPresent(originalMaterial, runtimeMaterial, MetallicGlossMapId);
+        CopyFloatIfPresent(originalMaterial, runtimeMaterial, MetallicId);
+        CopyFloatIfPresent(originalMaterial, runtimeMaterial, SmoothnessId);
+        CopyTextureIfPresent(originalMaterial, runtimeMaterial, OcclusionMapId);
+        CopyFloatIfPresent(originalMaterial, runtimeMaterial, OcclusionStrengthId);
+        CopyTextureIfPresent(originalMaterial, runtimeMaterial, EmissionMapId);
+        CopyColorIfPresent(originalMaterial, runtimeMaterial, EmissionColorId);
+        CopyFloatIfPresent(originalMaterial, runtimeMaterial, PainterlyScaleId);
     }
 
     private static bool IsInLayerMask(int layer, LayerMask layerMask)
@@ -904,6 +979,66 @@ public class MemoryModeShaderManager : MonoBehaviour
         }
 
         target.SetTexture(propertyId, source.GetTexture(propertyId));
+    }
+
+    private static void CopyFloatIfPresent(Material source, Material target, int propertyId)
+    {
+        if (source == null || target == null || !source.HasProperty(propertyId) || !target.HasProperty(propertyId))
+        {
+            return;
+        }
+
+        target.SetFloat(propertyId, source.GetFloat(propertyId));
+    }
+
+    private static void CopyColorIfPresent(Material source, Material target, int propertyId)
+    {
+        if (source == null || target == null || !source.HasProperty(propertyId) || !target.HasProperty(propertyId))
+        {
+            return;
+        }
+
+        target.SetColor(propertyId, source.GetColor(propertyId));
+    }
+
+    private static void CopyBaseMapWithTransform(Material source, Material target)
+    {
+        if (source == null || target == null || !target.HasProperty(BaseMapPropertyName))
+        {
+            return;
+        }
+
+        string sourceTextureProperty = source.HasProperty(BaseMapPropertyName)
+            ? BaseMapPropertyName
+            : (source.HasProperty(MainTexPropertyName) ? MainTexPropertyName : null);
+
+        if (string.IsNullOrEmpty(sourceTextureProperty))
+        {
+            return;
+        }
+
+        target.SetTexture(BaseMapPropertyName, source.GetTexture(sourceTextureProperty));
+        target.SetTextureScale(BaseMapPropertyName, source.GetTextureScale(sourceTextureProperty));
+        target.SetTextureOffset(BaseMapPropertyName, source.GetTextureOffset(sourceTextureProperty));
+    }
+
+    private static void CopyBaseColor(Material source, Material target)
+    {
+        if (source == null || target == null || !target.HasProperty(BaseColorId))
+        {
+            return;
+        }
+
+        if (source.HasProperty(BaseColorPropertyName))
+        {
+            target.SetColor(BaseColorId, source.GetColor(BaseColorId));
+            return;
+        }
+
+        if (source.HasProperty(ColorPropertyName))
+        {
+            target.SetColor(BaseColorId, source.GetColor(ColorPropertyName));
+        }
     }
 
     private void Log(string message, bool warning)

@@ -17,43 +17,263 @@ MonoBehaviour:
   gridDepth: 10
   gridSize: 1
   placements:
-  - placementId: PL_0297f766
-    segmentId: SM_wall_white_001_1x1.25
+  - placementId: PL_06bb277f
+    segmentId: SM_floor_marble_001_2X2
+    category: 0
+    gridX: 5
+    gridZ: 6
+    side: 2
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_0c73573b
+    segmentId: SM_wall_white_001_2x2.5
     category: 1
-    gridX: 2
-    gridZ: 5
+    gridX: 1
+    gridZ: 7
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_0f10a0fc
+    segmentId: SM_floor_marble_001_2X2
+    category: 0
+    gridX: 5
+    gridZ: 4
+    side: 2
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_15cb1780
+    segmentId: SM_wall_white_001_2x2.5
+    category: 1
+    gridX: 7
+    gridZ: 7
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_1754cd27
+    segmentId: SM_floor_marble_001_2X2
+    category: 0
+    gridX: 1
+    gridZ: 4
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_1c33cd3e
+    segmentId: SM_floor_marble_001_2X2
+    category: 0
+    gridX: 7
+    gridZ: 6
+    side: 2
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_2b93aafb
+    segmentId: SM_wall_white_001_2x2.5
+    category: 1
+    gridX: 3
+    gridZ: 7
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_383d9a05
+    segmentId: SM_floor_marble_001_2X2
+    category: 0
+    gridX: 7
+    gridZ: 4
+    side: 2
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_3e976ca6
+    segmentId: SM_wall_white_001_2x2.5
+    category: 1
+    gridX: 5
+    gridZ: 7
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_48471591
+    segmentId: SM_wall_white_001_2x2.5
+    category: 1
+    gridX: 5
+    gridZ: 4
+    side: 1
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_4f228dc0
+    segmentId: SM_wall_white_001_2x2.5
+    category: 1
+    gridX: 1
+    gridZ: 2
+    side: 1
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_56caffdc
+    segmentId: SM_wall_white_001_1x2.5
+    category: 1
+    gridX: 8
+    gridZ: 7
     side: 2
     rotationY: 0
     footprint: {x: 1, y: 1}
     overlaySegmentId: 
     isConnectorCandidate: 0
-  - placementId: PL_90887753
-    segmentId: SM_wall_white_001_1x1.25
+  - placementId: PL_66c2d85d
+    segmentId: SM_floor_marble_001_2X2
+    category: 0
+    gridX: 3
+    gridZ: 2
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_69aabe3e
+    segmentId: SM_floor_marble_001_2X2
+    category: 0
+    gridX: 3
+    gridZ: 6
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_89661db6
+    segmentId: SM_wall_white_001_2x2.5
     category: 1
     gridX: 1
+    gridZ: 2
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_964b5728
+    segmentId: SM_wall_white_001_2x2.5
+    category: 1
+    gridX: 1
+    gridZ: 4
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_a73b16a2
+    segmentId: SM_wall_white_001_1x2.5_doorright
+    category: 1
+    gridX: 8
     gridZ: 5
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: SM_doorway_2X2.5_001
+    isConnectorCandidate: 1
+  - placementId: PL_aa007144
+    segmentId: SM_wall_white_001_2x2.5
+    category: 1
+    gridX: 1
+    gridZ: 6
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_d5e1adf8
+    segmentId: SM_wall_white_001_2x2.5
+    category: 1
+    gridX: 3
+    gridZ: 2
+    side: 1
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_df30f210
+    segmentId: SM_wall_white_001_2x2.5
+    category: 1
+    gridX: 7
+    gridZ: 4
+    side: 1
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_e21c0234
+    segmentId: SM_floor_marble_001_2X2
+    category: 0
+    gridX: 1
+    gridZ: 6
     side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_e24ec7dd
+    segmentId: SM_wall_white_001_1x2.5
+    category: 1
+    gridX: 8
+    gridZ: 4
+    side: 2
     rotationY: 0
     footprint: {x: 1, y: 1}
     overlaySegmentId: 
     isConnectorCandidate: 0
-  - placementId: PL_9bb6405a
-    segmentId: SM_wall_white_001_1x1.25
-    category: 1
-    gridX: 2
-    gridZ: 5
+  - placementId: PL_e8675605
+    segmentId: SM_floor_marble_001_2X2
+    category: 0
+    gridX: 1
+    gridZ: 2
     side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_ee7eb542
+    segmentId: SM_wall_white_001_1x2.5_doorleft
+    category: 1
+    gridX: 8
+    gridZ: 6
+    side: 2
     rotationY: 0
     footprint: {x: 1, y: 1}
     overlaySegmentId: 
     isConnectorCandidate: 0
-  - placementId: PL_efa0e614
-    segmentId: SM_wall_white_001_1x1.25
-    category: 1
-    gridX: 0
-    gridZ: 5
+  - placementId: PL_f7cf8619
+    segmentId: SM_floor_marble_001_2X2
+    category: 0
+    gridX: 3
+    gridZ: 4
     side: 0
     rotationY: 0
-    footprint: {x: 1, y: 1}
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_ff4cd742
+    segmentId: SM_wall_white_001_2x2.5
+    category: 1
+    gridX: 4
+    gridZ: 2
+    side: 2
+    rotationY: 0
+    footprint: {x: 2, y: 1}
     overlaySegmentId: 
     isConnectorCandidate: 0

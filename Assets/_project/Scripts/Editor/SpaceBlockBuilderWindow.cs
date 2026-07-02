@@ -72,9 +72,14 @@ public class SpaceBlockBuilderWindow : EditorWindow
     [SerializeField] private bool replaceExistingPlacement;
     [SerializeField] private bool markConnectorCandidate;
     [SerializeField] private SpaceBlockDefinition selectedBlockDefinitionAsset;
+    [SerializeField] private string bakePrefabName = string.Empty;
     [SerializeField] private bool scenePlacementEnabled = true;
     [SerializeField] private bool sceneAutoPickWallSide = true;
     [SerializeField] private bool sceneDeleteMode;
+    [SerializeField] private SpaceOpeningPort connectionPortA;
+    [SerializeField] private SpaceOpeningPort connectionPortB;
+    [SerializeField] private bool connectionAutoAlignBlockB = true;
+    [SerializeField] private bool connectionAllowOverlapAnyway;
 
     private readonly List<SegmentPaletteEntry> segmentPaletteEntries = new List<SegmentPaletteEntry>();
     private bool deferredRepaintQueued;
@@ -112,6 +117,9 @@ public class SpaceBlockBuilderWindow : EditorWindow
                 DrawQuickRectangularMode();
                 break;
         }
+
+        EditorGUILayout.Space();
+        DrawBlockConnectionTool();
     }
 
     private void DrawQuickRectangularMode()
@@ -258,6 +266,7 @@ public class SpaceBlockBuilderWindow : EditorWindow
             selectedBlockDefinitionAsset,
             typeof(SpaceBlockDefinition),
             false);
+        bakePrefabName = EditorGUILayout.TextField("Bake Prefab Name", bakePrefabName);
 
         if (GUILayout.Button("Save Block Definition"))
         {
@@ -1276,7 +1285,8 @@ public class SpaceBlockBuilderWindow : EditorWindow
             }
 
             string blockId = string.IsNullOrWhiteSpace(sourceBlock.spaceBlockId) ? sourceBlock.name : sourceBlock.spaceBlockId;
-            GameObject bakeRoot = new GameObject($"PF_SB_{blockId}");
+            string prefabFileName = GetBakePrefabFileName(sourceBlock);
+            GameObject bakeRoot = new GameObject(prefabFileName);
             try
             {
                 MemorySpaceBlock bakedBlock = bakeRoot.AddComponent<MemorySpaceBlock>();
@@ -1288,6 +1298,7 @@ public class SpaceBlockBuilderWindow : EditorWindow
                 bakedBlock.blockDefinition = selectedBlockDefinitionAsset;
 
                 GridBlockRoots roots = EnsureGridBlockRoots(bakeRoot.transform);
+                EnsureDoorwayPortsForBlock(sourceBlock);
                 List<SpaceSegmentPlacementRecord> records = CollectPlacementRecords(sourceBlock);
 
                 for (int i = 0; i < records.Count; i++)
@@ -1304,7 +1315,10 @@ public class SpaceBlockBuilderWindow : EditorWindow
                 }
 
                 bakedBlock.NormalizeWallSlotRoots();
-                string prefabPath = Path.Combine(SpaceBlockPrefabFolder, $"PF_SB_{blockId}.prefab").Replace("\\", "/");
+                CopyDoorwayPlacementState(sourceBlock, bakedBlock);
+                bakedBlock.GetOrCreateBlockBoundsCollider();
+                string prefabPath = AssetDatabase.GenerateUniqueAssetPath(
+                    Path.Combine(SpaceBlockPrefabFolder, $"{prefabFileName}.prefab").Replace("\\", "/"));
                 PrefabUtility.SaveAsPrefabAsset(bakeRoot, prefabPath);
                 ShowSummary($"Baked block prefab: {prefabPath}");
             }
@@ -1343,6 +1357,312 @@ public class SpaceBlockBuilderWindow : EditorWindow
         {
             ReportException("Validate Block", exception);
         }
+    }
+
+    private void DrawBlockConnectionTool()
+    {
+        EditorGUILayout.LabelField("Block Connection Tool", EditorStyles.boldLabel);
+        connectionPortA = (SpaceOpeningPort)EditorGUILayout.ObjectField("Port A", connectionPortA, typeof(SpaceOpeningPort), true);
+        connectionPortB = (SpaceOpeningPort)EditorGUILayout.ObjectField("Port B", connectionPortB, typeof(SpaceOpeningPort), true);
+        connectionAutoAlignBlockB = EditorGUILayout.Toggle("Auto Align Block B", connectionAutoAlignBlockB);
+        connectionAllowOverlapAnyway = EditorGUILayout.Toggle("Allow Overlap Anyway", connectionAllowOverlapAnyway);
+
+        if (GUILayout.Button("Auto Find Matching Ports"))
+        {
+            AutoFindMatchingPorts();
+        }
+
+        if (GUILayout.Button("Preview Connection"))
+        {
+            PreviewSelectedConnection();
+        }
+
+        if (GUILayout.Button("Connect Selected Doorways"))
+        {
+            ConnectSelectedDoorways();
+        }
+
+        if (GUILayout.Button("Clear Connection"))
+        {
+            ClearSelectedConnection();
+        }
+
+        if (GUILayout.Button("Validate Ports"))
+        {
+            ValidateSelectedPorts();
+        }
+    }
+
+    private void AutoFindMatchingPorts()
+    {
+        try
+        {
+            CaptureConnectionPortsFromSelection();
+            if (connectionPortA == null && connectionPortB != null)
+            {
+                connectionPortA = connectionPortB;
+                connectionPortB = null;
+            }
+
+            if (connectionPortA == null)
+            {
+                ShowSummary("Select or assign Port A first.");
+                return;
+            }
+
+            SpaceConnectionManager manager = SpaceConnectionManager.GetOrCreateManager();
+            if (!manager.TryFindBestMatch(connectionPortA, connectionAutoAlignBlockB, out SpaceOpeningPort match, out string message))
+            {
+                ShowSummary(message);
+                return;
+            }
+
+            connectionPortB = match;
+            Selection.activeGameObject = match.gameObject;
+            ShowSummary(message);
+        }
+        catch (Exception exception)
+        {
+            ReportException("Auto Find Matching Ports", exception);
+        }
+    }
+
+    private void PreviewSelectedConnection()
+    {
+        try
+        {
+            if (!TryGetConnectionManager(out SpaceConnectionManager manager))
+            {
+                return;
+            }
+
+            if (manager.PreviewConnection(
+                connectionPortA,
+                connectionPortB,
+                connectionAutoAlignBlockB,
+                connectionAllowOverlapAnyway,
+                out string message))
+            {
+                ShowSummary(message);
+                return;
+            }
+
+            ShowSummary(message);
+        }
+        catch (Exception exception)
+        {
+            ReportException("Preview Connection", exception);
+        }
+    }
+
+    private void ConnectSelectedDoorways()
+    {
+        try
+        {
+            if (!TryGetConnectionManager(out SpaceConnectionManager manager))
+            {
+                return;
+            }
+
+            if (connectionPortA != null && connectionPortA.OwningBlock != null)
+            {
+                Undo.RegisterFullObjectHierarchyUndo(connectionPortA.OwningBlock.gameObject, "Connect Space Doorways");
+            }
+
+            if (connectionPortB != null
+                && connectionPortB.OwningBlock != null
+                && (connectionPortA == null || connectionPortB.OwningBlock != connectionPortA.OwningBlock))
+            {
+                Undo.RegisterFullObjectHierarchyUndo(connectionPortB.OwningBlock.gameObject, "Connect Space Doorways");
+            }
+
+            if (manager.ConnectPorts(
+                connectionPortA,
+                connectionPortB,
+                connectionAutoAlignBlockB,
+                connectionAllowOverlapAnyway,
+                out string message))
+            {
+                ShowSummary(message);
+                return;
+            }
+
+            ShowSummary(message);
+        }
+        catch (Exception exception)
+        {
+            ReportException("Connect Selected Doorways", exception);
+        }
+    }
+
+    private void ClearSelectedConnection()
+    {
+        try
+        {
+            SpaceConnectionManager manager = SpaceConnectionManager.GetOrCreateManager();
+            if (manager.ClearConnection(connectionPortA, connectionPortB, out string message))
+            {
+                ShowSummary(message);
+                return;
+            }
+
+            ShowSummary(message);
+        }
+        catch (Exception exception)
+        {
+            ReportException("Clear Connection", exception);
+        }
+    }
+
+    private void ValidateSelectedPorts()
+    {
+        try
+        {
+            if (!TryGetConnectionManager(out SpaceConnectionManager manager))
+            {
+                return;
+            }
+
+            string message;
+            bool valid = manager.ValidatePorts(
+                connectionPortA,
+                connectionPortB,
+                connectionAutoAlignBlockB,
+                connectionAllowOverlapAnyway,
+                out message);
+
+            ShowSummary(valid ? $"Validation passed. {message}" : $"Validation failed. {message}");
+        }
+        catch (Exception exception)
+        {
+            ReportException("Validate Ports", exception);
+        }
+    }
+
+    private bool TryGetConnectionManager(out SpaceConnectionManager manager)
+    {
+        CaptureConnectionPortsFromSelection();
+        manager = SpaceConnectionManager.GetOrCreateManager();
+        if (connectionPortA == null || connectionPortB == null)
+        {
+            ShowSummary("Assign both Port A and Port B.");
+            return false;
+        }
+
+        manager.RefreshRegisteredPorts();
+        return true;
+    }
+
+    private void CaptureConnectionPortsFromSelection()
+    {
+        SpaceOpeningPort selectedPort = GetSelectedOpeningPort();
+        if (selectedPort == null)
+        {
+            return;
+        }
+
+        if (connectionPortA == null)
+        {
+            connectionPortA = selectedPort;
+            return;
+        }
+
+        if (connectionPortB == null && selectedPort != connectionPortA)
+        {
+            connectionPortB = selectedPort;
+        }
+    }
+
+    private SpaceOpeningPort GetSelectedOpeningPort()
+    {
+        if (Selection.activeGameObject == null)
+        {
+            return null;
+        }
+
+        SpaceOpeningPort selectedPort = Selection.activeGameObject.GetComponentInParent<SpaceOpeningPort>();
+        if (selectedPort != null)
+        {
+            return selectedPort;
+        }
+
+        MemorySpaceBlock selectedBlock = Selection.activeGameObject.GetComponentInParent<MemorySpaceBlock>();
+        EnsureDoorwayPortsForBlock(selectedBlock);
+        return GetFirstAvailableOpeningPort(selectedBlock);
+    }
+
+    private void EnsureDoorwayPortsForBlock(MemorySpaceBlock block)
+    {
+        if (block == null)
+        {
+            return;
+        }
+
+        SpaceSegmentKit kit = selectedSegmentKit != null ? selectedSegmentKit : block.segmentKit;
+        SpaceSegmentPlacementMetadata[] placements = block.GetComponentsInChildren<SpaceSegmentPlacementMetadata>(true);
+        for (int i = 0; i < placements.Length; i++)
+        {
+            SpaceSegmentPlacementMetadata metadata = placements[i];
+            if (metadata == null || metadata.record == null || metadata.record.category != SegmentCategory.Wall)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(metadata.record.overlaySegmentId))
+            {
+                continue;
+            }
+
+            WallSegmentSlot wallSlot = metadata.GetComponent<WallSegmentSlot>();
+            if (wallSlot == null)
+            {
+                continue;
+            }
+
+            SpaceSegmentDefinition overlayDefinition = metadata.overlayDefinition;
+            if (overlayDefinition == null && kit != null)
+            {
+                overlayDefinition = kit.GetSegment(metadata.record.overlaySegmentId);
+                metadata.overlayDefinition = overlayDefinition;
+            }
+
+            if (overlayDefinition != null && IsDoorwayDefinition(overlayDefinition))
+            {
+                CreateBakedOpeningPort(block, wallSlot, metadata.record, overlayDefinition);
+            }
+        }
+    }
+
+    private static SpaceOpeningPort GetFirstAvailableOpeningPort(MemorySpaceBlock block)
+    {
+        if (block == null)
+        {
+            return null;
+        }
+
+        SpaceOpeningPort[] ports = block.GetComponentsInChildren<SpaceOpeningPort>(true);
+        if (ports == null || ports.Length == 0)
+        {
+            return null;
+        }
+
+        Array.Sort(ports, CompareOpeningPorts);
+        for (int i = 0; i < ports.Length; i++)
+        {
+            if (ports[i] != null && !ports[i].isOccupied)
+            {
+                return ports[i];
+            }
+        }
+
+        return ports[0];
+    }
+
+    private static int CompareOpeningPorts(SpaceOpeningPort a, SpaceOpeningPort b)
+    {
+        string aId = a != null ? a.openingId : string.Empty;
+        string bId = b != null ? b.openingId : string.Empty;
+        return string.Compare(aId, bId, StringComparison.OrdinalIgnoreCase);
     }
 
     private void PlaceOverlayOnSelectedWall(MemorySpaceBlock block, SpaceSegmentKit kit)
@@ -1407,6 +1727,11 @@ public class SpaceBlockBuilderWindow : EditorWindow
         metadata.record.overlaySegmentId = overlayDefinition.segmentId;
         metadata.overlayDefinition = overlayDefinition;
         metadata.record.isConnectorCandidate = markConnectorCandidate || IsDoorwayDefinition(overlayDefinition);
+        if (IsDoorwayDefinition(overlayDefinition))
+        {
+            CreateBakedOpeningPort(block, wallSlot, metadata.record, overlayDefinition);
+        }
+
         EditorUtility.SetDirty(metadata);
         EditorUtility.SetDirty(block);
     }
@@ -1439,6 +1764,221 @@ public class SpaceBlockBuilderWindow : EditorWindow
         }
 
         return true;
+    }
+
+    private void CreateBakedOpeningPort(
+        MemorySpaceBlock block,
+        WallSegmentSlot wallSlot,
+        SpaceSegmentPlacementRecord record,
+        SpaceSegmentDefinition overlayDefinition)
+    {
+        if (block == null
+            || wallSlot == null
+            || record == null
+            || overlayDefinition == null
+            || wallSlot.overlayRoot == null
+            || wallSlot.overlayRoot.childCount == 0)
+        {
+            return;
+        }
+
+        Transform doorwayTransform = wallSlot.overlayRoot.GetChild(0);
+        if (doorwayTransform == null)
+        {
+            return;
+        }
+
+        SpaceOpeningPort port = doorwayTransform.GetComponent<SpaceOpeningPort>();
+        if (port == null)
+        {
+            port = doorwayTransform.gameObject.AddComponent<SpaceOpeningPort>();
+        }
+
+        port.openingId = $"{block.spaceBlockId}_{record.placementId}_{overlayDefinition.segmentId}";
+        port.openingType = SpaceOpeningType.Doorway;
+        port.connectionKind = SpaceConnectionKind.Passage;
+        port.widthUnits = Mathf.Max(1, Mathf.RoundToInt(GetDefinitionDisplayWidth(overlayDefinition)));
+        port.height = Mathf.Max(1f, GetDefinitionDisplayHeight(overlayDefinition));
+        port.wallSide = record.side;
+        port.gridPosition = new Vector2Int(record.gridX, record.gridZ);
+        port.isOccupied = false;
+        port.connectedPort = null;
+
+        Transform connectorAnchor = doorwayTransform.Find("ConnectorAnchor");
+        if (connectorAnchor == null)
+        {
+            GameObject anchorObject = new GameObject("ConnectorAnchor");
+            connectorAnchor = anchorObject.transform;
+            connectorAnchor.SetParent(doorwayTransform, false);
+        }
+
+        port.connectorAnchor = connectorAnchor;
+        ConfigureDoorwayConnectorAnchor(block, doorwayTransform, connectorAnchor, record.side, port.height);
+    }
+
+    private void CopyDoorwayPlacementState(MemorySpaceBlock sourceBlock, MemorySpaceBlock bakedBlock)
+    {
+        if (sourceBlock == null || bakedBlock == null)
+        {
+            return;
+        }
+
+        SpaceSegmentPlacementMetadata[] sourcePlacements = sourceBlock.GetComponentsInChildren<SpaceSegmentPlacementMetadata>(true);
+        for (int i = 0; i < sourcePlacements.Length; i++)
+        {
+            SpaceSegmentPlacementMetadata sourcePlacement = sourcePlacements[i];
+            if (sourcePlacement == null
+                || sourcePlacement.record == null
+                || string.IsNullOrWhiteSpace(sourcePlacement.record.overlaySegmentId)
+                || sourcePlacement.overlayDefinition == null
+                || !IsDoorwayDefinition(sourcePlacement.overlayDefinition))
+            {
+                continue;
+            }
+
+            WallSegmentSlot sourceSlot = sourcePlacement.GetComponent<WallSegmentSlot>();
+            if (sourceSlot == null || sourceSlot.overlayRoot == null || sourceSlot.overlayRoot.childCount == 0)
+            {
+                continue;
+            }
+
+            Transform bakedPlacementTransform = FindDescendantByName(bakedBlock.transform, sourcePlacement.record.placementId);
+            if (bakedPlacementTransform == null)
+            {
+                continue;
+            }
+
+            WallSegmentSlot bakedSlot = bakedPlacementTransform.GetComponent<WallSegmentSlot>();
+            if (bakedSlot == null || bakedSlot.overlayRoot == null || bakedSlot.overlayRoot.childCount == 0)
+            {
+                continue;
+            }
+
+            Transform sourceDoorway = sourceSlot.overlayRoot.GetChild(0);
+            Transform bakedDoorway = bakedSlot.overlayRoot.GetChild(0);
+            bakedDoorway.localPosition = sourceDoorway.localPosition;
+            bakedDoorway.localRotation = sourceDoorway.localRotation;
+            bakedDoorway.localScale = sourceDoorway.localScale;
+            bakedSlot.SetOverlayTransformOverride(sourceDoorway);
+
+            SpaceOpeningPort sourcePort = sourceDoorway.GetComponent<SpaceOpeningPort>();
+            SpaceOpeningPort bakedPort = bakedDoorway.GetComponent<SpaceOpeningPort>();
+            if (sourcePort != null && bakedPort != null && sourcePort.connectorAnchor != null && bakedPort.connectorAnchor != null)
+            {
+                bakedPort.connectorAnchor.localPosition = sourcePort.connectorAnchor.localPosition;
+                bakedPort.connectorAnchor.localRotation = sourcePort.connectorAnchor.localRotation;
+                bakedPort.connectorAnchor.localScale = sourcePort.connectorAnchor.localScale;
+            }
+
+            ConfigureDoorwayConnectorAnchor(
+                bakedBlock,
+                bakedDoorway,
+                bakedPort != null ? bakedPort.connectorAnchor : null,
+                sourcePlacement.record.side,
+                bakedPort != null ? bakedPort.height : GetDefinitionDisplayHeight(sourcePlacement.overlayDefinition));
+        }
+    }
+
+    private static void ConfigureDoorwayConnectorAnchor(
+        MemorySpaceBlock block,
+        Transform doorwayTransform,
+        Transform connectorAnchor,
+        WallSide wallSide,
+        float openingHeight)
+    {
+        if (doorwayTransform == null || connectorAnchor == null)
+        {
+            return;
+        }
+
+        Vector3 up = block != null ? block.transform.up : Vector3.up;
+        Vector3 forward = -GetWallForward(block != null ? block.transform : doorwayTransform, wallSide);
+        Vector3 floorOrigin = block != null ? block.transform.position : doorwayTransform.position;
+        Vector3 doorwayOffset = doorwayTransform.position - floorOrigin;
+        Vector3 doorwayOnFloor = doorwayTransform.position - (up * Vector3.Dot(doorwayOffset, up));
+        Vector3 worldCenter = doorwayOnFloor + (up * (openingHeight * 0.5f));
+
+        connectorAnchor.position = worldCenter;
+        connectorAnchor.rotation = Quaternion.LookRotation(forward, up);
+        connectorAnchor.localScale = Vector3.one;
+    }
+
+    private static Vector3 GetWallForward(Transform referenceRoot, WallSide wallSide)
+    {
+        switch (wallSide)
+        {
+            case WallSide.East:
+                return referenceRoot != null ? referenceRoot.right : Vector3.right;
+            case WallSide.South:
+                return referenceRoot != null ? -referenceRoot.forward : Vector3.back;
+            case WallSide.West:
+                return referenceRoot != null ? -referenceRoot.right : Vector3.left;
+            default:
+                return referenceRoot != null ? referenceRoot.forward : Vector3.forward;
+        }
+    }
+
+    private static bool TryGetWorldRendererBounds(Transform root, out Bounds worldBounds)
+    {
+        worldBounds = default;
+        if (root == null)
+        {
+            return false;
+        }
+
+        Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+        if (renderers == null || renderers.Length == 0)
+        {
+            return false;
+        }
+
+        worldBounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            worldBounds.Encapsulate(renderers[i].bounds);
+        }
+
+        return true;
+    }
+
+    private static Transform FindDescendantByName(Transform root, string targetName)
+    {
+        if (root == null || string.IsNullOrWhiteSpace(targetName))
+        {
+            return null;
+        }
+
+        Transform[] descendants = root.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < descendants.Length; i++)
+        {
+            if (string.Equals(descendants[i].name, targetName, StringComparison.OrdinalIgnoreCase))
+            {
+                return descendants[i];
+            }
+        }
+
+        return null;
+    }
+
+    private string GetBakePrefabFileName(MemorySpaceBlock block)
+    {
+        string requestedName = string.IsNullOrWhiteSpace(bakePrefabName)
+            ? string.Empty
+            : bakePrefabName.Trim();
+        if (!string.IsNullOrWhiteSpace(requestedName))
+        {
+            return $"PF_SB_{requestedName}";
+        }
+
+        if (selectedBlockDefinitionAsset != null && !string.IsNullOrWhiteSpace(selectedBlockDefinitionAsset.name))
+        {
+            return $"PF_SB_{selectedBlockDefinitionAsset.name}";
+        }
+
+        string blockId = block != null && !string.IsNullOrWhiteSpace(block.spaceBlockId)
+            ? block.spaceBlockId
+            : (block != null ? block.name : "SpaceBlock");
+        return $"PF_SB_{blockId}";
     }
 
     private SpaceSegmentPlacementRecord BuildPlacementRecord(SpaceSegmentDefinition definition)
@@ -1795,7 +2335,7 @@ public class SpaceBlockBuilderWindow : EditorWindow
         switch (record.category)
         {
             case SegmentCategory.Wall:
-                CreateWallPlacement(placementRoot, record, definition, kit, metadata);
+                CreateWallPlacement(placementRoot, record, definition, kit, metadata, editable);
                 break;
             default:
                 CreateGenericPlacement(placementRoot.transform, record, definition);
@@ -1808,7 +2348,8 @@ public class SpaceBlockBuilderWindow : EditorWindow
         SpaceSegmentPlacementRecord record,
         SpaceSegmentDefinition definition,
         SpaceSegmentKit kit,
-        SpaceSegmentPlacementMetadata metadata)
+        SpaceSegmentPlacementMetadata metadata,
+        bool editable)
     {
         WallSegmentSlot slot = placementRoot.AddComponent<WallSegmentSlot>();
         slot.side = record.side;
@@ -1831,6 +2372,15 @@ public class SpaceBlockBuilderWindow : EditorWindow
                 if (metadata != null)
                 {
                     metadata.overlayDefinition = overlayDefinition;
+                }
+
+                if (IsDoorwayDefinition(overlayDefinition))
+                {
+                    CreateBakedOpeningPort(
+                        placementRoot.GetComponentInParent<MemorySpaceBlock>(),
+                        slot,
+                        record,
+                        overlayDefinition);
                 }
             }
         }

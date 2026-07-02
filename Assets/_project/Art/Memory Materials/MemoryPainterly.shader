@@ -39,6 +39,7 @@ Shader "MemoryGarden/Memory Painterly"
         _ViewBrushStrength ("View Brush Strength", Range(0, 1)) = 0.38
         _ScreenGrainStrength ("Screen Grain Strength", Range(0, 1)) = 0.22
         // Growth transition controls: painterly effect grows outward from the focused memory item.
+        [HideInInspector] _RuntimeTransitionActive ("Runtime Transition Active", Float) = 0
         _GrowthOrigin ("Growth Origin", Vector) = (0, 0, 0, 0)
         _GrowthRadius ("Growth Radius", Float) = 0
         _GrowthMaxRadius ("Growth Max Radius", Float) = 12
@@ -131,6 +132,7 @@ Shader "MemoryGarden/Memory Painterly"
                 half _ViewBrushScale;
                 half _ViewBrushStrength;
                 half _ScreenGrainStrength;
+                half _RuntimeTransitionActive;
                 float4 _GrowthOrigin;
                 half _GrowthRadius;
                 half _GrowthMaxRadius;
@@ -354,7 +356,7 @@ Shader "MemoryGarden/Memory Painterly"
                 half3 neutralColor = lerp(neutralShadowColor, neutralLightColor, neutralLightMask);
 
                 half growthMask = ComputeGrowthMask(input.positionWS, edgeBreak, watercolor);
-                half growthBlend = saturate(growthMask * _GrowthBlend);
+                half growthBlend = lerp(1.0h, saturate(growthMask * _GrowthBlend), saturate(_RuntimeTransitionActive));
                 color = lerp(neutralColor, color, growthBlend);
 
                 color = ApplySaturation(color, _Saturation);

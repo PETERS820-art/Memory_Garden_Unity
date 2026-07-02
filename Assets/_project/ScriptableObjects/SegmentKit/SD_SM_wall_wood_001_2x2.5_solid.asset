@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f7d8f4f63cb42c7a4d5e9b1cc8d3a61, type: 3}
+  m_Name: SD_SM_wall_wood_001_2x2.5_solid
+  m_EditorClassIdentifier: 
+  segmentId: SM_wall_wood_001_2x2.5_solid
+  category: 1
+  styleId: wood_001
+  sizeXZ: {x: 2, y: 1}
+  height: 2.5
+  variant: 0
+  prefab: {fileID: 1861230588053305496, guid: 32eb4e391ba06394da9b691c5e75c6c3, type: 3}
+  hasCollider: 1
+  canBeWallSegment: 1
+  canBeOpeningOverlay: 0

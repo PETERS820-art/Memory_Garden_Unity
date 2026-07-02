@@ -47,6 +47,16 @@ MonoBehaviour:
     footprint: {x: 2, y: 2}
     overlaySegmentId: 
     isConnectorCandidate: 0
+  - placementId: PL_1dd01427
+    segmentId: SM_wall_white_001_1x1.25
+    category: 1
+    gridX: 9
+    gridZ: 2
+    side: 0
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
   - placementId: PL_214d95c5
     segmentId: SM_wall_white_001_2x1.25
     category: 1
@@ -247,6 +257,16 @@ MonoBehaviour:
     footprint: {x: 2, y: 2}
     overlaySegmentId: 
     isConnectorCandidate: 0
+  - placementId: PL_9d2ee43f
+    segmentId: SM_wall_white_001_1x2.5_doorleft
+    category: 1
+    gridX: 9
+    gridZ: 2
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
   - placementId: PL_9ebd03c1
     segmentId: SM_floor_marble_001_2X2
     category: 0
@@ -275,6 +295,16 @@ MonoBehaviour:
     side: 1
     rotationY: 0
     footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_b0e7361d
+    segmentId: SM_wall_white_001_1x1.25
+    category: 1
+    gridX: 9
+    gridZ: 1
+    side: 1
+    rotationY: 0
+    footprint: {x: 1, y: 1}
     overlaySegmentId: 
     isConnectorCandidate: 0
   - placementId: PL_b73d1a78
@@ -317,6 +347,16 @@ MonoBehaviour:
     footprint: {x: 2, y: 2}
     overlaySegmentId: 
     isConnectorCandidate: 0
+  - placementId: PL_ddf232c4
+    segmentId: SM_wall_white_001_1x2.5_doorright
+    category: 1
+    gridX: 9
+    gridZ: 1
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: SM_doorway_2X2.5_001
+    isConnectorCandidate: 1
   - placementId: PL_f936c9d2
     segmentId: SM_wall_white_001_2x1.25
     category: 1

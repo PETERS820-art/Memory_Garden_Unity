@@ -155,9 +155,12 @@ namespace Hierarchy2
                             if (isMat)
                             {
                                 MaterialEditor maEditor = editor as MaterialEditor;
+                                MaterialProperty[] materialProperties = MaterialEditor.GetMaterialProperties(new Object[] { component });
 
                                 EditorGUILayout.BeginVertical();
-                                if (maEditor.PropertiesGUI())
+                                EditorGUI.BeginChangeCheck();
+                                maEditor.PropertiesDefaultGUI(materialProperties);
+                                if (EditorGUI.EndChangeCheck())
                                     maEditor.PropertiesChanged();
                                 EditorGUILayout.EndVertical();
                             }

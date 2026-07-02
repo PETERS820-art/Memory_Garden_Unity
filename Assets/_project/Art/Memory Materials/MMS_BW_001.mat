@@ -8,14 +8,14 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MMS_BW_001
-  m_Shader: {fileID: 4800000, guid: 7bd7ac8cecf54d8897c88b0a23433c61, type: 3}
+  m_Shader: {fileID: 4800000, guid: b1f0b91c7a4d4ecfb4ea8d17887f9c10, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
+  m_DoubleSidedGI: 1
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
@@ -129,10 +129,17 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _GrowthBlend: 0
+    - _GrowthMaxRadius: 12
+    - _GrowthNoiseStrength: 0.5
+    - _GrowthRadius: 0
+    - _GrowthSoftness: 1.2
     - _LightRangeCompression: 0.825
     - _Metallic: 0
+    - _MemoryBlend: 1
     - _NormalFlatten: 0.55
     - _OcclusionStrength: 1
+    - _PainterlyScale: 1
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _RampInfluence: 0.569
@@ -168,6 +175,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _EmotionTintColor: {r: 0.94, g: 0.9, b: 0.86, a: 1}
+    - _GrowthOrigin: {r: 0, g: 0, b: 0, a: 0}
     - _LightTintColor: {r: 1, g: 1, b: 1, a: 1}
     - _RimColor: {r: 1, g: 0.93757534, b: 0.8632076, a: 1}
     - _ShadowColor: {r: 0.17111667, g: 0.011213949, b: 0.26415092, a: 1}

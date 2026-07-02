@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MMS_green_001
-  m_Shader: {fileID: 4800000, guid: 7bd7ac8cecf54d8897c88b0a23433c61, type: 3}
+  m_Shader: {fileID: 4800000, guid: b1f0b91c7a4d4ecfb4ea8d17887f9c10, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -131,8 +131,10 @@ Material:
     - _GlossyReflections: 0
     - _LightRangeCompression: 0.66
     - _Metallic: 0
+    - _MemoryBlend: 1
     - _NormalFlatten: 0.55
     - _OcclusionStrength: 1
+    - _PainterlyScale: 1
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _RampInfluence: 0.7

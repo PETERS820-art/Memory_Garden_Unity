@@ -23,3 +23,13 @@ public enum CornerPlacement
     SouthEast,
     SouthWest
 }
+
+public enum SpaceOpeningType
+{
+    Doorway
+}
+
+public enum SpaceConnectionKind
+{
+    Passage
+}
