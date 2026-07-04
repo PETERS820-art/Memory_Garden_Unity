@@ -22,3 +22,6 @@ MonoBehaviour:
   hasCollider: 1
   canBeWallSegment: 0
   canBeOpeningOverlay: 0
+  hasPlacementAuthoringOverride: 0
+  placementAuthoringEulerAngles: {x: 0, y: 0, z: 0}
+  placementAuthoringScale: {x: 1, y: 1, z: 1}

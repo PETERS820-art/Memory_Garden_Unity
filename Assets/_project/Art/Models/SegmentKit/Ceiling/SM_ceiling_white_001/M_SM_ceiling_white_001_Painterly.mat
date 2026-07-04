@@ -16,7 +16,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 2000
   stringTagMap:
     RenderType: Opaque
   disabledShaderPasses: []
@@ -112,7 +112,7 @@ Material:
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _Cull: 2
+    - _Cull: 0
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
@@ -127,6 +127,11 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _GrowthBlend: 0
+    - _GrowthMaxRadius: 12
+    - _GrowthNoiseStrength: 0.5
+    - _GrowthRadius: 0
+    - _GrowthSoftness: 1.2
     - _LightRangeCompression: 0.66
     - _MemoryBlend: 0
     - _Metallic: 0
@@ -139,6 +144,7 @@ Material:
     - _ReceiveShadows: 1
     - _RimPower: 3
     - _RimStrength: 0.2
+    - _RuntimeTransitionActive: 0
     - _Saturation: 1
     - _ScreenGrainStrength: 0.22
     - _ShadeSteps: 3
@@ -166,7 +172,9 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _EmotionTintColor: {r: 0.94, g: 0.9, b: 0.86, a: 1}
+    - _GrowthOrigin: {r: 0, g: 0, b: 0, a: 0}
     - _LightTintColor: {r: 1, g: 0.97, b: 0.93, a: 1}
+    - _PainterlyBaseColor: {r: 1, g: 1, b: 1, a: 0}
     - _RimColor: {r: 0.85, g: 0.92, b: 1, a: 1}
     - _ShadowColor: {r: 0.55, g: 0.63, b: 0.72, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

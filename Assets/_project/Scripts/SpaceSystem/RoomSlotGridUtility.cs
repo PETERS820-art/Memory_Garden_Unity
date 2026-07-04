@@ -5,6 +5,7 @@ using UnityEngine;
 public static class RoomSlotGridUtility
 {
     private const float DefaultGridSize = 1f;
+    private const int FloorGridSubdivision = 2;
 
     public static int GetGridWidth(MemorySpaceBlock block)
     {
@@ -46,6 +47,11 @@ public static class RoomSlotGridUtility
         return DefaultGridSize;
     }
 
+    public static int GetFloorGridSubdivision()
+    {
+        return FloorGridSubdivision;
+    }
+
     public static string GetBlockTypeId(MemorySpaceBlock block)
     {
         if (block == null)
@@ -83,6 +89,10 @@ public static class RoomSlotGridUtility
         int gridZ,
         int widthUnits,
         int depthUnits,
+        int floorGridXHalf,
+        int floorGridZHalf,
+        int floorWidthHalf,
+        int floorDepthHalf,
         float rotationY,
         WallSide wallSide,
         int wallGridPosition,
@@ -113,13 +123,17 @@ public static class RoomSlotGridUtility
         switch (surfaceType)
         {
             case RoomSlotSurfaceType.Floor:
-                if (!IsFloorPlacementInBounds(block, gridX, gridZ, widthUnits, depthUnits))
+                int resolvedFloorGridXHalf = floorWidthHalf > 0 ? floorGridXHalf : gridX * FloorGridSubdivision;
+                int resolvedFloorGridZHalf = floorDepthHalf > 0 ? floorGridZHalf : gridZ * FloorGridSubdivision;
+                int resolvedFloorWidthHalf = floorWidthHalf > 0 ? floorWidthHalf : Mathf.Max(1, widthUnits) * FloorGridSubdivision;
+                int resolvedFloorDepthHalf = floorDepthHalf > 0 ? floorDepthHalf : Mathf.Max(1, depthUnits) * FloorGridSubdivision;
+                if (!IsFloorPlacementInBoundsHalf(block, resolvedFloorGridXHalf, resolvedFloorGridZHalf, resolvedFloorWidthHalf, resolvedFloorDepthHalf))
                 {
                     errorMessage = $"Floor placement is out of bounds: ({gridX}, {gridZ}) size {widthUnits}x{depthUnits}.";
                     return false;
                 }
 
-                localPosition = GetFloorLocalPosition(block, gridX, gridZ, widthUnits, depthUnits);
+                localPosition = GetFloorLocalPositionHalf(block, resolvedFloorGridXHalf, resolvedFloorGridZHalf, resolvedFloorWidthHalf, resolvedFloorDepthHalf);
                 localRotation = Quaternion.Euler(0f, NormalizeRotation(rotationY), 0f);
                 return true;
 
@@ -147,16 +161,32 @@ public static class RoomSlotGridUtility
         int widthUnits,
         int depthUnits)
     {
+        return GetFloorLocalPositionHalf(
+            block,
+            gridX * FloorGridSubdivision,
+            gridZ * FloorGridSubdivision,
+            Mathf.Max(1, widthUnits) * FloorGridSubdivision,
+            Mathf.Max(1, depthUnits) * FloorGridSubdivision);
+    }
+
+    public static Vector3 GetFloorLocalPositionHalf(
+        MemorySpaceBlock block,
+        int gridXHalf,
+        int gridZHalf,
+        int widthHalf,
+        int depthHalf)
+    {
         int gridWidth = GetGridWidth(block);
         int gridDepth = GetGridDepth(block);
         float gridSize = GetGridSize(block);
+        float halfGridSize = gridSize / FloorGridSubdivision;
         float halfWidth = gridWidth * gridSize * 0.5f;
         float halfDepth = gridDepth * gridSize * 0.5f;
 
         return new Vector3(
-            -halfWidth + ((gridX + (Mathf.Max(1, widthUnits) * 0.5f)) * gridSize),
+            -halfWidth + ((gridXHalf + (Mathf.Max(1, widthHalf) * 0.5f)) * halfGridSize),
             0f,
-            -halfDepth + ((gridZ + (Mathf.Max(1, depthUnits) * 0.5f)) * gridSize));
+            -halfDepth + ((gridZHalf + (Mathf.Max(1, depthHalf) * 0.5f)) * halfGridSize));
     }
 
     public static bool IsFloorPlacementInBounds(
@@ -166,15 +196,32 @@ public static class RoomSlotGridUtility
         int widthUnits,
         int depthUnits)
     {
+        return IsFloorPlacementInBoundsHalf(
+            block,
+            gridX * FloorGridSubdivision,
+            gridZ * FloorGridSubdivision,
+            Mathf.Max(1, widthUnits) * FloorGridSubdivision,
+            Mathf.Max(1, depthUnits) * FloorGridSubdivision);
+    }
+
+    public static bool IsFloorPlacementInBoundsHalf(
+        MemorySpaceBlock block,
+        int gridXHalf,
+        int gridZHalf,
+        int widthHalf,
+        int depthHalf)
+    {
         int gridWidth = GetGridWidth(block);
         int gridDepth = GetGridDepth(block);
-        widthUnits = Mathf.Max(1, widthUnits);
-        depthUnits = Mathf.Max(1, depthUnits);
+        int halfGridWidth = gridWidth * FloorGridSubdivision;
+        int halfGridDepth = gridDepth * FloorGridSubdivision;
+        widthHalf = Mathf.Max(1, widthHalf);
+        depthHalf = Mathf.Max(1, depthHalf);
 
-        return gridX >= 0
-            && gridZ >= 0
-            && gridX + widthUnits <= gridWidth
-            && gridZ + depthUnits <= gridDepth;
+        return gridXHalf >= 0
+            && gridZHalf >= 0
+            && gridXHalf + widthHalf <= halfGridWidth
+            && gridZHalf + depthHalf <= halfGridDepth;
     }
 
     public static bool TryGetWallAnchorGrid(
@@ -294,14 +341,23 @@ public static class RoomSlotGridUtility
 
     public static List<Vector2Int> GetFloorFootprintCells(int gridX, int gridZ, int widthUnits, int depthUnits)
     {
+        return GetFloorFootprintHalfCells(
+            gridX * FloorGridSubdivision,
+            gridZ * FloorGridSubdivision,
+            Mathf.Max(1, widthUnits) * FloorGridSubdivision,
+            Mathf.Max(1, depthUnits) * FloorGridSubdivision);
+    }
+
+    public static List<Vector2Int> GetFloorFootprintHalfCells(int gridXHalf, int gridZHalf, int widthHalf, int depthHalf)
+    {
         List<Vector2Int> cells = new List<Vector2Int>();
-        int width = Mathf.Max(1, widthUnits);
-        int depth = Mathf.Max(1, depthUnits);
+        int width = Mathf.Max(1, widthHalf);
+        int depth = Mathf.Max(1, depthHalf);
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < depth; z++)
             {
-                cells.Add(new Vector2Int(gridX + x, gridZ + z));
+                cells.Add(new Vector2Int(gridXHalf + x, gridZHalf + z));
             }
         }
 
@@ -343,7 +399,20 @@ public static class RoomSlotGridUtility
 
         if (a.surfaceType == RoomSlotSurfaceType.Floor)
         {
-            return DoFloorAreasOverlap(a.gridX, a.gridZ, a.widthUnits, a.depthUnits, b.gridX, b.gridZ, b.widthUnits, b.depthUnits);
+            return DoFloorAreasOverlapHalf(
+                GetFloorGridXHalf(a),
+                GetFloorGridZHalf(a),
+                GetFloorWidthHalf(a),
+                GetFloorDepthHalf(a),
+                GetFloorGridXHalf(b),
+                GetFloorGridZHalf(b),
+                GetFloorWidthHalf(b),
+                GetFloorDepthHalf(b));
+        }
+
+        if (GetWallLayerIndex(a) != GetWallLayerIndex(b))
+        {
+            return false;
         }
 
         List<string> aKeys = GetWallEdgeKeys(a.gridX, a.gridZ, a.wallSide, a.widthUnits);
@@ -372,15 +441,36 @@ public static class RoomSlotGridUtility
         int bWidthUnits,
         int bDepthUnits)
     {
-        int aMinX = aGridX;
-        int aMaxX = aGridX + Mathf.Max(1, aWidthUnits);
-        int aMinZ = aGridZ;
-        int aMaxZ = aGridZ + Mathf.Max(1, aDepthUnits);
+        return DoFloorAreasOverlapHalf(
+            aGridX * FloorGridSubdivision,
+            aGridZ * FloorGridSubdivision,
+            Mathf.Max(1, aWidthUnits) * FloorGridSubdivision,
+            Mathf.Max(1, aDepthUnits) * FloorGridSubdivision,
+            bGridX * FloorGridSubdivision,
+            bGridZ * FloorGridSubdivision,
+            Mathf.Max(1, bWidthUnits) * FloorGridSubdivision,
+            Mathf.Max(1, bDepthUnits) * FloorGridSubdivision);
+    }
 
-        int bMinX = bGridX;
-        int bMaxX = bGridX + Mathf.Max(1, bWidthUnits);
-        int bMinZ = bGridZ;
-        int bMaxZ = bGridZ + Mathf.Max(1, bDepthUnits);
+    public static bool DoFloorAreasOverlapHalf(
+        int aGridXHalf,
+        int aGridZHalf,
+        int aWidthHalf,
+        int aDepthHalf,
+        int bGridXHalf,
+        int bGridZHalf,
+        int bWidthHalf,
+        int bDepthHalf)
+    {
+        int aMinX = aGridXHalf;
+        int aMaxX = aGridXHalf + Mathf.Max(1, aWidthHalf);
+        int aMinZ = aGridZHalf;
+        int aMaxZ = aGridZHalf + Mathf.Max(1, aDepthHalf);
+
+        int bMinX = bGridXHalf;
+        int bMaxX = bGridXHalf + Mathf.Max(1, bWidthHalf);
+        int bMinZ = bGridZHalf;
+        int bMaxZ = bGridZHalf + Mathf.Max(1, bDepthHalf);
 
         return aMinX < bMaxX && aMaxX > bMinX && aMinZ < bMaxZ && aMaxZ > bMinZ;
     }
@@ -445,5 +535,71 @@ public static class RoomSlotGridUtility
         return GetGridWidth(block) > 0
             && GetGridDepth(block) > 0
             && GetGridSize(block) > 0f;
+    }
+
+    public static int GetFloorGridXHalf(RoomSlotPlacementMetadata metadata)
+    {
+        if (metadata == null)
+        {
+            return 0;
+        }
+
+        return HasHalfFloorPlacementData(metadata) && !(metadata.floorGridXHalf == 0 && metadata.gridX != 0)
+            ? metadata.floorGridXHalf
+            : metadata.gridX * FloorGridSubdivision;
+    }
+
+    public static int GetFloorGridZHalf(RoomSlotPlacementMetadata metadata)
+    {
+        if (metadata == null)
+        {
+            return 0;
+        }
+
+        return HasHalfFloorPlacementData(metadata) && !(metadata.floorGridZHalf == 0 && metadata.gridZ != 0)
+            ? metadata.floorGridZHalf
+            : metadata.gridZ * FloorGridSubdivision;
+    }
+
+    public static int GetFloorWidthHalf(RoomSlotPlacementMetadata metadata)
+    {
+        if (metadata == null)
+        {
+            return FloorGridSubdivision;
+        }
+
+        return HasHalfFloorPlacementData(metadata)
+            ? Mathf.Max(1, metadata.floorWidthHalf)
+            : Mathf.Max(1, metadata.widthUnits) * FloorGridSubdivision;
+    }
+
+    public static int GetFloorDepthHalf(RoomSlotPlacementMetadata metadata)
+    {
+        if (metadata == null)
+        {
+            return FloorGridSubdivision;
+        }
+
+        return HasHalfFloorPlacementData(metadata)
+            ? Mathf.Max(1, metadata.floorDepthHalf)
+            : Mathf.Max(1, metadata.depthUnits) * FloorGridSubdivision;
+    }
+
+    public static int GetWallLayerIndex(RoomSlotPlacementMetadata metadata)
+    {
+        if (metadata == null)
+        {
+            return 0;
+        }
+
+        int layerCount = Mathf.Max(1, metadata.wallLayerCount);
+        return Mathf.Clamp(metadata.wallLayerIndex, 0, layerCount - 1);
+    }
+
+    private static bool HasHalfFloorPlacementData(RoomSlotPlacementMetadata metadata)
+    {
+        return metadata != null
+            && metadata.floorWidthHalf > 0
+            && metadata.floorDepthHalf > 0;
     }
 }

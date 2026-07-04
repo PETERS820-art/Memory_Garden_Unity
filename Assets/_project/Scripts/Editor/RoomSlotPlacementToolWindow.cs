@@ -18,6 +18,11 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     private const float PreviewWallHeight = 1f;
     private const float PaletteButtonWidth = 92f;
     private const float PaletteButtonHeight = 98f;
+    private const float FullWallHeight = 2.5f;
+    private const float HalfWallHeight = 1.25f;
+    private const float WallHeightTolerance = 0.1f;
+    private const int FullWallLayerCount = 3;
+    private const int HalfWallLayerCount = 1;
 
     private enum PreviewMode
     {
@@ -97,10 +102,17 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         public int GridZ;
         public int WidthUnits;
         public int DepthUnits;
+        public int FloorGridXHalf;
+        public int FloorGridZHalf;
+        public int FloorWidthHalf;
+        public int FloorDepthHalf;
         public float RotationY;
         public WallSide WallSide;
         public int WallGridPosition;
         public float HeightOffset;
+        public int WallLayerIndex;
+        public int WallLayerCount;
+        public float WallSurfaceHeight;
     }
 
     private struct ScenePlacementPreview
@@ -115,6 +127,23 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         public Quaternion LocalRotation;
         public string Message;
         public RoomSlotPlacementMetadata TargetPlacement;
+        public bool ShowWallLayerGuide;
+        public int WallLayerCount;
+        public int ActiveWallLayerIndex;
+        public Vector3 WallGuideLocalCenter;
+        public Vector3 WallGuideLocalSize;
+        public WallSide WallGuideSide;
+    }
+
+    private sealed class WallSurfaceContext
+    {
+        public SpaceSegmentPlacementMetadata PlacementMetadata;
+        public SpaceSegmentDefinition Definition;
+        public WallSegmentSlot WallSlot;
+        public WallSide Side;
+        public Vector3 LocalHitPoint;
+        public float SurfaceHeight;
+        public int LayerCount;
     }
 
     private sealed class SlotPrefabPaletteEntry
@@ -134,12 +163,10 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     [SerializeField] private WallSide wallSide = WallSide.North;
     [SerializeField] private int wallGridPosition;
     [SerializeField] private int wallWidthUnits = 1;
-    [SerializeField] private float wallHeightOffset;
     [SerializeField] private float wallRotationY;
     [SerializeField] private bool resizeHitboxToGridFootprint;
     [SerializeField] private bool replaceOverlappingSlots;
     [SerializeField] private bool scenePlacementEnabled = true;
-    [SerializeField] private bool sceneAutoPickWallSide = true;
     [SerializeField] private bool sceneDeleteMode;
     [SerializeField] private bool hideCeilingsWhilePainting;
 
@@ -149,6 +176,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     private string statusMessage = "Select a MemorySpaceBlock and a slot prefab to begin.";
     private MessageType statusType = MessageType.Info;
     private bool deferredRepaintQueued;
+    private bool deferredSceneRepaintQueued;
     private GUIStyle prefabPaletteButtonStyle;
     private readonly List<string> infoMessages = new List<string>();
     private readonly List<string> warningMessages = new List<string>();
@@ -157,6 +185,9 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     private readonly List<GameObject> temporarilyHiddenCeilingObjects = new List<GameObject>();
     private readonly HashSet<int> preHiddenCeilingObjectIds = new HashSet<int>();
     private MemorySpaceBlock temporarilyHiddenCeilingBlock;
+    private int hoveredWallLayerIndex;
+    private int hoveredWallLayerCount = 1;
+    private float hoveredWallSurfaceHeight;
 
     [MenuItem(MenuPath)]
     private static void OpenWindow()
@@ -312,7 +343,6 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         EditorGUI.BeginChangeCheck();
         scenePlacementEnabled = EditorGUILayout.Toggle("Enable Scene Placement", scenePlacementEnabled);
-        sceneAutoPickWallSide = EditorGUILayout.Toggle("Auto Pick Wall Side", sceneAutoPickWallSide);
         sceneDeleteMode = EditorGUILayout.Toggle("Scene Delete Mode", sceneDeleteMode);
         hideCeilingsWhilePainting = EditorGUILayout.Toggle("Temporarily Hide Ceilings While Painting", hideCeilingsWhilePainting);
         if (EditorGUI.EndChangeCheck())
@@ -322,8 +352,8 @@ public class RoomSlotPlacementToolWindow : EditorWindow
                 RestoreTemporaryCeilingVisibility();
             }
 
+            InvalidateScenePreviewCache();
             RepaintPreviewIfNeeded();
-            SceneView.RepaintAll();
         }
 
         using (new EditorGUILayout.HorizontalScope())
@@ -331,19 +361,22 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             if (GUILayout.Button("Paint Floor"))
             {
                 previewMode = PreviewMode.Floor;
-                SceneView.RepaintAll();
+                InvalidateScenePreviewCache();
+                QueueDeferredRepaint();
             }
 
             if (GUILayout.Button("Paint Wall"))
             {
                 previewMode = PreviewMode.Wall;
-                SceneView.RepaintAll();
+                InvalidateScenePreviewCache();
+                QueueDeferredRepaint();
             }
 
             if (GUILayout.Button("Clear Scene Preview"))
             {
                 previewMode = PreviewMode.None;
-                SceneView.RepaintAll();
+                InvalidateScenePreviewCache();
+                QueueDeferredRepaint();
             }
         }
 
@@ -384,13 +417,22 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         floorWidthUnits = Mathf.Max(1, EditorGUILayout.IntField("Width Units", floorWidthUnits));
         floorDepthUnits = Mathf.Max(1, EditorGUILayout.IntField("Depth Units", floorDepthUnits));
         floorRotationY = EditorGUILayout.FloatField("Rotation Y", floorRotationY);
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Rotate 90", GUILayout.Width(110f)))
+            {
+                floorRotationY = RoomSlotGridUtility.NormalizeRotation(floorRotationY + 90f);
+                GUI.changed = true;
+            }
+        }
         if (EditorGUI.EndChangeCheck())
         {
             RepaintPreviewIfNeeded();
         }
 
         EditorGUILayout.HelpBox(
-            "These settings control the footprint and rotation used when you paint floor furniture directly in Scene view.",
+            "Floor painting now snaps on a half-grid, so you can place furniture on cell centers and interior grid corners with the same tool.",
             MessageType.None);
     }
 
@@ -399,23 +441,26 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         EditorGUILayout.LabelField("Wall Settings", EditorStyles.boldLabel);
 
         EditorGUI.BeginChangeCheck();
-        if (!sceneAutoPickWallSide)
-        {
-            wallSide = (WallSide)EditorGUILayout.EnumPopup("Wall Side", wallSide);
-        }
-
         wallWidthUnits = Mathf.Max(1, EditorGUILayout.IntField("Width Units", wallWidthUnits));
-        wallHeightOffset = EditorGUILayout.FloatField("Height Offset", wallHeightOffset);
         wallRotationY = EditorGUILayout.FloatField("Rotation Y", wallRotationY);
+        EditorGUILayout.LabelField("Hovered Layer", $"{hoveredWallLayerIndex + 1}/{Mathf.Max(1, hoveredWallLayerCount)}");
+        EditorGUILayout.LabelField("Hovered Wall Height", hoveredWallSurfaceHeight > 0f ? hoveredWallSurfaceHeight.ToString("0.###") : "-");
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Rotate 90", GUILayout.Width(110f)))
+            {
+                wallRotationY = RoomSlotGridUtility.NormalizeRotation(wallRotationY + 90f);
+                GUI.changed = true;
+            }
+        }
         if (EditorGUI.EndChangeCheck())
         {
             RepaintPreviewIfNeeded();
         }
 
         EditorGUILayout.HelpBox(
-            sceneAutoPickWallSide
-                ? "Wall side is picked from the cursor position in Scene view. Width, height offset, and rotation still apply to the painted slot."
-                : "These settings control the wall placement used when painting directly in Scene view.",
+            "Wall painting now picks the real wall surface under the cursor. Full-height walls expose 3 paintable layers, half-height walls expose only the bottom layer, and window/opening surfaces are blocked.",
             MessageType.None);
     }
 
@@ -468,12 +513,14 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         if (!TryResolveTargetBlock(targetObject, out MemorySpaceBlock targetBlock, out _))
         {
             RestoreTemporaryCeilingVisibility();
+            InvalidateScenePreviewCache();
             return;
         }
 
         if (targetBlock == null || EditorUtility.IsPersistent(targetBlock.gameObject))
         {
             RestoreTemporaryCeilingVisibility();
+            InvalidateScenePreviewCache();
             return;
         }
 
@@ -482,8 +529,9 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         sceneView.wantsMouseMove = scenePlacementEnabled || sceneDeleteMode;
         Event current = Event.current;
         RequestLiveScenePreviewRefresh(current);
+        bool isRepaintEvent = current != null && current.type == EventType.Repaint;
 
-        if (current != null && current.type == EventType.Repaint && (scenePlacementEnabled || sceneDeleteMode))
+        if (isRepaintEvent && (scenePlacementEnabled || sceneDeleteMode))
         {
             DrawAuthoringGrid(
                 targetBlock.transform,
@@ -494,14 +542,15 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         HandleSceneHotkeys(current);
 
-        if (TryBuildDeletePreview(targetBlock, current, out ScenePlacementPreview deletePreview))
+        ScenePlacementPreview preview;
+        if (TryBuildDeletePreview(targetBlock, current, out preview))
         {
-            if (current != null && current.type == EventType.Repaint)
+            if (isRepaintEvent)
             {
-                DrawScenePlacementPreview(targetBlock.transform, deletePreview);
+                DrawScenePlacementPreview(targetBlock.transform, preview);
             }
 
-            if (TryHandleDeletePreviewClick(current, targetBlock, deletePreview))
+            if (TryHandleDeletePreviewClick(current, targetBlock, preview))
             {
                 QueueDeferredRepaint();
             }
@@ -511,9 +560,9 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         if (scenePlacementEnabled && previewMode != PreviewMode.None)
         {
-            if (TryBuildScenePlacementPreview(targetBlock, current, out ScenePlacementPreview preview))
+            if (TryBuildScenePlacementPreview(targetBlock, current, out preview))
             {
-                if (current != null && current.type == EventType.Repaint)
+                if (isRepaintEvent)
                 {
                     DrawScenePlacementPreview(targetBlock.transform, preview);
                 }
@@ -537,7 +586,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         if (current.type == EventType.MouseMove || current.type == EventType.MouseDrag)
         {
-            QueueDeferredRepaint();
+            QueueDeferredSceneRepaint();
         }
     }
 
@@ -577,6 +626,17 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         EditorApplication.delayCall += DeferredRepaint;
     }
 
+    private void QueueDeferredSceneRepaint()
+    {
+        if (deferredSceneRepaintQueued || deferredRepaintQueued)
+        {
+            return;
+        }
+
+        deferredSceneRepaintQueued = true;
+        EditorApplication.delayCall += DeferredSceneRepaint;
+    }
+
     private void DeferredRepaint()
     {
         deferredRepaintQueued = false;
@@ -587,6 +647,27 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         Repaint();
         SceneView.RepaintAll();
+    }
+
+    private void DeferredSceneRepaint()
+    {
+        deferredSceneRepaintQueued = false;
+        if (this == null)
+        {
+            return;
+        }
+
+        SceneView.RepaintAll();
+    }
+
+    private void InvalidateScenePreviewCache()
+    {
+        if (previewMode != PreviewMode.Wall)
+        {
+            hoveredWallLayerIndex = 0;
+            hoveredWallLayerCount = 1;
+            hoveredWallSurfaceHeight = 0f;
+        }
     }
 
     private void DrawAuthoringGrid(Transform root, int width, int depth, float size)
@@ -649,14 +730,15 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             preview.CanPlace = false;
             preview.Candidate = candidate;
             preview.Message = errorMessage;
-            preview.LocalCenter = localPosition;
+            preview.LocalCenter = GetPreviewDisplayCenter(candidate, localPosition);
             preview.LocalSize = candidate.SurfaceType == RoomSlotSurfaceType.Floor
                 ? new Vector3(
-                    Mathf.Max(1, candidate.WidthUnits) * RoomSlotGridUtility.GetGridSize(targetBlock),
+                    candidate.FloorWidthHalf * (RoomSlotGridUtility.GetGridSize(targetBlock) / RoomSlotGridUtility.GetFloorGridSubdivision()),
                     PreviewFloorHeight,
-                    Mathf.Max(1, candidate.DepthUnits) * RoomSlotGridUtility.GetGridSize(targetBlock))
+                    candidate.FloorDepthHalf * (RoomSlotGridUtility.GetGridSize(targetBlock) / RoomSlotGridUtility.GetFloorGridSubdivision()))
                 : GetWallPreviewSize(targetBlock, candidate);
-            preview.LocalRotation = localRotation;
+            preview.LocalRotation = ComposePreviewRotation(localRotation, slotPrefab);
+            PopulateWallGuidePreview(ref preview, candidate, localPosition, targetBlock);
             return true;
         }
 
@@ -677,15 +759,16 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         preview.HasPreview = true;
         preview.Candidate = candidate;
         preview.Overlaps = overlaps;
-        preview.LocalCenter = localPosition;
-        preview.LocalRotation = localRotation;
+        preview.LocalCenter = GetPreviewDisplayCenter(candidate, localPosition);
+        preview.LocalRotation = ComposePreviewRotation(localRotation, slotPrefab);
         preview.LocalSize = candidate.SurfaceType == RoomSlotSurfaceType.Floor
             ? new Vector3(
-                Mathf.Max(1, candidate.WidthUnits) * RoomSlotGridUtility.GetGridSize(targetBlock),
+                candidate.FloorWidthHalf * (RoomSlotGridUtility.GetGridSize(targetBlock) / RoomSlotGridUtility.GetFloorGridSubdivision()),
                 PreviewFloorHeight,
-                Mathf.Max(1, candidate.DepthUnits) * RoomSlotGridUtility.GetGridSize(targetBlock))
+                candidate.FloorDepthHalf * (RoomSlotGridUtility.GetGridSize(targetBlock) / RoomSlotGridUtility.GetFloorGridSubdivision()))
             : GetWallPreviewSize(targetBlock, candidate);
         preview.CanPlace = overlaps.Count == 0 || replaceOverlappingSlots;
+        PopulateWallGuidePreview(ref preview, candidate, localPosition, targetBlock);
 
         if (overlaps.Count > 0 && !replaceOverlappingSlots)
         {
@@ -697,11 +780,11 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         }
         else if (candidate.SurfaceType == RoomSlotSurfaceType.Wall)
         {
-            preview.Message = $"{candidate.SurfaceType} {candidate.WallSide} [{candidate.WallGridPosition}]";
+            preview.Message = $"{candidate.SurfaceType} {candidate.WallSide} [{candidate.WallGridPosition}] Layer {candidate.WallLayerIndex + 1}/{Mathf.Max(1, candidate.WallLayerCount)}";
         }
         else
         {
-            preview.Message = $"{candidate.SurfaceType} @ ({candidate.GridX}, {candidate.GridZ})";
+            preview.Message = $"{candidate.SurfaceType} @ half-grid ({candidate.FloorGridXHalf}, {candidate.FloorGridZHalf})";
         }
 
         return true;
@@ -718,7 +801,18 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             return false;
         }
 
-        if (!TryRaycastAuthoringPlane(block.transform, current.mousePosition, out Vector3 localPoint))
+        if (TryRaycastRoomSlotPlacementUnderCursor(block, current.mousePosition, out RoomSlotPlacementMetadata pickedPlacement, out _))
+        {
+            return TryBuildDeletePreviewFromMetadata(block, pickedPlacement, out preview);
+        }
+
+        Vector3 localPoint;
+        if (previewMode == PreviewMode.Wall
+            && TryPickWallSurfaceContext(block, current.mousePosition, out WallSurfaceContext deleteWallContext, out _))
+        {
+            localPoint = deleteWallContext.LocalHitPoint;
+        }
+        else if (!TryRaycastAuthoringPlane(block.transform, current.mousePosition, out localPoint))
         {
             return false;
         }
@@ -728,28 +822,50 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             return false;
         }
 
+        return TryBuildDeletePreviewFromMetadata(block, metadata, out preview);
+    }
+
+    private bool TryBuildDeletePreviewFromMetadata(
+        MemorySpaceBlock block,
+        RoomSlotPlacementMetadata metadata,
+        out ScenePlacementPreview preview)
+    {
+        preview = default;
+        if (block == null || metadata == null)
+        {
+            return false;
+        }
+
         if (!TryGetRoomSlotPreviewBounds(block, metadata.gameObject, out Vector3 localCenter, out Vector3 localSize))
         {
-            localCenter = metadata.localPosition;
+            PlacementCandidate previewCandidate = new PlacementCandidate
+            {
+                SurfaceType = metadata.surfaceType,
+                WidthUnits = metadata.widthUnits,
+                DepthUnits = metadata.depthUnits,
+                FloorGridXHalf = RoomSlotGridUtility.GetFloorGridXHalf(metadata),
+                FloorGridZHalf = RoomSlotGridUtility.GetFloorGridZHalf(metadata),
+                FloorWidthHalf = RoomSlotGridUtility.GetFloorWidthHalf(metadata),
+                FloorDepthHalf = RoomSlotGridUtility.GetFloorDepthHalf(metadata),
+                WallSide = metadata.wallSide,
+                WallGridPosition = metadata.wallGridPosition,
+                GridX = metadata.gridX,
+                GridZ = metadata.gridZ,
+                RotationY = metadata.rotationY,
+                HeightOffset = metadata.heightOffset,
+                WallLayerIndex = metadata.wallLayerIndex,
+                WallLayerCount = Mathf.Max(1, metadata.wallLayerCount),
+                WallSurfaceHeight = metadata.wallSurfaceHeight
+            };
+            localCenter = GetPreviewDisplayCenter(previewCandidate, metadata.localPosition);
             localSize = metadata.surfaceType == RoomSlotSurfaceType.Floor
                 ? new Vector3(
-                    Mathf.Max(1, metadata.widthUnits) * RoomSlotGridUtility.GetGridSize(block),
+                    RoomSlotGridUtility.GetFloorWidthHalf(metadata) * (RoomSlotGridUtility.GetGridSize(block) / RoomSlotGridUtility.GetFloorGridSubdivision()),
                     PreviewFloorHeight,
-                    Mathf.Max(1, metadata.depthUnits) * RoomSlotGridUtility.GetGridSize(block))
+                    RoomSlotGridUtility.GetFloorDepthHalf(metadata) * (RoomSlotGridUtility.GetGridSize(block) / RoomSlotGridUtility.GetFloorGridSubdivision()))
                 : GetWallPreviewSize(
                     block,
-                    new PlacementCandidate
-                    {
-                        SurfaceType = metadata.surfaceType,
-                        WidthUnits = metadata.widthUnits,
-                        DepthUnits = metadata.depthUnits,
-                        WallSide = metadata.wallSide,
-                        WallGridPosition = metadata.wallGridPosition,
-                        GridX = metadata.gridX,
-                        GridZ = metadata.gridZ,
-                        RotationY = metadata.rotationY,
-                        HeightOffset = metadata.heightOffset
-                    });
+                    previewCandidate);
         }
 
         preview.HasPreview = true;
@@ -762,11 +878,46 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         return true;
     }
 
+    private static Vector3 GetPreviewDisplayCenter(PlacementCandidate candidate, Vector3 placementLocalPosition)
+    {
+        if (candidate.SurfaceType == RoomSlotSurfaceType.Wall && candidate.WallLayerCount > 0 && candidate.WallSurfaceHeight > 0f)
+        {
+            return placementLocalPosition + Vector3.up * ((candidate.WallSurfaceHeight / candidate.WallLayerCount) * 0.5f);
+        }
+
+        return placementLocalPosition;
+    }
+
+    private void PopulateWallGuidePreview(ref ScenePlacementPreview preview, PlacementCandidate candidate, Vector3 placementLocalPosition, MemorySpaceBlock block)
+    {
+        if (candidate.SurfaceType != RoomSlotSurfaceType.Wall || block == null || candidate.WallLayerCount <= 0 || candidate.WallSurfaceHeight <= 0f)
+        {
+            preview.ShowWallLayerGuide = false;
+            return;
+        }
+
+        float gridSize = RoomSlotGridUtility.GetGridSize(block);
+        float width = Mathf.Max(1, candidate.WidthUnits) * gridSize;
+        preview.ShowWallLayerGuide = true;
+        preview.WallLayerCount = candidate.WallLayerCount;
+        preview.ActiveWallLayerIndex = Mathf.Clamp(candidate.WallLayerIndex, 0, candidate.WallLayerCount - 1);
+        preview.WallGuideSide = candidate.WallSide;
+        preview.WallGuideLocalCenter = placementLocalPosition + Vector3.up * (candidate.WallSurfaceHeight * 0.5f);
+        preview.WallGuideLocalSize = candidate.WallSide == WallSide.North || candidate.WallSide == WallSide.South
+            ? new Vector3(width, candidate.WallSurfaceHeight, PreviewThickness)
+            : new Vector3(PreviewThickness, candidate.WallSurfaceHeight, width);
+    }
+
     private void DrawScenePlacementPreview(Transform blockRoot, ScenePlacementPreview preview)
     {
         if (blockRoot == null || !preview.HasPreview)
         {
             return;
+        }
+
+        if (preview.ShowWallLayerGuide)
+        {
+            DrawWallLayerGuide(blockRoot, preview);
         }
 
         using (new Handles.DrawingScope(
@@ -782,6 +933,52 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         Vector3 worldLabelPosition = blockRoot.TransformPoint(preview.LocalCenter + Vector3.up * 0.2f);
         Handles.Label(worldLabelPosition, preview.Message);
+    }
+
+    private static void DrawWallLayerGuide(Transform blockRoot, ScenePlacementPreview preview)
+    {
+        if (blockRoot == null || !preview.ShowWallLayerGuide || preview.WallLayerCount <= 0)
+        {
+            return;
+        }
+
+        using (new Handles.DrawingScope(
+                   Matrix4x4.TRS(
+                       blockRoot.TransformPoint(preview.WallGuideLocalCenter),
+                       blockRoot.rotation,
+                       Vector3.one)))
+        {
+            Handles.color = new Color(0.35f, 0.75f, 1f, 0.4f);
+            Handles.DrawWireCube(Vector3.zero, preview.WallGuideLocalSize);
+
+            float layerHeight = preview.WallGuideLocalSize.y / preview.WallLayerCount;
+            float activeLayerCenterY = -preview.WallGuideLocalSize.y * 0.5f + (layerHeight * (preview.ActiveWallLayerIndex + 0.5f));
+            Vector3 activeLayerSize = preview.WallGuideSide == WallSide.North || preview.WallGuideSide == WallSide.South
+                ? new Vector3(preview.WallGuideLocalSize.x, layerHeight, preview.WallGuideLocalSize.z)
+                : new Vector3(preview.WallGuideLocalSize.x, layerHeight, preview.WallGuideLocalSize.z);
+            Handles.color = new Color(0.15f, 1f, 0.75f, 0.7f);
+            Handles.DrawWireCube(new Vector3(0f, activeLayerCenterY, 0f), activeLayerSize);
+
+            Handles.color = new Color(0.35f, 0.75f, 1f, 0.4f);
+            for (int layer = 1; layer < preview.WallLayerCount; layer++)
+            {
+                float y = -preview.WallGuideLocalSize.y * 0.5f + (layerHeight * layer);
+                Vector3 from;
+                Vector3 to;
+                if (preview.WallGuideSide == WallSide.North || preview.WallGuideSide == WallSide.South)
+                {
+                    from = new Vector3(-preview.WallGuideLocalSize.x * 0.5f, y, 0f);
+                    to = new Vector3(preview.WallGuideLocalSize.x * 0.5f, y, 0f);
+                }
+                else
+                {
+                    from = new Vector3(0f, y, -preview.WallGuideLocalSize.z * 0.5f);
+                    to = new Vector3(0f, y, preview.WallGuideLocalSize.z * 0.5f);
+                }
+
+                Handles.DrawLine(from, to);
+            }
+        }
     }
 
     private static Color GetScenePreviewColor(ScenePlacementPreview preview)
@@ -916,8 +1113,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
                 string slotPlacementId = GenerateSlotPlacementId();
                 instance.name = slotPlacementId;
-                instance.transform.localPosition = localPosition;
-                instance.transform.localRotation = localRotation;
+                ApplyAuthoredPlacementTransform(instance.transform, localPosition, localRotation);
 
                 ValidationResult setupValidation = EnsureFurnitureAndSlots(instance, context, slotPlacementId, candidate);
                 if (setupValidation.HasErrors)
@@ -1138,15 +1334,24 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             switch (metadata.surfaceType)
             {
                 case RoomSlotSurfaceType.Floor:
-                    if (!RoomSlotGridUtility.IsFloorPlacementInBounds(block, metadata.gridX, metadata.gridZ, metadata.widthUnits, metadata.depthUnits))
+                    if (!RoomSlotGridUtility.IsFloorPlacementInBoundsHalf(
+                        block,
+                        RoomSlotGridUtility.GetFloorGridXHalf(metadata),
+                        RoomSlotGridUtility.GetFloorGridZHalf(metadata),
+                        RoomSlotGridUtility.GetFloorWidthHalf(metadata),
+                        RoomSlotGridUtility.GetFloorDepthHalf(metadata)))
                     {
                         result.AddError($"Floor footprint out of bounds on {metadata.slotPlacementId}.");
                     }
 
-                    List<Vector2Int> floorCells = RoomSlotGridUtility.GetFloorFootprintCells(metadata.gridX, metadata.gridZ, metadata.widthUnits, metadata.depthUnits);
+                    List<Vector2Int> floorCells = RoomSlotGridUtility.GetFloorFootprintHalfCells(
+                        RoomSlotGridUtility.GetFloorGridXHalf(metadata),
+                        RoomSlotGridUtility.GetFloorGridZHalf(metadata),
+                        RoomSlotGridUtility.GetFloorWidthHalf(metadata),
+                        RoomSlotGridUtility.GetFloorDepthHalf(metadata));
                     for (int cellIndex = 0; cellIndex < floorCells.Count; cellIndex++)
                     {
-                        string key = $"{floorCells[cellIndex].x}:{floorCells[cellIndex].y}";
+                        string key = $"H:{floorCells[cellIndex].x}:{floorCells[cellIndex].y}";
                         if (!occupiedFloorCells.Add(key))
                         {
                             result.AddError($"Overlapping floor footprint at {key}.");
@@ -1160,12 +1365,33 @@ public class RoomSlotPlacementToolWindow : EditorWindow
                         result.AddError($"Invalid wallGridPosition on {metadata.slotPlacementId}: {metadata.wallSide} [{metadata.wallGridPosition}]");
                     }
 
+                    PlacementCandidate validationCandidate = new PlacementCandidate
+                    {
+                        SurfaceType = RoomSlotSurfaceType.Wall,
+                        GridX = metadata.gridX,
+                        GridZ = metadata.gridZ,
+                        WidthUnits = Mathf.Max(1, metadata.widthUnits),
+                        DepthUnits = 1,
+                        RotationY = metadata.rotationY,
+                        WallSide = metadata.wallSide,
+                        WallGridPosition = metadata.wallGridPosition,
+                        HeightOffset = metadata.heightOffset,
+                        WallLayerIndex = metadata.wallLayerIndex,
+                        WallLayerCount = Mathf.Max(1, metadata.wallLayerCount),
+                        WallSurfaceHeight = metadata.wallSurfaceHeight
+                    };
+                    if (!TryResolveWallPlacementCandidate(block, ref validationCandidate, out string wallValidationMessage))
+                    {
+                        result.AddError($"Invalid wall placement on {metadata.slotPlacementId}: {wallValidationMessage}");
+                    }
+
                     List<string> wallEdgeKeys = RoomSlotGridUtility.GetWallEdgeKeys(metadata.gridX, metadata.gridZ, metadata.wallSide, metadata.widthUnits);
                     for (int edgeIndex = 0; edgeIndex < wallEdgeKeys.Count; edgeIndex++)
                     {
-                        if (!occupiedWallEdges.Add(wallEdgeKeys[edgeIndex]))
+                        string layeredKey = $"{wallEdgeKeys[edgeIndex]}:L{RoomSlotGridUtility.GetWallLayerIndex(metadata)}";
+                        if (!occupiedWallEdges.Add(layeredKey))
                         {
-                            result.AddError($"Overlapping wall footprint at {wallEdgeKeys[edgeIndex]}.");
+                            result.AddError($"Overlapping wall footprint at {layeredKey}.");
                         }
                     }
                     break;
@@ -1306,10 +1532,17 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         metadata.gridZ = candidate.GridZ;
         metadata.widthUnits = Mathf.Max(1, candidate.WidthUnits);
         metadata.depthUnits = candidate.SurfaceType == RoomSlotSurfaceType.Floor ? Mathf.Max(1, candidate.DepthUnits) : 1;
+        metadata.floorGridXHalf = candidate.SurfaceType == RoomSlotSurfaceType.Floor ? candidate.FloorGridXHalf : metadata.gridX * RoomSlotGridUtility.GetFloorGridSubdivision();
+        metadata.floorGridZHalf = candidate.SurfaceType == RoomSlotSurfaceType.Floor ? candidate.FloorGridZHalf : metadata.gridZ * RoomSlotGridUtility.GetFloorGridSubdivision();
+        metadata.floorWidthHalf = candidate.SurfaceType == RoomSlotSurfaceType.Floor ? Mathf.Max(1, candidate.FloorWidthHalf) : Mathf.Max(1, metadata.widthUnits) * RoomSlotGridUtility.GetFloorGridSubdivision();
+        metadata.floorDepthHalf = candidate.SurfaceType == RoomSlotSurfaceType.Floor ? Mathf.Max(1, candidate.FloorDepthHalf) : Mathf.Max(1, metadata.depthUnits) * RoomSlotGridUtility.GetFloorGridSubdivision();
         metadata.rotationY = RoomSlotGridUtility.NormalizeRotation(candidate.RotationY);
         metadata.wallSide = candidate.WallSide;
         metadata.wallGridPosition = candidate.WallGridPosition;
         metadata.heightOffset = candidate.SurfaceType == RoomSlotSurfaceType.Wall ? candidate.HeightOffset : 0f;
+        metadata.wallLayerIndex = candidate.SurfaceType == RoomSlotSurfaceType.Wall ? Mathf.Max(0, candidate.WallLayerIndex) : 0;
+        metadata.wallLayerCount = candidate.SurfaceType == RoomSlotSurfaceType.Wall ? Mathf.Max(1, candidate.WallLayerCount) : 1;
+        metadata.wallSurfaceHeight = candidate.SurfaceType == RoomSlotSurfaceType.Wall ? Mathf.Max(0f, candidate.WallSurfaceHeight) : 0f;
         metadata.furnitureId = furniture != null ? GetSerializedString(furniture, "furnitureId") : string.Empty;
         metadata.slotIds = new List<string>(slots.Length);
         for (int i = 0; i < slots.Length; i++)
@@ -1482,12 +1715,18 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             GridZ = floorGridZ,
             WidthUnits = placementSurface == RoomSlotSurfaceType.Floor ? Mathf.Max(1, floorWidthUnits) : Mathf.Max(1, wallWidthUnits),
             DepthUnits = placementSurface == RoomSlotSurfaceType.Floor ? Mathf.Max(1, floorDepthUnits) : 1,
+            FloorGridXHalf = floorGridX * RoomSlotGridUtility.GetFloorGridSubdivision(),
+            FloorGridZHalf = floorGridZ * RoomSlotGridUtility.GetFloorGridSubdivision(),
+            FloorWidthHalf = Mathf.Max(1, floorWidthUnits) * RoomSlotGridUtility.GetFloorGridSubdivision(),
+            FloorDepthHalf = Mathf.Max(1, floorDepthUnits) * RoomSlotGridUtility.GetFloorGridSubdivision(),
             RotationY = placementSurface == RoomSlotSurfaceType.Floor
                 ? RoomSlotGridUtility.NormalizeRotation(floorRotationY)
                 : RoomSlotGridUtility.NormalizeRotation(wallRotationY),
             WallSide = wallSide,
             WallGridPosition = wallGridPosition,
-            HeightOffset = placementSurface == RoomSlotSurfaceType.Wall ? wallHeightOffset : 0f
+            HeightOffset = 0f,
+            WallLayerCount = 1,
+            WallSurfaceHeight = placementSurface == RoomSlotSurfaceType.Wall ? FullWallHeight : 0f
         };
     }
 
@@ -1520,6 +1759,10 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             candidate.GridZ,
             candidate.WidthUnits,
             candidate.DepthUnits,
+            candidate.FloorGridXHalf,
+            candidate.FloorGridZHalf,
+            candidate.FloorWidthHalf,
+            candidate.FloorDepthHalf,
             candidate.RotationY,
             candidate.WallSide,
             candidate.WallGridPosition,
@@ -1538,10 +1781,17 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         metadata.gridZ = candidate.GridZ;
         metadata.widthUnits = Mathf.Max(1, candidate.WidthUnits);
         metadata.depthUnits = candidate.SurfaceType == RoomSlotSurfaceType.Floor ? Mathf.Max(1, candidate.DepthUnits) : 1;
+        metadata.floorGridXHalf = candidate.SurfaceType == RoomSlotSurfaceType.Floor ? candidate.FloorGridXHalf : metadata.gridX * RoomSlotGridUtility.GetFloorGridSubdivision();
+        metadata.floorGridZHalf = candidate.SurfaceType == RoomSlotSurfaceType.Floor ? candidate.FloorGridZHalf : metadata.gridZ * RoomSlotGridUtility.GetFloorGridSubdivision();
+        metadata.floorWidthHalf = candidate.SurfaceType == RoomSlotSurfaceType.Floor ? Mathf.Max(1, candidate.FloorWidthHalf) : Mathf.Max(1, metadata.widthUnits) * RoomSlotGridUtility.GetFloorGridSubdivision();
+        metadata.floorDepthHalf = candidate.SurfaceType == RoomSlotSurfaceType.Floor ? Mathf.Max(1, candidate.FloorDepthHalf) : Mathf.Max(1, metadata.depthUnits) * RoomSlotGridUtility.GetFloorGridSubdivision();
         metadata.rotationY = RoomSlotGridUtility.NormalizeRotation(candidate.RotationY);
         metadata.wallSide = candidate.WallSide;
         metadata.wallGridPosition = candidate.WallGridPosition;
         metadata.heightOffset = candidate.SurfaceType == RoomSlotSurfaceType.Wall ? candidate.HeightOffset : 0f;
+        metadata.wallLayerIndex = candidate.SurfaceType == RoomSlotSurfaceType.Wall ? Mathf.Max(0, candidate.WallLayerIndex) : 0;
+        metadata.wallLayerCount = candidate.SurfaceType == RoomSlotSurfaceType.Wall ? Mathf.Max(1, candidate.WallLayerCount) : 1;
+        metadata.wallSurfaceHeight = candidate.SurfaceType == RoomSlotSurfaceType.Wall ? Mathf.Max(0f, candidate.WallSurfaceHeight) : 0f;
         return metadata;
     }
 
@@ -1554,12 +1804,13 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     {
         float gridSize = RoomSlotGridUtility.GetGridSize(block);
         float width = Mathf.Max(1, candidate.WidthUnits) * gridSize;
+        float height = GetWallPreviewHeight(candidate);
         if (candidate.WallSide == WallSide.North || candidate.WallSide == WallSide.South)
         {
-            return new Vector3(width, PreviewWallHeight, PreviewThickness);
+            return new Vector3(width, height, PreviewThickness);
         }
 
-        return new Vector3(PreviewThickness, PreviewWallHeight, width);
+        return new Vector3(PreviewThickness, height, width);
     }
 
     private bool TryBuildPlacementCandidateFromScenePoint(
@@ -1577,6 +1828,21 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             return false;
         }
 
+        if (surfaceType == RoomSlotSurfaceType.Wall)
+        {
+            return TryBuildWallPlacementCandidateFromScenePoint(block, mousePosition, ref candidate, out message);
+        }
+
+        return TryBuildFloorPlacementCandidateFromScenePoint(block, mousePosition, ref candidate, out message);
+    }
+
+    private bool TryBuildFloorPlacementCandidateFromScenePoint(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        ref PlacementCandidate candidate,
+        out string message)
+    {
+        message = string.Empty;
         if (!TryRaycastAuthoringPlane(block.transform, mousePosition, out Vector3 localPoint))
         {
             message = "Could not raycast onto the block authoring plane.";
@@ -1586,35 +1852,429 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         int gridWidth = RoomSlotGridUtility.GetGridWidth(block);
         int gridDepth = RoomSlotGridUtility.GetGridDepth(block);
         float gridSize = RoomSlotGridUtility.GetGridSize(block);
+        float halfGridSize = gridSize / RoomSlotGridUtility.GetFloorGridSubdivision();
         float halfWidth = gridWidth * gridSize * 0.5f;
         float halfDepth = gridDepth * gridSize * 0.5f;
-        int cellX = Mathf.FloorToInt((localPoint.x + halfWidth) / gridSize);
-        int cellZ = Mathf.FloorToInt((localPoint.z + halfDepth) / gridSize);
-        if (cellX < 0 || cellZ < 0 || cellX >= gridWidth || cellZ >= gridDepth)
+        int halfGridWidth = gridWidth * RoomSlotGridUtility.GetFloorGridSubdivision();
+        int halfGridDepth = gridDepth * RoomSlotGridUtility.GetFloorGridSubdivision();
+        int snappedCenterXHalf = Mathf.RoundToInt((localPoint.x + halfWidth) / halfGridSize);
+        int snappedCenterZHalf = Mathf.RoundToInt((localPoint.z + halfDepth) / halfGridSize);
+        int footprintWidthHalf = Mathf.Max(1, candidate.WidthUnits) * RoomSlotGridUtility.GetFloorGridSubdivision();
+        int footprintDepthHalf = Mathf.Max(1, candidate.DepthUnits) * RoomSlotGridUtility.GetFloorGridSubdivision();
+        int minHalfX = snappedCenterXHalf - (footprintWidthHalf / 2);
+        int minHalfZ = snappedCenterZHalf - (footprintDepthHalf / 2);
+        int maxHalfX = Mathf.Max(0, halfGridWidth - footprintWidthHalf);
+        int maxHalfZ = Mathf.Max(0, halfGridDepth - footprintDepthHalf);
+
+        if (snappedCenterXHalf < 0 || snappedCenterZHalf < 0 || snappedCenterXHalf > halfGridWidth || snappedCenterZHalf > halfGridDepth)
         {
             message = "Cursor is outside the block grid.";
             return false;
         }
 
-        if (surfaceType == RoomSlotSurfaceType.Wall)
-        {
-            candidate.WallSide = sceneAutoPickWallSide
-                ? GetNearestWallSide(localPoint, cellX, cellZ, gridWidth, gridDepth, gridSize)
-                : wallSide;
+        candidate.FloorWidthHalf = footprintWidthHalf;
+        candidate.FloorDepthHalf = footprintDepthHalf;
+        candidate.FloorGridXHalf = Mathf.Clamp(minHalfX, 0, maxHalfX);
+        candidate.FloorGridZHalf = Mathf.Clamp(minHalfZ, 0, maxHalfZ);
+        candidate.GridX = Mathf.FloorToInt(candidate.FloorGridXHalf * 0.5f);
+        candidate.GridZ = Mathf.FloorToInt(candidate.FloorGridZHalf * 0.5f);
+        return true;
+    }
 
-            int wallSpan = RoomSlotGridUtility.GetWallSlotCount(block, candidate.WallSide);
-            int maxAnchor = Mathf.Max(0, wallSpan - Mathf.Max(1, candidate.WidthUnits));
-            candidate.WallGridPosition = candidate.WallSide == WallSide.North || candidate.WallSide == WallSide.South
-                ? Mathf.Clamp(cellX, 0, maxAnchor)
-                : Mathf.Clamp(cellZ, 0, maxAnchor);
-            candidate.GridX = 0;
-            candidate.GridZ = 0;
+    private bool TryBuildWallPlacementCandidateFromScenePoint(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        ref PlacementCandidate candidate,
+        out string message)
+    {
+        message = string.Empty;
+        hoveredWallLayerIndex = 0;
+        hoveredWallLayerCount = 1;
+        hoveredWallSurfaceHeight = 0f;
+
+        if (!TryPickWallSurfaceContext(block, mousePosition, out WallSurfaceContext surfaceContext, out message))
+        {
+            return false;
+        }
+
+        hoveredWallSurfaceHeight = surfaceContext.SurfaceHeight;
+        hoveredWallLayerCount = surfaceContext.LayerCount;
+
+        int gridWidth = RoomSlotGridUtility.GetGridWidth(block);
+        int gridDepth = RoomSlotGridUtility.GetGridDepth(block);
+        float gridSize = RoomSlotGridUtility.GetGridSize(block);
+        float halfWidth = gridWidth * gridSize * 0.5f;
+        float halfDepth = gridDepth * gridSize * 0.5f;
+        int wallSpan = RoomSlotGridUtility.GetWallSlotCount(block, surfaceContext.Side);
+        int maxAnchor = Mathf.Max(0, wallSpan - Mathf.Max(1, candidate.WidthUnits));
+
+        candidate.WallSide = surfaceContext.Side;
+        switch (surfaceContext.Side)
+        {
+            case WallSide.North:
+            case WallSide.South:
+                candidate.WallGridPosition = Mathf.Clamp(
+                    Mathf.FloorToInt((surfaceContext.LocalHitPoint.x + halfWidth) / gridSize),
+                    0,
+                    maxAnchor);
+                break;
+            case WallSide.East:
+            case WallSide.West:
+                candidate.WallGridPosition = Mathf.Clamp(
+                    Mathf.FloorToInt((surfaceContext.LocalHitPoint.z + halfDepth) / gridSize),
+                    0,
+                    maxAnchor);
+                break;
+        }
+
+        float layerHeight = surfaceContext.LayerCount > 0
+            ? surfaceContext.SurfaceHeight / surfaceContext.LayerCount
+            : surfaceContext.SurfaceHeight;
+        candidate.WallLayerIndex = Mathf.Clamp(
+            Mathf.FloorToInt(Mathf.Clamp(surfaceContext.LocalHitPoint.y, 0f, Mathf.Max(0f, surfaceContext.SurfaceHeight - 0.0001f)) / Mathf.Max(0.0001f, layerHeight)),
+            0,
+            Mathf.Max(0, surfaceContext.LayerCount - 1));
+        candidate.WallLayerCount = surfaceContext.LayerCount;
+        candidate.WallSurfaceHeight = surfaceContext.SurfaceHeight;
+        hoveredWallLayerIndex = candidate.WallLayerIndex;
+
+        if (!TryResolveWallPlacementCandidate(block, ref candidate, out message))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryResolveWallPlacementCandidate(
+        MemorySpaceBlock block,
+        ref PlacementCandidate candidate,
+        out string message)
+    {
+        message = string.Empty;
+        if (block == null)
+        {
+            message = "Target MemorySpaceBlock is missing.";
+            return false;
+        }
+
+        if (!RoomSlotGridUtility.TryGetWallAnchorGrid(
+            block,
+            candidate.WallSide,
+            candidate.WallGridPosition,
+            candidate.WidthUnits,
+            out int resolvedGridX,
+            out int resolvedGridZ))
+        {
+            message = $"Wall placement is out of bounds: {candidate.WallSide} [{candidate.WallGridPosition}] span {candidate.WidthUnits}.";
+            return false;
+        }
+
+        List<string> wallEdgeKeys = RoomSlotGridUtility.GetWallEdgeKeys(resolvedGridX, resolvedGridZ, candidate.WallSide, candidate.WidthUnits);
+        float resolvedHeight = 0f;
+        int resolvedLayerCount = 0;
+        for (int i = 0; i < wallEdgeKeys.Count; i++)
+        {
+            if (!TryGetWallSurfaceContextForEdge(block, wallEdgeKeys[i], out WallSurfaceContext edgeContext, out string edgeMessage))
+            {
+                message = edgeMessage;
+                return false;
+            }
+
+            if (resolvedLayerCount == 0)
+            {
+                resolvedHeight = edgeContext.SurfaceHeight;
+                resolvedLayerCount = edgeContext.LayerCount;
+            }
+            else if (!ApproximatelyWallHeight(resolvedHeight, edgeContext.SurfaceHeight) || resolvedLayerCount != edgeContext.LayerCount)
+            {
+                message = "The selected wall span crosses different wall heights, so this slot cannot be painted as one placement.";
+                return false;
+            }
+        }
+
+        if (resolvedLayerCount <= 0)
+        {
+            message = "The selected wall surface does not expose a valid placement layer.";
+            return false;
+        }
+
+        if (candidate.WallLayerIndex >= resolvedLayerCount)
+        {
+            message = $"This wall only supports {resolvedLayerCount} layer(s).";
+            return false;
+        }
+
+        candidate.GridX = resolvedGridX;
+        candidate.GridZ = resolvedGridZ;
+        candidate.WallLayerCount = resolvedLayerCount;
+        candidate.WallSurfaceHeight = resolvedHeight;
+        candidate.HeightOffset = resolvedLayerCount > 0
+            ? candidate.WallLayerIndex * (resolvedHeight / resolvedLayerCount)
+            : 0f;
+        hoveredWallLayerCount = resolvedLayerCount;
+        hoveredWallSurfaceHeight = resolvedHeight;
+        return true;
+    }
+
+    private bool TryPickWallSurfaceContext(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        out WallSurfaceContext context,
+        out string message)
+    {
+        context = null;
+        message = string.Empty;
+        if (block == null)
+        {
+            message = "Select a MemorySpaceBlock target first.";
+            return false;
+        }
+
+        if (TryRaycastRoomSlotPlacementUnderCursor(block, mousePosition, out RoomSlotPlacementMetadata pickedSlotPlacement, out RaycastHit slotHit)
+            && pickedSlotPlacement.surfaceType == RoomSlotSurfaceType.Wall)
+        {
+            float slotWallHeight = pickedSlotPlacement.wallSurfaceHeight > 0f ? pickedSlotPlacement.wallSurfaceHeight : FullWallHeight;
+            int slotLayerCount = Mathf.Max(1, pickedSlotPlacement.wallLayerCount);
+
+            context = new WallSurfaceContext
+            {
+                PlacementMetadata = null,
+                Definition = null,
+                WallSlot = null,
+                Side = pickedSlotPlacement.wallSide,
+                LocalHitPoint = block.transform.InverseTransformPoint(slotHit.point),
+                SurfaceHeight = slotWallHeight,
+                LayerCount = slotLayerCount
+            };
             return true;
         }
 
-        candidate.GridX = Mathf.Clamp(cellX, 0, Mathf.Max(0, gridWidth - Mathf.Max(1, candidate.WidthUnits)));
-        candidate.GridZ = Mathf.Clamp(cellZ, 0, Mathf.Max(0, gridDepth - Mathf.Max(1, candidate.DepthUnits)));
+        if (!TryRaycastSegmentPlacementUnderCursor(block, mousePosition, out SpaceSegmentPlacementMetadata placementMetadata, out RaycastHit segmentHit))
+        {
+            message = "Hover a painted wall segment to place a wall slot.";
+            return false;
+        }
+
+        if (placementMetadata == null
+            || placementMetadata.record == null
+            || placementMetadata.record.category != SegmentCategory.Wall)
+        {
+            message = "Wall slot painting only works on real wall segments inside the selected block.";
+            return false;
+        }
+
+        SpaceSegmentDefinition definition = placementMetadata.definition;
+        if (definition == null && block.segmentKit != null && !string.IsNullOrWhiteSpace(placementMetadata.record.segmentId))
+        {
+            definition = block.segmentKit.GetSegment(placementMetadata.record.segmentId);
+        }
+
+        if (definition == null || definition.category != SegmentCategory.Wall)
+        {
+            message = "The hovered surface is not backed by a valid wall segment definition.";
+            return false;
+        }
+
+        WallSegmentSlot wallSlot = placementMetadata.GetComponent<WallSegmentSlot>();
+        bool hasOverlay = placementMetadata.overlayDefinition != null
+            || (wallSlot != null && !string.IsNullOrWhiteSpace(wallSlot.overlayId));
+        if (hasOverlay)
+        {
+            message = "Window/opening wall segments cannot host room slots.";
+            return false;
+        }
+
+        float surfaceHeight = ResolveWallSurfaceHeight(definition);
+        int layerCount = GetWallLayerCountForHeight(surfaceHeight);
+        if (layerCount <= 0)
+        {
+            message = $"Unsupported wall height {surfaceHeight:0.###}. Only {HalfWallHeight:0.##} and {FullWallHeight:0.##} are paintable.";
+            return false;
+        }
+
+        context = new WallSurfaceContext
+        {
+            PlacementMetadata = placementMetadata,
+            Definition = definition,
+            WallSlot = wallSlot,
+            Side = placementMetadata.record.side,
+            LocalHitPoint = block.transform.InverseTransformPoint(segmentHit.point),
+            SurfaceHeight = surfaceHeight,
+            LayerCount = layerCount
+        };
         return true;
+    }
+
+    private static int CompareRaycastHitDistance(RaycastHit a, RaycastHit b)
+    {
+        return a.distance.CompareTo(b.distance);
+    }
+
+    private static bool TryRaycastRoomSlotPlacementUnderCursor(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        out RoomSlotPlacementMetadata metadata,
+        out RaycastHit hit)
+    {
+        metadata = null;
+        hit = default;
+        if (block == null)
+        {
+            return false;
+        }
+
+        Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
+        RaycastHit[] hits = Physics.RaycastAll(ray, 1000f, ~0, QueryTriggerInteraction.Collide);
+        if (hits == null || hits.Length == 0)
+        {
+            return false;
+        }
+
+        Array.Sort(hits, CompareRaycastHitDistance);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RoomSlotPlacementMetadata candidate = hits[i].collider != null
+                ? hits[i].collider.GetComponentInParent<RoomSlotPlacementMetadata>()
+                : null;
+            if (candidate == null || candidate.GetComponentInParent<MemorySpaceBlock>() != block)
+            {
+                continue;
+            }
+
+            metadata = candidate;
+            hit = hits[i];
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryRaycastSegmentPlacementUnderCursor(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        out SpaceSegmentPlacementMetadata metadata,
+        out RaycastHit hit)
+    {
+        metadata = null;
+        hit = default;
+        if (block == null)
+        {
+            return false;
+        }
+
+        Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
+        RaycastHit[] hits = Physics.RaycastAll(ray, 1000f, ~0, QueryTriggerInteraction.Collide);
+        if (hits == null || hits.Length == 0)
+        {
+            return false;
+        }
+
+        Array.Sort(hits, CompareRaycastHitDistance);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            SpaceSegmentPlacementMetadata candidate = hits[i].collider != null
+                ? hits[i].collider.GetComponentInParent<SpaceSegmentPlacementMetadata>()
+                : null;
+            if (candidate == null || candidate.GetComponentInParent<MemorySpaceBlock>() != block)
+            {
+                continue;
+            }
+
+            metadata = candidate;
+            hit = hits[i];
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool TryGetWallSurfaceContextForEdge(
+        MemorySpaceBlock block,
+        string wallEdgeKey,
+        out WallSurfaceContext context,
+        out string message)
+    {
+        context = null;
+        message = string.Empty;
+        if (block == null || string.IsNullOrWhiteSpace(wallEdgeKey))
+        {
+            message = "Wall surface data is missing.";
+            return false;
+        }
+
+        SpaceSegmentPlacementMetadata[] placements = block.GetComponentsInChildren<SpaceSegmentPlacementMetadata>(true);
+        for (int i = 0; i < placements.Length; i++)
+        {
+            SpaceSegmentPlacementMetadata placement = placements[i];
+            if (placement == null || placement.record == null || placement.record.category != SegmentCategory.Wall)
+            {
+                continue;
+            }
+
+            List<string> placementKeys = RoomSlotGridUtility.GetWallEdgeKeys(
+                placement.record.gridX,
+                placement.record.gridZ,
+                placement.record.side,
+                Mathf.Max(1, placement.record.footprint.x));
+            bool matches = false;
+            for (int keyIndex = 0; keyIndex < placementKeys.Count; keyIndex++)
+            {
+                if (string.Equals(placementKeys[keyIndex], wallEdgeKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    matches = true;
+                    break;
+                }
+            }
+
+            if (!matches)
+            {
+                continue;
+            }
+
+            SpaceSegmentDefinition definition = placement.definition;
+            if (definition == null && block.segmentKit != null && !string.IsNullOrWhiteSpace(placement.record.segmentId))
+            {
+                definition = block.segmentKit.GetSegment(placement.record.segmentId);
+            }
+
+            if (definition == null || definition.category != SegmentCategory.Wall)
+            {
+                message = $"Wall edge {wallEdgeKey} is missing a valid wall definition.";
+                return false;
+            }
+
+            WallSegmentSlot wallSlot = placement.GetComponent<WallSegmentSlot>();
+            bool hasOverlay = placement.overlayDefinition != null
+                || (wallSlot != null && !string.IsNullOrWhiteSpace(wallSlot.overlayId));
+            if (hasOverlay)
+            {
+                message = $"Wall edge {wallEdgeKey} belongs to a window/opening segment and cannot host room slots.";
+                return false;
+            }
+
+            float surfaceHeight = ResolveWallSurfaceHeight(definition);
+            int layerCount = GetWallLayerCountForHeight(surfaceHeight);
+            if (layerCount <= 0)
+            {
+                message = $"Wall edge {wallEdgeKey} has unsupported height {surfaceHeight:0.###}.";
+                return false;
+            }
+
+            context = new WallSurfaceContext
+            {
+                PlacementMetadata = placement,
+                Definition = definition,
+                WallSlot = wallSlot,
+                Side = placement.record.side,
+                SurfaceHeight = surfaceHeight,
+                LayerCount = layerCount
+            };
+            return true;
+        }
+
+        message = $"No painted wall segment was found for wall edge {wallEdgeKey}.";
+        return false;
     }
 
     private static bool TryRaycastAuthoringPlane(Transform blockRoot, Vector2 mousePosition, out Vector3 localPoint)
@@ -1637,40 +2297,135 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         return true;
     }
 
-    private static WallSide GetNearestWallSide(Vector3 localPoint, int cellX, int cellZ, int gridWidth, int gridDepth, float gridSize)
+    private static bool TryRaycastWallSurfaceLocalPoint(
+        MemorySpaceBlock block,
+        WallSide wallSide,
+        Vector3 wallOriginWorld,
+        Vector2 mousePosition,
+        out Vector3 localPoint)
     {
-        float halfWidth = gridWidth * gridSize * 0.5f;
-        float halfDepth = gridDepth * gridSize * 0.5f;
-        float minX = -halfWidth + (cellX * gridSize);
-        float maxX = minX + gridSize;
-        float minZ = -halfDepth + (cellZ * gridSize);
-        float maxZ = minZ + gridSize;
-
-        float westDistance = Mathf.Abs(localPoint.x - minX);
-        float eastDistance = Mathf.Abs(localPoint.x - maxX);
-        float southDistance = Mathf.Abs(localPoint.z - minZ);
-        float northDistance = Mathf.Abs(localPoint.z - maxZ);
-
-        float bestDistance = northDistance;
-        WallSide side = WallSide.North;
-        if (southDistance < bestDistance)
+        localPoint = Vector3.zero;
+        if (block == null)
         {
-            bestDistance = southDistance;
-            side = WallSide.South;
+            return false;
         }
 
-        if (eastDistance < bestDistance)
+        Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
+        Vector3 worldNormal = block.transform.TransformDirection(GetWallPlaneLocalNormal(wallSide));
+        Plane plane = new Plane(worldNormal, wallOriginWorld);
+        if (!plane.Raycast(ray, out float distance))
         {
-            bestDistance = eastDistance;
-            side = WallSide.East;
+            return false;
         }
 
-        if (westDistance < bestDistance)
+        localPoint = block.transform.InverseTransformPoint(ray.GetPoint(distance));
+        return true;
+    }
+
+    private static Vector3 GetWallPlaneLocalNormal(WallSide wallSide)
+    {
+        switch (wallSide)
         {
-            side = WallSide.West;
+            case WallSide.North:
+                return Vector3.forward;
+            case WallSide.South:
+                return Vector3.back;
+            case WallSide.East:
+                return Vector3.right;
+            case WallSide.West:
+                return Vector3.left;
+            default:
+                return Vector3.forward;
+        }
+    }
+
+    private static float ResolveWallSurfaceHeight(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return 0f;
         }
 
-        return side;
+        if (definition.height > 0f)
+        {
+            return definition.height;
+        }
+
+        if (TryExtractDefinitionSize(definition, out _, out float parsedHeight))
+        {
+            return parsedHeight;
+        }
+
+        return 0f;
+    }
+
+    private static int GetWallLayerCountForHeight(float wallHeight)
+    {
+        if (ApproximatelyWallHeight(wallHeight, FullWallHeight))
+        {
+            return FullWallLayerCount;
+        }
+
+        if (ApproximatelyWallHeight(wallHeight, HalfWallHeight))
+        {
+            return HalfWallLayerCount;
+        }
+
+        return 0;
+    }
+
+    private static bool ApproximatelyWallHeight(float a, float b)
+    {
+        return Mathf.Abs(a - b) <= WallHeightTolerance;
+    }
+
+    private static bool TryExtractDefinitionSize(SpaceSegmentDefinition definition, out float sizeX, out float sizeY)
+    {
+        sizeX = 1f;
+        sizeY = 1f;
+        if (definition == null || string.IsNullOrWhiteSpace(definition.segmentId))
+        {
+            return false;
+        }
+
+        string[] tokens = definition.segmentId.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
+        for (int i = tokens.Length - 1; i >= 0; i--)
+        {
+            if (TryParseSizeToken(tokens[i], out sizeX, out sizeY))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryParseSizeToken(string token, out float sizeX, out float sizeY)
+    {
+        sizeX = 1f;
+        sizeY = 1f;
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        string normalized = token.Trim().ToLowerInvariant().Replace("x", "X");
+        string[] parts = normalized.Split(new[] { 'X' }, StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 2
+            && float.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sizeX)
+            && float.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sizeY);
+    }
+
+    private static float GetWallPreviewHeight(PlacementCandidate candidate)
+    {
+        if (candidate.SurfaceType == RoomSlotSurfaceType.Wall
+            && candidate.WallSurfaceHeight > 0f
+            && candidate.WallLayerCount > 0)
+        {
+            return Mathf.Max(0.1f, candidate.WallSurfaceHeight / candidate.WallLayerCount);
+        }
+
+        return PreviewWallHeight;
     }
 
     private bool TryFindNearestRoomSlotPlacementMetadata(
@@ -1698,29 +2453,36 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
             if (!TryGetRoomSlotPreviewBounds(block, candidate.gameObject, out Vector3 candidateLocalCenter, out Vector3 candidateLocalSize))
             {
-                candidateLocalCenter = candidate.localPosition;
+                PlacementCandidate previewCandidate = new PlacementCandidate
+                {
+                    SurfaceType = candidate.surfaceType,
+                    WidthUnits = candidate.widthUnits,
+                    DepthUnits = candidate.depthUnits,
+                    FloorGridXHalf = RoomSlotGridUtility.GetFloorGridXHalf(candidate),
+                    FloorGridZHalf = RoomSlotGridUtility.GetFloorGridZHalf(candidate),
+                    FloorWidthHalf = RoomSlotGridUtility.GetFloorWidthHalf(candidate),
+                    FloorDepthHalf = RoomSlotGridUtility.GetFloorDepthHalf(candidate),
+                    WallSide = candidate.wallSide,
+                    WallLayerIndex = candidate.wallLayerIndex,
+                    WallLayerCount = Mathf.Max(1, candidate.wallLayerCount),
+                    WallSurfaceHeight = candidate.wallSurfaceHeight
+                };
+                candidateLocalCenter = GetPreviewDisplayCenter(previewCandidate, candidate.localPosition);
                 candidateLocalSize = candidate.surfaceType == RoomSlotSurfaceType.Floor
                     ? new Vector3(
-                        Mathf.Max(1, candidate.widthUnits) * gridSize,
+                        RoomSlotGridUtility.GetFloorWidthHalf(candidate) * (gridSize / RoomSlotGridUtility.GetFloorGridSubdivision()),
                         PreviewFloorHeight,
-                        Mathf.Max(1, candidate.depthUnits) * gridSize)
+                        RoomSlotGridUtility.GetFloorDepthHalf(candidate) * (gridSize / RoomSlotGridUtility.GetFloorGridSubdivision()))
                     : GetWallPreviewSize(
                         block,
-                        new PlacementCandidate
-                        {
-                            SurfaceType = candidate.surfaceType,
-                            WidthUnits = candidate.widthUnits,
-                            DepthUnits = candidate.depthUnits,
-                            WallSide = candidate.wallSide
-                        });
+                        previewCandidate);
             }
 
-            Vector2 localPointXZ = new Vector2(localPoint.x, localPoint.z);
-            Vector2 candidateXZ = new Vector2(candidateLocalCenter.x, candidateLocalCenter.z);
-            Vector2 halfSizeXZ = new Vector2(candidateLocalSize.x * 0.5f, candidateLocalSize.z * 0.5f);
-            float clampedX = Mathf.Clamp(localPointXZ.x, candidateXZ.x - halfSizeXZ.x, candidateXZ.x + halfSizeXZ.x);
-            float clampedZ = Mathf.Clamp(localPointXZ.y, candidateXZ.y - halfSizeXZ.y, candidateXZ.y + halfSizeXZ.y);
-            float distanceSqr = (localPointXZ - new Vector2(clampedX, clampedZ)).sqrMagnitude;
+            Vector3 halfSize = candidateLocalSize * 0.5f;
+            float clampedX = Mathf.Clamp(localPoint.x, candidateLocalCenter.x - halfSize.x, candidateLocalCenter.x + halfSize.x);
+            float clampedY = Mathf.Clamp(localPoint.y, candidateLocalCenter.y - halfSize.y, candidateLocalCenter.y + halfSize.y);
+            float clampedZ = Mathf.Clamp(localPoint.z, candidateLocalCenter.z - halfSize.z, candidateLocalCenter.z + halfSize.z);
+            float distanceSqr = (localPoint - new Vector3(clampedX, clampedY, clampedZ)).sqrMagnitude;
             if (distanceSqr > maxDistanceSqr || distanceSqr >= bestDistanceSqr)
             {
                 continue;
@@ -1999,6 +2761,40 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         return instance;
     }
 
+    private static void ApplyAuthoredPlacementTransform(Transform instanceTransform, Vector3 placementLocalPosition, Quaternion placementLocalRotation)
+    {
+        if (instanceTransform == null)
+        {
+            return;
+        }
+
+        Vector3 authoredLocalPosition = instanceTransform.localPosition;
+        Quaternion authoredLocalRotation = instanceTransform.localRotation;
+        Vector3 authoredLocalScale = EnsureNonZeroScale(instanceTransform.localScale);
+
+        instanceTransform.localPosition = placementLocalPosition + (placementLocalRotation * authoredLocalPosition);
+        instanceTransform.localRotation = placementLocalRotation * authoredLocalRotation;
+        instanceTransform.localScale = authoredLocalScale;
+    }
+
+    private static Quaternion ComposePreviewRotation(Quaternion placementLocalRotation, GameObject prefab)
+    {
+        if (prefab == null)
+        {
+            return placementLocalRotation;
+        }
+
+        return placementLocalRotation * prefab.transform.localRotation;
+    }
+
+    private static Vector3 EnsureNonZeroScale(Vector3 scale)
+    {
+        return new Vector3(
+            Mathf.Approximately(scale.x, 0f) ? 1f : scale.x,
+            Mathf.Approximately(scale.y, 0f) ? 1f : scale.y,
+            Mathf.Approximately(scale.z, 0f) ? 1f : scale.z);
+    }
+
     private static string GenerateSlotPlacementId()
     {
         return $"RSP_{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant()}";
@@ -2227,7 +3023,8 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     {
         if (previewMode != PreviewMode.None)
         {
-            SceneView.RepaintAll();
+            InvalidateScenePreviewCache();
+            QueueDeferredRepaint();
         }
     }
 
