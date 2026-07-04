@@ -3,7 +3,17 @@ guid: 6d72133cd093e3840bec2d7d0b6aaf32
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: MADEIRA TAMPO
+    second: {fileID: 2100000, guid: c26a6610db153ac44952dcc88c2931b4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: wire_143225087
+    second: {fileID: 2100000, guid: af13bcaa7c0db2443bca643ecc18e81f, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

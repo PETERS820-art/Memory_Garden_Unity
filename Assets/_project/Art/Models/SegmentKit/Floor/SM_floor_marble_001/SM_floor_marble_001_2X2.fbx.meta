@@ -3,7 +3,12 @@ guid: 36d87adc77081104f88596d432919279
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: marble_calacatta.002
+    second: {fileID: 2100000, guid: 6d2e67e753a84d24a844167cc7bce8ab, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

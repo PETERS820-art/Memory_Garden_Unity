@@ -7,6 +7,9 @@ using UnityEngine.Serialization;
 
 public class MemoryModeLightingController : MonoBehaviour
 {
+    private const string SpotlightObjectName = "MemoryModeSpotlight";
+    private const string FillLightObjectName = "MemoryModeFillLight";
+
     [Header("Transition")]
     [FormerlySerializedAs("transitionDuration")]
     [SerializeField] private float memoryTransitionDuration = 0.3f;
@@ -166,6 +169,14 @@ public class MemoryModeLightingController : MonoBehaviour
         isLightingModeActive = false;
     }
 
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        ResolveOptionalReferences();
+        TryResolveManagedLights();
+    }
+#endif
+
     private void ResolveOptionalReferences()
     {
         if (targetDirectionalLight == null && RenderSettings.sun != null)
@@ -177,6 +188,8 @@ public class MemoryModeLightingController : MonoBehaviour
         {
             skyboxMaterial = RenderSettings.skybox;
         }
+
+        TryResolveManagedLights();
     }
 
     private void CacheEnvironmentState()
@@ -289,31 +302,43 @@ public class MemoryModeLightingController : MonoBehaviour
 
     private void EnsureSpotlightExists()
     {
+        if (memorySpotlight == null)
+        {
+            memorySpotlight = FindManagedLight(SpotlightObjectName);
+        }
+
         if (memorySpotlight != null)
         {
             return;
         }
 
-        GameObject spotlightObject = new GameObject("MemoryModeSpotlight");
+        GameObject spotlightObject = new GameObject(SpotlightObjectName);
         spotlightObject.transform.SetParent(transform, false);
 
         memorySpotlight = spotlightObject.AddComponent<Light>();
         memorySpotlight.type = LightType.Spot;
+        memorySpotlight.shadows = LightShadows.Soft;
         memorySpotlight.enabled = false;
     }
 
     private void EnsureFillLightExists()
     {
+        if (memoryFillLight == null)
+        {
+            memoryFillLight = FindManagedLight(FillLightObjectName);
+        }
+
         if (memoryFillLight != null)
         {
             return;
         }
 
-        GameObject fillLightObject = new GameObject("MemoryModeFillLight");
+        GameObject fillLightObject = new GameObject(FillLightObjectName);
         fillLightObject.transform.SetParent(transform, false);
 
         memoryFillLight = fillLightObject.AddComponent<Light>();
         memoryFillLight.type = LightType.Spot;
+        memoryFillLight.shadows = LightShadows.None;
         memoryFillLight.enabled = false;
     }
 
@@ -329,6 +354,7 @@ public class MemoryModeLightingController : MonoBehaviour
         memorySpotlight.type = LightType.Spot;
         memorySpotlight.range = spotlightRange;
         memorySpotlight.spotAngle = spotlightAngle;
+        memorySpotlight.shadows = LightShadows.Soft;
         memorySpotlight.intensity = 0f;
         memorySpotlight.enabled = false;
     }
@@ -348,6 +374,44 @@ public class MemoryModeLightingController : MonoBehaviour
         memoryFillLight.shadows = LightShadows.None;
         memoryFillLight.intensity = 0f;
         memoryFillLight.enabled = false;
+    }
+
+    private void TryResolveManagedLights()
+    {
+        if (memorySpotlight == null)
+        {
+            memorySpotlight = FindManagedLight(SpotlightObjectName);
+        }
+
+        if (memoryFillLight == null)
+        {
+            memoryFillLight = FindManagedLight(FillLightObjectName);
+        }
+    }
+
+    private Light FindManagedLight(string objectName)
+    {
+        Transform child = transform.Find(objectName);
+        if (child != null)
+        {
+            Light childLight = child.GetComponent<Light>();
+            if (childLight != null)
+            {
+                return childLight;
+            }
+        }
+
+        Light[] childLights = GetComponentsInChildren<Light>(true);
+        for (int i = 0; i < childLights.Length; i++)
+        {
+            Light childLight = childLights[i];
+            if (childLight != null && childLight.name == objectName)
+            {
+                return childLight;
+            }
+        }
+
+        return null;
     }
 
     private void UpdateActiveLightTransforms()

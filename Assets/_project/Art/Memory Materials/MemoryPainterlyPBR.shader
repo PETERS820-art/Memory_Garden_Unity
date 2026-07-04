@@ -7,9 +7,23 @@ Shader "MemoryGarden/Memory Painterly PBR"
     // 4. At runtime, the manager can copy only painterly/emotion values from the emotion material while item PBR textures stay local.
     Properties
     {
-        [Header(PBR Surface)]
+        [HideInInspector] _WorkflowMode ("Workflow Mode", Float) = 1
+        [Enum(Opaque, 0, Transparent, 1)] _Surface ("Surface Type", Float) = 0
+        [Enum(Alpha, 0, Premultiply, 1, Multiply, 2)] _Blend ("Blend Mode", Float) = 0
+        [Enum(Off, 0, Front, 1, Back, 2)] _Cull ("Render Face", Float) = 2
+        [ToggleUI] _AlphaClip ("Alpha Clipping", Float) = 0
+        _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
+        [ToggleUI] _ReceiveShadows ("Receive Shadows", Float) = 1
+        [ToggleUI] _SpecularHighlights ("Specular Highlights", Float) = 1
+        [ToggleUI] _EnvironmentReflections ("Environment Reflections", Float) = 1
+        [HideInInspector] _SrcBlend ("Src Blend", Float) = 1
+        [HideInInspector] _DstBlend ("Dst Blend", Float) = 0
+        [HideInInspector] _ZWrite ("ZWrite", Float) = 1
+        _QueueOffset ("Queue Offset", Range(-50, 50)) = 0
+
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {}
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1)
+        [HideInInspector] _PainterlyBaseColor ("Painterly Base Color", Color) = (1, 1, 1, 0)
         [Normal] _BumpMap ("Normal Map", 2D) = "bump" {}
         _BumpScale ("Normal Scale", Range(0, 2)) = 1
         _MetallicGlossMap ("Metallic Smoothness Map", 2D) = "black" {}
@@ -21,10 +35,9 @@ Shader "MemoryGarden/Memory Painterly PBR"
         _EmissionMap ("Emission Map", 2D) = "black" {}
         _PainterlyScale ("Painterly Scale", Range(0.1, 16)) = 1
 
-        [Header(Mode Blend)]
         _MemoryBlend ("Memory Blend", Range(0, 1)) = 0
 
-        [Header(Painterly Palette)]
+        // Flatness controls.
         _ShadowColor ("Shadow Color", Color) = (0.55, 0.63, 0.72, 1)
         _LightTintColor ("Light Tint Color", Color) = (1, 0.97, 0.93, 1)
         _AccentColor ("Accent Color", Color) = (1, 0.82, 0.6, 1)
@@ -34,14 +47,11 @@ Shader "MemoryGarden/Memory Painterly PBR"
         _RimColor ("Rim Color", Color) = (0.85, 0.92, 1, 1)
         _RimStrength ("Rim Strength", Range(0, 1)) = 0.2
         _RimPower ("Rim Power", Range(0.5, 8)) = 3
-
-        [Header(Flattening)]
         _FlattenAmount ("Flatten Amount", Range(0, 1)) = 0.58
         _LightRangeCompression ("Light Range Compression", Range(0, 1)) = 0.66
         _ShadeSteps ("Shade Steps", Range(1, 6)) = 3
         _NormalFlatten ("Normal Flatten", Range(0, 1)) = 0.55
 
-        [Header(Painterly Strokes)]
         _StrokeDensity ("Stroke Density", Range(0, 1)) = 0.52
         _StrokeContrast ("Stroke Contrast", Range(0.5, 4)) = 1.9
         _Saturation ("Saturation", Range(0, 2)) = 1
@@ -54,16 +64,17 @@ Shader "MemoryGarden/Memory Painterly PBR"
         _WatercolorStrength ("Watercolor Strength", Range(0, 1)) = 0.35
         _EdgeBreakStrength ("Edge Break Strength", Range(0, 1)) = 0.45
         _EdgeDistortion ("Edge Distortion", Range(0, 1)) = 0.18
-        _ShadowEdgeBreakStrength ("Shadow Edge Break Strength", Range(0, 1)) = 0.58
-        _ShadowEdgeNoiseScale ("Shadow Edge Noise Scale", Range(0.1, 4)) = 1.85
-        _ShadowEdgeBrushInfluence ("Shadow Edge Brush Influence", Range(0, 1)) = 0.62
 
-        [Header(View Projection)]
+        // View-projected brush controls.
         _ViewProjectionBlend ("View Projection Blend", Range(0, 1)) = 0.35
         _ViewBrushStrength ("View Brush Strength", Range(0, 1)) = 0.38
         _ScreenGrainStrength ("Screen Grain Strength", Range(0, 1)) = 0.22
 
-        [Header(Runtime Growth)]
+        // Brushy shadow edge controls.
+        _ShadowEdgeBreakStrength ("Shadow Edge Break Strength", Range(0, 1)) = 0.58
+        _ShadowEdgeNoiseScale ("Shadow Edge Noise Scale", Range(0.1, 4)) = 1.85
+        _ShadowEdgeBrushInfluence ("Shadow Edge Brush Influence", Range(0, 1)) = 0.62
+
         [HideInInspector] _RuntimeTransitionActive ("Runtime Transition Active", Float) = 0
         _GrowthOrigin ("Growth Origin", Vector) = (0, 0, 0, 0)
         _GrowthRadius ("Growth Radius", Float) = 0
@@ -72,7 +83,6 @@ Shader "MemoryGarden/Memory Painterly PBR"
         _GrowthNoiseStrength ("Growth Noise Strength", Range(0, 2)) = 0.5
         _GrowthBlend ("Growth Blend", Range(0, 1)) = 0
 
-        [Header(Painterly Textures)]
         [NoScaleOffset] _BrushRampTex ("Brush Ramp Tex", 2D) = "white" {}
         [NoScaleOffset] _BrushGrainTex ("Brush Grain Tex", 2D) = "gray" {}
         [NoScaleOffset] _DryBrushTex ("Dry Brush Tex", 2D) = "gray" {}
@@ -84,9 +94,8 @@ Shader "MemoryGarden/Memory Painterly PBR"
     {
         Tags
         {
-            "Queue" = "Geometry"
-            "RenderType" = "Opaque"
             "RenderPipeline" = "UniversalPipeline"
+            "IgnoreProjector" = "True"
         }
         LOD 300
 
@@ -94,6 +103,9 @@ Shader "MemoryGarden/Memory Painterly PBR"
         {
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
+            Blend [_SrcBlend] [_DstBlend]
+            ZWrite [_ZWrite]
+            Cull [_Cull]
 
             HLSLPROGRAM
             #pragma target 3.0
@@ -103,6 +115,9 @@ Shader "MemoryGarden/Memory Painterly PBR"
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
+            #pragma shader_feature_local_fragment _ALPHAMODULATE_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -118,7 +133,6 @@ Shader "MemoryGarden/Memory Painterly PBR"
             SAMPLER(sampler_OcclusionMap);
             TEXTURE2D(_EmissionMap);
             SAMPLER(sampler_EmissionMap);
-
             TEXTURE2D(_BrushRampTex);
             SAMPLER(sampler_BrushRampTex);
             TEXTURE2D(_BrushGrainTex);
@@ -133,12 +147,17 @@ Shader "MemoryGarden/Memory Painterly PBR"
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 half4 _BaseColor;
+                half4 _PainterlyBaseColor;
                 half4 _ShadowColor;
                 half4 _LightTintColor;
                 half4 _AccentColor;
                 half4 _EmotionTintColor;
                 half4 _RimColor;
                 half4 _EmissionColor;
+                half _Cutoff;
+                half _ReceiveShadows;
+                half _SpecularHighlights;
+                half _EnvironmentReflections;
                 half _BumpScale;
                 half _Metallic;
                 half _Smoothness;
@@ -269,7 +288,15 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half painterlyScale = max(_PainterlyScale, 0.0001h);
 
                 half4 albedoSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, baseUV);
-                half3 albedo = albedoSample.rgb * _BaseColor.rgb;
+                half alpha = saturate(albedoSample.a * _BaseColor.a);
+                #if defined(_ALPHATEST_ON)
+                    clip(alpha - _Cutoff);
+                #endif
+
+                half3 pbrAlbedo = albedoSample.rgb * _BaseColor.rgb;
+                half painterlyBaseOverride = step(0.001h, _PainterlyBaseColor.a);
+                half3 painterlyBaseTint = lerp(_BaseColor.rgb, _PainterlyBaseColor.rgb, painterlyBaseOverride);
+                half3 painterlySourceAlbedo = albedoSample.rgb * painterlyBaseTint;
 
                 half4 normalSample = SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, baseUV);
                 half3 normalTS = UnpackNormalScale(normalSample, _BumpScale);
@@ -292,15 +319,19 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half3 lightDirWS = normalize(mainLight.direction);
                 half ndotlPBR = saturate(dot(normalWS, lightDirWS));
                 half shadowAttenuation = saturate(mainLight.shadowAttenuation * mainLight.distanceAttenuation);
-                half3 ambient = SampleSH(normalWS) * albedo * occlusion;
-                half3 diffuse = albedo * mainLight.color * ndotlPBR * shadowAttenuation;
+                shadowAttenuation = lerp(1.0h, shadowAttenuation, saturate(_ReceiveShadows));
+
+                half3 ambient = SampleSH(normalWS) * pbrAlbedo * occlusion;
+                ambient *= saturate(_EnvironmentReflections);
+                half3 diffuse = pbrAlbedo * mainLight.color * ndotlPBR * shadowAttenuation;
 
                 half3 halfDirWS = SafeNormalize(lightDirWS + viewDirWS);
                 half ndoth = saturate(dot(normalWS, halfDirWS));
                 half specularPower = exp2(2.0h + smoothness * 10.0h);
                 half specularTerm = pow(ndoth, specularPower) * ndotlPBR * shadowAttenuation;
-                half3 specularColor = lerp(half3(0.04h, 0.04h, 0.04h), albedo, metallic);
+                half3 specularColor = lerp(half3(0.04h, 0.04h, 0.04h), pbrAlbedo, metallic);
                 half3 specular = specularColor * mainLight.color * specularTerm * lerp(0.35h, 1.2h, smoothness);
+                specular *= saturate(_SpecularHighlights);
 
                 half3 pbrColor = ambient + diffuse + specular + emission;
 
@@ -375,8 +406,12 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half lightMask = saturate(lerp(toonMask, rampValue, _RampInfluence));
                 lightMask *= lerp(1.0h, shadowAttenuation, 0.78h);
 
+                half albedoLuma = Luminance(painterlySourceAlbedo);
+                half3 flattenedPainterlyBase = lerp(albedoLuma.xxx * painterlyBaseTint, painterlyBaseTint, 0.42h);
+                half painterlyTextureFlatten = saturate(flatten * 0.6h + _MemoryBlend * 0.35h);
+                half3 painterlyBase = lerp(painterlySourceAlbedo, flattenedPainterlyBase, painterlyTextureFlatten);
                 half watercolorMask = watercolor * _WatercolorStrength;
-                half3 paintedBase = albedo * (1.0h + watercolorMask * 0.12h);
+                half3 paintedBase = painterlyBase * (1.0h + watercolorMask * 0.12h);
                 half accentMix = saturate(watercolor01 * 0.25h + dry01 * 0.18h) * _WatercolorStrength;
                 paintedBase = lerp(paintedBase, paintedBase * _AccentColor.rgb, accentMix * saturate(0.18h + lightMask * 0.22h));
 
@@ -385,7 +420,7 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 lightColor *= lerp(1.0h.xxx, saturate(rampSample * 1.25h), _RampInfluence * 0.16h);
                 half3 painterlyColor = lerp(shadowColor, lightColor, lightMask);
 
-                painterlyColor += SampleSH(normalWS) * albedo * lerp(0.26h, 0.18h, flatten) * saturate(1.0h - lightMask * 0.38h);
+                painterlyColor += SampleSH(normalWS) * painterlyBase * lerp(0.26h, 0.18h, flatten) * saturate(1.0h - lightMask * 0.38h);
 
                 half strokeFieldA = saturate(watercolor01 * 0.42h + dry01 * 0.36h + grain01 * 0.22h);
                 half strokeFieldB = saturate(dry01 * 0.42h + edge01 * 0.38h + (1.0h - grain01) * 0.2h);
@@ -419,7 +454,15 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 finalColor = ApplySaturation(finalColor, _Saturation);
                 finalColor *= _Brightness;
                 finalColor = MixFog(finalColor, input.fogFactor);
-                return half4(saturate(finalColor), albedoSample.a * _BaseColor.a);
+
+                #if defined(_ALPHAMODULATE_ON)
+                    half3 multiplyColor = lerp(1.0h.xxx, saturate(finalColor), alpha);
+                    return half4(multiplyColor, alpha);
+                #elif defined(_ALPHAPREMULTIPLY_ON)
+                    return half4(saturate(finalColor) * alpha, alpha);
+                #else
+                    return half4(saturate(finalColor), alpha);
+                #endif
             }
             ENDHLSL
         }
@@ -431,6 +474,7 @@ Shader "MemoryGarden/Memory Painterly PBR"
             ZWrite On
             ZTest LEqual
             ColorMask 0
+            Cull [_Cull]
 
             HLSLPROGRAM
             #pragma target 3.0
@@ -438,10 +482,20 @@ Shader "MemoryGarden/Memory Painterly PBR"
             #pragma fragment ShadowPassFragment
             #pragma multi_compile_instancing
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                half4 _BaseColor;
+                half _Cutoff;
+            CBUFFER_END
 
             float3 _LightDirection;
             float3 _LightPosition;
@@ -450,14 +504,21 @@ Shader "MemoryGarden/Memory Painterly PBR"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
+
+            half SampleAlpha(float2 uv)
+            {
+                return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, TRANSFORM_TEX(uv, _BaseMap)).a * _BaseColor.a;
+            }
 
             float4 GetShadowPositionHClip(Attributes input)
             {
@@ -487,12 +548,16 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 output.positionCS = GetShadowPositionHClip(input);
+                output.uv = input.uv;
                 return output;
             }
 
             half4 ShadowPassFragment(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                #if defined(_ALPHATEST_ON)
+                    clip(SampleAlpha(input.uv) - _Cutoff);
+                #endif
                 return 0;
             }
             ENDHLSL
@@ -504,26 +569,44 @@ Shader "MemoryGarden/Memory Painterly PBR"
             Tags { "LightMode" = "DepthOnly" }
             ZWrite On
             ColorMask R
+            Cull [_Cull]
 
             HLSLPROGRAM
             #pragma target 3.0
             #pragma vertex DepthOnlyVertex
             #pragma fragment DepthOnlyFragment
             #pragma multi_compile_instancing
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                half4 _BaseColor;
+                half _Cutoff;
+            CBUFFER_END
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
+
+            half SampleAlpha(float2 uv)
+            {
+                return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, TRANSFORM_TEX(uv, _BaseMap)).a * _BaseColor.a;
+            }
 
             Varyings DepthOnlyVertex(Attributes input)
             {
@@ -531,17 +614,22 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.uv = input.uv;
                 return output;
             }
 
             half4 DepthOnlyFragment(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                #if defined(_ALPHATEST_ON)
+                    clip(SampleAlpha(input.uv) - _Cutoff);
+                #endif
                 return 0;
             }
             ENDHLSL
         }
     }
 
+    CustomEditor "MemoryPainterlyPBRShaderGUI"
     FallBack Off
 }

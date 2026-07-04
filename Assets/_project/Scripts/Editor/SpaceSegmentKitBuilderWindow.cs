@@ -15,6 +15,9 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
     private const string DefaultPrefabOutputFolder = "Assets/_project/Prefabs/SegmentKit";
     private const string DefaultDefinitionOutputFolder = "Assets/_project/ScriptableObjects/SegmentKit";
     private const string DefaultKitAssetName = "SK_DefaultSegmentKit.asset";
+    private const string DefaultPainterlyTemplatePath = "Assets/_project/Art/Memory Materials/MMS_BW_001.mat";
+    private const string PainterlyPbrShaderName = "MemoryGarden/Memory Painterly PBR";
+    private const string PainterlyPbrShaderPath = "Assets/_project/Art/Memory Materials/MemoryPainterlyPBR.shader";
     private const string PrefabPrefix = "PF_";
     private const string DefinitionPrefix = "SD_";
     private const string ModelContainerObjectName = "Model";
@@ -27,6 +30,8 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
     [SerializeField] private string sourceFolder = DefaultSourceFolder;
     [SerializeField] private string prefabOutputFolder = DefaultPrefabOutputFolder;
     [SerializeField] private string definitionOutputFolder = DefaultDefinitionOutputFolder;
+    [SerializeField] private bool autoMigrateExtractedMaterialsToPainterly = true;
+    [SerializeField] private Material painterlyTemplateMaterial;
 
     [MenuItem(MenuItemPath)]
     public static void OpenWindow()
@@ -53,6 +58,11 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         {
             definitionOutputFolder = DefaultDefinitionOutputFolder;
         }
+
+        if (painterlyTemplateMaterial == null)
+        {
+            painterlyTemplateMaterial = ResolveDefaultPainterlyTemplateMaterial();
+        }
     }
 
     private void OnGUI()
@@ -64,6 +74,25 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         sourceFolder = EditorGUILayout.TextField("Source Folder", sourceFolder);
         prefabOutputFolder = EditorGUILayout.TextField("Prefab Output Folder", prefabOutputFolder);
         definitionOutputFolder = EditorGUILayout.TextField("Definition Output Folder", definitionOutputFolder);
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Painterly Migration", EditorStyles.boldLabel);
+        autoMigrateExtractedMaterialsToPainterly = EditorGUILayout.ToggleLeft(
+            "Auto migrate extracted external materials to Painterly PBR during prefab build",
+            autoMigrateExtractedMaterialsToPainterly);
+
+        using (new EditorGUI.DisabledScope(!autoMigrateExtractedMaterialsToPainterly))
+        {
+            painterlyTemplateMaterial = (Material)EditorGUILayout.ObjectField(
+                "Painterly Template",
+                painterlyTemplateMaterial,
+                typeof(Material),
+                false);
+        }
+
+        EditorGUILayout.HelpBox(
+            "If a SegmentKit FBX already references extracted external .mat assets, the builder can convert those materials to Memory Painterly PBR while preserving the local PBR textures. Embedded FBX materials are not force-converted; the builder will warn so you can Extract Materials first.",
+            MessageType.None);
 
         EditorGUILayout.Space();
 
@@ -123,6 +152,9 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
 
             List<SegmentSourceInfo> targets = GetUniqueSources(scan);
             List<string> generatedPrefabs = new List<string>();
+            int migratedMaterialCount = 0;
+            int alreadyPainterlyMaterialCount = 0;
+            int embeddedMaterialCount = 0;
 
             for (int i = 0; i < targets.Count; i++)
             {
@@ -132,8 +164,11 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
                     $"Building prefab {source.segmentId} ({i + 1}/{targets.Count})",
                     (float)(i + 1) / targets.Count);
 
-                string prefabAssetPath = BuildPrefabForSource(source);
-                generatedPrefabs.Add(prefabAssetPath);
+                BuildPrefabResult buildResult = BuildPrefabForSource(source, scan.Warnings);
+                generatedPrefabs.Add(buildResult.prefabAssetPath);
+                migratedMaterialCount += buildResult.materialMigrationResult.migratedMaterialCount;
+                alreadyPainterlyMaterialCount += buildResult.materialMigrationResult.alreadyPainterlyMaterialCount;
+                embeddedMaterialCount += buildResult.materialMigrationResult.embeddedMaterialCount;
             }
 
             AssetDatabase.SaveAssets();
@@ -146,7 +181,21 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
                 Debug.Log($"[SpaceSegmentKitBuilder] Generated prefab: {generatedPrefabs[i]}");
             }
 
-            ShowSummary($"Built or updated {generatedPrefabs.Count} SegmentKit prefab(s).");
+            string summary =
+                $"Built or updated {generatedPrefabs.Count} SegmentKit prefab(s). " +
+                $"Migrated {migratedMaterialCount} extracted material(s) to Painterly PBR.";
+
+            if (alreadyPainterlyMaterialCount > 0)
+            {
+                summary += $" {alreadyPainterlyMaterialCount} material(s) were already using Painterly PBR.";
+            }
+
+            if (embeddedMaterialCount > 0)
+            {
+                summary += $" {embeddedMaterialCount} embedded FBX material reference(s) still need Extract Materials before migration.";
+            }
+
+            ShowSummary(summary);
         }
         catch (Exception exception)
         {
@@ -536,7 +585,7 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         }
     }
 
-    private string BuildPrefabForSource(SegmentSourceInfo source)
+    private BuildPrefabResult BuildPrefabForSource(SegmentSourceInfo source, List<string> warnings)
     {
         GameObject modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(source.assetPath);
         if (modelAsset == null)
@@ -547,6 +596,7 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         EnsureParentFolderForAssetPath(source.prefabAssetPath);
 
         GameObject root = new GameObject($"{PrefabPrefix}{source.segmentId}");
+        MaterialMigrationResult materialMigrationResult = default;
         try
         {
             GameObject modelContainer = new GameObject(ModelContainerObjectName);
@@ -562,6 +612,11 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
             modelInstance.transform.SetParent(modelContainer.transform, false);
             modelInstance.transform.localPosition = Vector3.zero;
             modelInstance.transform.localRotation = Quaternion.identity;
+
+            if (autoMigrateExtractedMaterialsToPainterly)
+            {
+                materialMigrationResult = MigrateReferencedMaterialsToPainterly(modelInstance, source, warnings);
+            }
 
             if (source.hasCollider)
             {
@@ -579,7 +634,375 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
             UnityEngine.Object.DestroyImmediate(root);
         }
 
-        return source.prefabAssetPath;
+        return new BuildPrefabResult
+        {
+            prefabAssetPath = source.prefabAssetPath,
+            materialMigrationResult = materialMigrationResult
+        };
+    }
+
+    private MaterialMigrationResult MigrateReferencedMaterialsToPainterly(
+        GameObject modelInstance,
+        SegmentSourceInfo source,
+        List<string> warnings)
+    {
+        MaterialMigrationResult result = default;
+        if (modelInstance == null)
+        {
+            return result;
+        }
+
+        Shader painterlyShader = ResolvePainterlyPbrShader();
+        if (painterlyShader == null)
+        {
+            warnings.Add($"Could not resolve Painterly PBR shader '{PainterlyPbrShaderName}'.");
+            return result;
+        }
+
+        Material templateMaterial = painterlyTemplateMaterial != null
+            ? painterlyTemplateMaterial
+            : ResolveDefaultPainterlyTemplateMaterial();
+
+        HashSet<Material> uniqueMaterials = new HashSet<Material>();
+        Renderer[] renderers = modelInstance.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            Material[] sharedMaterials = renderer.sharedMaterials;
+            for (int j = 0; j < sharedMaterials.Length; j++)
+            {
+                Material material = sharedMaterials[j];
+                if (material == null)
+                {
+                    continue;
+                }
+
+                string materialAssetPath = NormalizeAssetPath(AssetDatabase.GetAssetPath(material));
+                if (string.IsNullOrWhiteSpace(materialAssetPath))
+                {
+                    warnings.Add($"Segment '{source.segmentId}' references a material with no asset path: {material.name}");
+                    continue;
+                }
+
+                if (string.Equals(materialAssetPath, NormalizeAssetPath(source.assetPath), StringComparison.OrdinalIgnoreCase))
+                {
+                    result.embeddedMaterialCount++;
+                    warnings.Add(
+                        $"Segment '{source.segmentId}' still uses embedded FBX material '{material.name}'. " +
+                        "Extract Materials in Unity first, then rebuild to migrate it to Painterly PBR.");
+                    continue;
+                }
+
+                if (!materialAssetPath.EndsWith(".mat", StringComparison.OrdinalIgnoreCase))
+                {
+                    warnings.Add($"Segment '{source.segmentId}' references a non-.mat material asset: {materialAssetPath}");
+                    continue;
+                }
+
+                uniqueMaterials.Add(material);
+            }
+        }
+
+        foreach (Material material in uniqueMaterials)
+        {
+            switch (MigrateMaterialToPainterlyPbr(material, painterlyShader, templateMaterial, warnings))
+            {
+                case MaterialMigrationStatus.Migrated:
+                    result.migratedMaterialCount++;
+                    break;
+                case MaterialMigrationStatus.AlreadyPainterly:
+                    result.alreadyPainterlyMaterialCount++;
+                    break;
+            }
+        }
+
+        return result;
+    }
+
+    private static Shader ResolvePainterlyPbrShader()
+    {
+        Shader shader = Shader.Find(PainterlyPbrShaderName);
+        if (shader != null)
+        {
+            return shader;
+        }
+
+        return AssetDatabase.LoadAssetAtPath<Shader>(PainterlyPbrShaderPath);
+    }
+
+    private static Material ResolveDefaultPainterlyTemplateMaterial()
+    {
+        EmotionMaterialLog log = EmotionMaterialLogEditorUtility.FindEmotionMaterialLogAsset();
+        if (log != null && log.FallbackMaterial != null)
+        {
+            return log.FallbackMaterial;
+        }
+
+        return AssetDatabase.LoadAssetAtPath<Material>(DefaultPainterlyTemplatePath);
+    }
+
+    private static MaterialMigrationStatus MigrateMaterialToPainterlyPbr(
+        Material material,
+        Shader painterlyShader,
+        Material templateMaterial,
+        List<string> warnings)
+    {
+        if (material == null || painterlyShader == null)
+        {
+            return MaterialMigrationStatus.Skipped;
+        }
+
+        if (material.shader == painterlyShader
+            || MemoryPainterlyPBRMaterialUtility.IsPainterlyPbrShader(material.shader))
+        {
+            return MaterialMigrationStatus.AlreadyPainterly;
+        }
+
+        MaterialSurfaceSnapshot snapshot = CaptureMaterialSurfaceSnapshot(material);
+
+        material.shader = painterlyShader;
+
+        if (templateMaterial != null)
+        {
+            material.CopyPropertiesFromMaterial(templateMaterial);
+            material.shader = painterlyShader;
+        }
+
+        ApplyDefaultPainterlyTexturesIfNeeded(material);
+        ApplyMaterialSurfaceSnapshot(material, snapshot);
+        MemoryPainterlyPBRMaterialUtility.SetupMaterial(material);
+        EnsureTextureMarkedAsNormalMap(snapshot.normalMap, warnings);
+        EditorUtility.SetDirty(material);
+        return MaterialMigrationStatus.Migrated;
+    }
+
+    private static MaterialSurfaceSnapshot CaptureMaterialSurfaceSnapshot(Material material)
+    {
+        Texture baseMap = GetTexture(material, "_BaseMap");
+        if (baseMap == null)
+        {
+            baseMap = GetTexture(material, "_MainTex");
+        }
+
+        return new MaterialSurfaceSnapshot
+        {
+            baseMap = baseMap,
+            baseMapScale = GetTextureScale(material, baseMap != null && material.HasProperty("_BaseMap") ? "_BaseMap" : "_MainTex", Vector2.one),
+            baseMapOffset = GetTextureOffset(material, baseMap != null && material.HasProperty("_BaseMap") ? "_BaseMap" : "_MainTex", Vector2.zero),
+            baseColor = GetColor(material, "_BaseColor", GetColor(material, "_Color", Color.white)),
+            normalMap = GetTexture(material, "_BumpMap"),
+            bumpScale = GetFloat(material, "_BumpScale", 1f),
+            metallicGlossMap = GetTexture(material, "_MetallicGlossMap"),
+            metallic = GetFloat(material, "_Metallic", 0f),
+            smoothness = GetFloat(material, "_Smoothness", GetFloat(material, "_Glossiness", 0.5f)),
+            occlusionMap = GetTexture(material, "_OcclusionMap"),
+            occlusionStrength = GetFloat(material, "_OcclusionStrength", 1f),
+            emissionMap = GetTexture(material, "_EmissionMap"),
+            emissionColor = GetColor(material, "_EmissionColor", Color.black),
+            parallaxMap = GetTexture(material, "_ParallaxMap"),
+            parallax = GetFloat(material, "_Parallax", 0.005f),
+            cull = Mathf.RoundToInt(GetFloat(material, "_Cull", 2f)),
+            cutoff = GetFloat(material, "_Cutoff", 0.5f),
+            alphaClip = GetFloat(material, "_AlphaClip", 0f),
+            receiveShadows = GetFloat(material, "_ReceiveShadows", 1f),
+            surface = MemoryPainterlyPBRMaterialUtility.InferSurfaceType(material),
+            blend = MemoryPainterlyPBRMaterialUtility.InferBlendMode(material),
+            queueOffset = MemoryPainterlyPBRMaterialUtility.InferQueueOffset(
+                material,
+                MemoryPainterlyPBRMaterialUtility.InferSurfaceType(material),
+                GetFloat(material, "_AlphaClip", 0f)),
+            enableInstancing = material.enableInstancing,
+            doubleSidedGi = material.doubleSidedGI,
+            globalIlluminationFlags = material.globalIlluminationFlags
+        };
+    }
+
+    private static void ApplyMaterialSurfaceSnapshot(Material material, MaterialSurfaceSnapshot snapshot)
+    {
+        if (material == null)
+        {
+            return;
+        }
+
+        SetTexture(material, "_BaseMap", snapshot.baseMap);
+        SetTextureScale(material, "_BaseMap", snapshot.baseMapScale);
+        SetTextureOffset(material, "_BaseMap", snapshot.baseMapOffset);
+        SetColor(material, "_BaseColor", snapshot.baseColor);
+        SetColor(material, "_PainterlyBaseColor", new Color(1f, 1f, 1f, 0f));
+
+        SetTexture(material, "_BumpMap", snapshot.normalMap);
+        SetFloat(material, "_BumpScale", snapshot.bumpScale);
+        SetTexture(material, "_MetallicGlossMap", snapshot.metallicGlossMap);
+        SetFloat(material, "_Metallic", snapshot.metallic);
+        SetFloat(material, "_Smoothness", snapshot.smoothness);
+        SetTexture(material, "_OcclusionMap", snapshot.occlusionMap);
+        SetFloat(material, "_OcclusionStrength", snapshot.occlusionStrength);
+        SetTexture(material, "_EmissionMap", snapshot.emissionMap);
+        SetColor(material, "_EmissionColor", snapshot.emissionColor);
+        SetTexture(material, "_ParallaxMap", snapshot.parallaxMap);
+        SetFloat(material, "_Parallax", snapshot.parallax);
+        SetFloat(material, "_Cull", snapshot.cull);
+        SetFloat(material, "_Cutoff", snapshot.cutoff);
+        SetFloat(material, "_AlphaClip", snapshot.alphaClip);
+        SetFloat(material, "_ReceiveShadows", snapshot.receiveShadows);
+        SetFloat(material, "_Surface", snapshot.surface);
+        SetFloat(material, "_Blend", snapshot.blend);
+        SetFloat(material, "_QueueOffset", snapshot.queueOffset);
+        SetFloat(material, "_MemoryBlend", 0f);
+
+        material.enableInstancing = snapshot.enableInstancing;
+        material.doubleSidedGI = snapshot.doubleSidedGi;
+        material.globalIlluminationFlags = snapshot.globalIlluminationFlags;
+
+        SyncMaterialKeyword(material, "_NORMALMAP", snapshot.normalMap != null);
+        SyncMaterialKeyword(material, "_METALLICSPECGLOSSMAP", snapshot.metallicGlossMap != null);
+
+        bool hasEmission = snapshot.emissionMap != null || snapshot.emissionColor.maxColorComponent > 0.0001f;
+        SyncMaterialKeyword(material, "_EMISSION", hasEmission);
+    }
+
+    private static void ApplyDefaultPainterlyTexturesIfNeeded(Material material)
+    {
+        if (material == null)
+        {
+            return;
+        }
+
+        TryAssignDefaultTexture(material, "_BrushRampTex", "Assets/_project/Art/Memory Materials/Textures/Brush_Ramp_01.png");
+        TryAssignDefaultTexture(material, "_BrushGrainTex", "Assets/_project/Art/Memory Materials/Textures/Brush_Grain_01.png");
+        TryAssignDefaultTexture(material, "_DryBrushTex", "Assets/_project/Art/Memory Materials/Textures/DryBrush_Noise_01.png");
+        TryAssignDefaultTexture(material, "_WatercolorTex", "Assets/_project/Art/Memory Materials/Textures/Watercolor_Cloud_01.png");
+        TryAssignDefaultTexture(material, "_EdgeBreakTex", "Assets/_project/Art/Memory Materials/Textures/EdgeBreak_Noise_01.png");
+    }
+
+    private static void TryAssignDefaultTexture(Material material, string propertyName, string assetPath)
+    {
+        if (material == null || !material.HasProperty(propertyName) || material.GetTexture(propertyName) != null)
+        {
+            return;
+        }
+
+        Texture texture = AssetDatabase.LoadAssetAtPath<Texture>(assetPath);
+        if (texture != null)
+        {
+            material.SetTexture(propertyName, texture);
+        }
+    }
+
+    private static void EnsureTextureMarkedAsNormalMap(Texture texture, List<string> warnings)
+    {
+        if (texture == null)
+        {
+            return;
+        }
+
+        string texturePath = AssetDatabase.GetAssetPath(texture);
+        if (string.IsNullOrWhiteSpace(texturePath))
+        {
+            return;
+        }
+
+        TextureImporter importer = AssetImporter.GetAtPath(texturePath) as TextureImporter;
+        if (importer == null || importer.textureType == TextureImporterType.NormalMap)
+        {
+            return;
+        }
+
+        importer.textureType = TextureImporterType.NormalMap;
+        importer.sRGBTexture = false;
+        importer.SaveAndReimport();
+
+        if (warnings != null)
+        {
+            warnings.Add($"Marked normal map texture importer correctly for: {texturePath}");
+        }
+    }
+
+    private static Texture GetTexture(Material material, string propertyName)
+    {
+        return material != null && material.HasProperty(propertyName) ? material.GetTexture(propertyName) : null;
+    }
+
+    private static Color GetColor(Material material, string propertyName, Color fallback)
+    {
+        return material != null && material.HasProperty(propertyName) ? material.GetColor(propertyName) : fallback;
+    }
+
+    private static float GetFloat(Material material, string propertyName, float fallback)
+    {
+        return material != null && material.HasProperty(propertyName) ? material.GetFloat(propertyName) : fallback;
+    }
+
+    private static Vector2 GetTextureScale(Material material, string propertyName, Vector2 fallback)
+    {
+        return material != null && material.HasProperty(propertyName) ? material.GetTextureScale(propertyName) : fallback;
+    }
+
+    private static Vector2 GetTextureOffset(Material material, string propertyName, Vector2 fallback)
+    {
+        return material != null && material.HasProperty(propertyName) ? material.GetTextureOffset(propertyName) : fallback;
+    }
+
+    private static void SetTexture(Material material, string propertyName, Texture texture)
+    {
+        if (material != null && material.HasProperty(propertyName))
+        {
+            material.SetTexture(propertyName, texture);
+        }
+    }
+
+    private static void SetColor(Material material, string propertyName, Color color)
+    {
+        if (material != null && material.HasProperty(propertyName))
+        {
+            material.SetColor(propertyName, color);
+        }
+    }
+
+    private static void SetFloat(Material material, string propertyName, float value)
+    {
+        if (material != null && material.HasProperty(propertyName))
+        {
+            material.SetFloat(propertyName, value);
+        }
+    }
+
+    private static void SetTextureScale(Material material, string propertyName, Vector2 scale)
+    {
+        if (material != null && material.HasProperty(propertyName))
+        {
+            material.SetTextureScale(propertyName, scale);
+        }
+    }
+
+    private static void SetTextureOffset(Material material, string propertyName, Vector2 offset)
+    {
+        if (material != null && material.HasProperty(propertyName))
+        {
+            material.SetTextureOffset(propertyName, offset);
+        }
+    }
+
+    private static void SyncMaterialKeyword(Material material, string keyword, bool enabled)
+    {
+        if (material == null || string.IsNullOrWhiteSpace(keyword))
+        {
+            return;
+        }
+
+        if (enabled)
+        {
+            material.EnableKeyword(keyword);
+        }
+        else
+        {
+            material.DisableKeyword(keyword);
+        }
     }
 
     private static void ConfigureBoxCollider(GameObject root)
@@ -949,6 +1372,55 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
     {
         public readonly List<SegmentSourceInfo> Sources = new List<SegmentSourceInfo>();
         public readonly List<string> Warnings = new List<string>();
+    }
+
+    private enum MaterialMigrationStatus
+    {
+        Skipped,
+        AlreadyPainterly,
+        Migrated
+    }
+
+    private struct MaterialSurfaceSnapshot
+    {
+        public Texture baseMap;
+        public Vector2 baseMapScale;
+        public Vector2 baseMapOffset;
+        public Color baseColor;
+        public Texture normalMap;
+        public float bumpScale;
+        public Texture metallicGlossMap;
+        public float metallic;
+        public float smoothness;
+        public Texture occlusionMap;
+        public float occlusionStrength;
+        public Texture emissionMap;
+        public Color emissionColor;
+        public Texture parallaxMap;
+        public float parallax;
+        public int cull;
+        public float cutoff;
+        public float alphaClip;
+        public float receiveShadows;
+        public float surface;
+        public float blend;
+        public float queueOffset;
+        public bool enableInstancing;
+        public bool doubleSidedGi;
+        public MaterialGlobalIlluminationFlags globalIlluminationFlags;
+    }
+
+    private struct MaterialMigrationResult
+    {
+        public int migratedMaterialCount;
+        public int alreadyPainterlyMaterialCount;
+        public int embeddedMaterialCount;
+    }
+
+    private struct BuildPrefabResult
+    {
+        public string prefabAssetPath;
+        public MaterialMigrationResult materialMigrationResult;
     }
 
     private sealed class SegmentSourceInfo

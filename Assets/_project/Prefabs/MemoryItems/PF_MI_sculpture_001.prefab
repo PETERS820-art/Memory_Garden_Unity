@@ -283,6 +283,8 @@ MonoBehaviour:
   allowedSlotTypes: 
   preferredHeightOffset: 0
   alignToSlotRotation: 1
+  currentSlot: {fileID: 0}
+  lockRigidbodyDuringSnap: 1
 --- !u!114 &1590076345825043822
 MonoBehaviour:
   m_ObjectHideFlags: 0
