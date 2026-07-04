@@ -133,6 +133,14 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             }
         }
 
+        using (new EditorGUI.DisabledScope(furnitureTarget == null))
+        {
+            if (GUILayout.Button("Capture Scene Adjustments + Overwrite System Prefab"))
+            {
+                CaptureSceneAdjustmentsAndOverwriteFurniturePrefab();
+            }
+        }
+
         using (new EditorGUI.DisabledScope(Selection.gameObjects == null || Selection.gameObjects.Length == 0))
         {
             if (GUILayout.Button("Configure Placement On Selected Memory Items"))
@@ -424,7 +432,13 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             modelInstance.transform.localRotation = Quaternion.identity;
             modelInstance.transform.localScale = Vector3.one;
 
+            ApplyPrefabRootOverride(root.transform, settings.PrefabProfile != null ? settings.PrefabProfile.prefabRootTransform : null);
+            ApplyTransformOverride(modelContainer, settings.PrefabProfile != null ? settings.PrefabProfile.modelContainerTransform : null);
+            ApplyTransformOverride(modelInstance.transform, settings.PrefabProfile != null ? settings.PrefabProfile.modelAssetTransform : null);
+
             BuildFurniture(root, settings, useUndo: false);
+            ApplyPlacementBoundsOverride(root.transform, settings.PrefabProfile);
+            ApplySlotOverrides(root.transform, settings.PrefabProfile);
 
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, source.PrefabAssetPath);
             if (savedPrefab == null)
@@ -1005,7 +1019,8 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             CreatePlacementBounds = createOrUpdatePlacementBounds,
             AutoFitBoundsFromRenderers = autoFitBoundsFromRenderers,
             CreateBlockingCollider = createBlockingColliderOption,
-            GenerateSlotsFromPlacementBounds = generateSlotsFromPlacementBounds
+            GenerateSlotsFromPlacementBounds = generateSlotsFromPlacementBounds,
+            PrefabProfile = null
         };
     }
 
@@ -1043,7 +1058,8 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             CreatePlacementBounds = profile.createPlacementBounds,
             AutoFitBoundsFromRenderers = true,
             CreateBlockingCollider = profile.createBlockingCollider,
-            GenerateSlotsFromPlacementBounds = profile.generateSlotsFromPlacementBounds
+            GenerateSlotsFromPlacementBounds = profile.generateSlotsFromPlacementBounds,
+            PrefabProfile = profile
         };
     }
 
@@ -1401,6 +1417,40 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         PrefabUtility.SaveAsPrefabAssetAndConnect(target, prefabAssetPath, InteractionMode.UserAction);
     }
 
+    private void CaptureSceneAdjustmentsAndOverwriteFurniturePrefab()
+    {
+        GameObject authoringTarget = ResolveFurnitureAuthoringTarget(furnitureTarget);
+        if (authoringTarget == null)
+        {
+            ShowSummary("Display Furniture Override", "Select a Display Furniture prefab instance in the scene first.");
+            return;
+        }
+
+        if (!TryResolveSourceEntryFromFurnitureTarget(authoringTarget, out DisplayFurnitureSourceEntry source))
+        {
+            ShowSummary(
+                "Display Furniture Override",
+                $"Could not resolve a Display Furniture source/profile for {authoringTarget.name}.");
+            return;
+        }
+
+        if (!ConfirmSceneOverwrite("Display Furniture Prefab", source.PrefabAssetPath))
+        {
+            return;
+        }
+
+        DisplayFurnitureBuildProfile profile = EnsureBuildProfile(source, out _);
+        CaptureFurnitureOverrides(authoringTarget, profile);
+        SaveSceneTargetToPrefabAsset(authoringTarget, source.PrefabAssetPath);
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        ShowSummary(
+            "Display Furniture Override",
+            $"Captured scene adjustments and overwrote prefab:\n{source.PrefabAssetPath}");
+    }
+
     private static int EnsureRequiredFolders()
     {
         int createdFolders = 0;
@@ -1688,6 +1738,375 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         }
     }
 
+    private static GameObject ResolveFurnitureAuthoringTarget(GameObject target)
+    {
+        if (target == null)
+        {
+            return null;
+        }
+
+        MemoryDisplayFurniture furniture = target.GetComponentInParent<MemoryDisplayFurniture>();
+        if (furniture != null)
+        {
+            return furniture.gameObject;
+        }
+
+        GameObject prefabRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(target);
+        return prefabRoot != null ? prefabRoot : target;
+    }
+
+    private static bool TryResolveSourceEntryFromFurnitureTarget(
+        GameObject target,
+        out DisplayFurnitureSourceEntry resolvedSource)
+    {
+        resolvedSource = null;
+        if (target == null)
+        {
+            return false;
+        }
+
+        GameObject prefabAsset = EditorUtility.IsPersistent(target)
+            ? target
+            : PrefabUtility.GetCorrespondingObjectFromSource(target);
+        string prefabAssetPath = NormalizeAssetPath(AssetDatabase.GetAssetPath(prefabAsset));
+
+        List<DisplayFurnitureSourceEntry> sources = DiscoverDisplayFurnitureSources();
+        for (int i = 0; i < sources.Count; i++)
+        {
+            DisplayFurnitureSourceEntry source = sources[i];
+            if (!string.IsNullOrWhiteSpace(prefabAssetPath)
+                && string.Equals(source.PrefabAssetPath, prefabAssetPath, StringComparison.OrdinalIgnoreCase))
+            {
+                resolvedSource = source;
+                return true;
+            }
+
+            if (string.Equals(source.PrefabRootName, target.name, StringComparison.OrdinalIgnoreCase))
+            {
+                resolvedSource = source;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void CaptureFurnitureOverrides(GameObject target, DisplayFurnitureBuildProfile profile)
+    {
+        if (target == null || profile == null)
+        {
+            return;
+        }
+
+        CaptureRootRotationScaleOverride(target.transform, profile.prefabRootTransform);
+
+        Transform modelContainer = target.transform.Find(ModelContainerObjectName);
+        CaptureTransformOverride(modelContainer, profile.modelContainerTransform, includePosition: true);
+
+        Transform modelAssetTransform = GetPrimaryModelAssetTransform(target.transform);
+        CaptureTransformOverride(modelAssetTransform, profile.modelAssetTransform, includePosition: true);
+
+        BoxCollider placementBoundsCollider = FindPlacementBoundsCollider(target.transform);
+        CapturePlacementBoundsOverride(placementBoundsCollider, profile.placementBoundsOverride);
+        CaptureSlotOverrides(target.transform, profile.slotOverrides);
+        SetDirty(profile);
+    }
+
+    private static void CaptureRootRotationScaleOverride(Transform source, PrefabTransformOverrideData target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        if (source == null)
+        {
+            target.enabled = false;
+            target.localPosition = Vector3.zero;
+            target.localEulerAngles = Vector3.zero;
+            target.localScale = Vector3.one;
+            return;
+        }
+
+        target.enabled = true;
+        target.localPosition = Vector3.zero;
+        target.localEulerAngles = source.localEulerAngles;
+        target.localScale = EnsureNonZeroScale(source.localScale);
+    }
+
+    private static void CaptureTransformOverride(Transform source, PrefabTransformOverrideData target, bool includePosition)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        if (source == null)
+        {
+            target.enabled = false;
+            target.localPosition = Vector3.zero;
+            target.localEulerAngles = Vector3.zero;
+            target.localScale = Vector3.one;
+            return;
+        }
+
+        target.enabled = true;
+        target.localPosition = includePosition ? source.localPosition : Vector3.zero;
+        target.localEulerAngles = source.localEulerAngles;
+        target.localScale = EnsureNonZeroScale(source.localScale);
+    }
+
+    private static void CapturePlacementBoundsOverride(BoxCollider source, BoxColliderOverrideData target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        if (source == null)
+        {
+            target.enabled = false;
+            target.localPosition = Vector3.zero;
+            target.localEulerAngles = Vector3.zero;
+            target.localScale = Vector3.one;
+            target.center = Vector3.zero;
+            target.size = Vector3.one;
+            return;
+        }
+
+        target.enabled = true;
+        target.localPosition = source.transform.localPosition;
+        target.localEulerAngles = source.transform.localEulerAngles;
+        target.localScale = EnsureNonZeroScale(source.transform.localScale);
+        target.center = source.center;
+        target.size = EnsureMinSize(source.size);
+    }
+
+    private static void CaptureSlotOverrides(Transform furnitureRoot, List<NamedTransformOverrideData> slotOverrides)
+    {
+        if (slotOverrides == null)
+        {
+            return;
+        }
+
+        slotOverrides.Clear();
+        if (furnitureRoot == null)
+        {
+            return;
+        }
+
+        Transform slotsRoot = furnitureRoot.Find(SlotsRootObjectName);
+        if (slotsRoot == null)
+        {
+            return;
+        }
+
+        MemoryDisplaySlot[] slots = slotsRoot.GetComponentsInChildren<MemoryDisplaySlot>(true);
+        for (int i = 0; i < slots.Length; i++)
+        {
+            MemoryDisplaySlot slot = slots[i];
+            if (slot == null)
+            {
+                continue;
+            }
+
+            slotOverrides.Add(new NamedTransformOverrideData
+            {
+                id = string.IsNullOrWhiteSpace(slot.SlotId) ? slot.name : slot.SlotId,
+                localPosition = slot.transform.localPosition,
+                localEulerAngles = slot.transform.localEulerAngles,
+                localScale = EnsureNonZeroScale(slot.transform.localScale)
+            });
+        }
+    }
+
+    private static void ApplyPrefabRootOverride(Transform target, PrefabTransformOverrideData data)
+    {
+        if (target == null || data == null || !data.enabled)
+        {
+            return;
+        }
+
+        target.localPosition = Vector3.zero;
+        target.localRotation = Quaternion.Euler(data.localEulerAngles);
+        target.localScale = EnsureNonZeroScale(data.localScale);
+    }
+
+    private static void ApplyTransformOverride(Transform target, PrefabTransformOverrideData data)
+    {
+        if (target == null || data == null || !data.enabled)
+        {
+            return;
+        }
+
+        target.localPosition = data.localPosition;
+        target.localRotation = Quaternion.Euler(data.localEulerAngles);
+        target.localScale = EnsureNonZeroScale(data.localScale);
+    }
+
+    private static void ApplyPlacementBoundsOverride(Transform furnitureRoot, DisplayFurnitureBuildProfile profile)
+    {
+        if (furnitureRoot == null || profile?.placementBoundsOverride == null || !profile.placementBoundsOverride.enabled)
+        {
+            return;
+        }
+
+        Transform placementBoundsTransform = furnitureRoot.Find(PlacementBoundsObjectName);
+        BoxCollider placementBoundsCollider = placementBoundsTransform != null
+            ? placementBoundsTransform.GetComponent<BoxCollider>()
+            : null;
+        if (placementBoundsTransform == null || placementBoundsCollider == null)
+        {
+            return;
+        }
+
+        BoxColliderOverrideData data = profile.placementBoundsOverride;
+        placementBoundsTransform.localPosition = data.localPosition;
+        placementBoundsTransform.localRotation = Quaternion.Euler(data.localEulerAngles);
+        placementBoundsTransform.localScale = EnsureNonZeroScale(data.localScale);
+        placementBoundsCollider.center = data.center;
+        placementBoundsCollider.size = EnsureMinSize(data.size);
+
+        Transform blockingColliderTransform = furnitureRoot.Find(BlockingColliderObjectName);
+        BoxCollider blockingCollider = blockingColliderTransform != null
+            ? blockingColliderTransform.GetComponent<BoxCollider>()
+            : null;
+        if (blockingColliderTransform != null && blockingCollider != null)
+        {
+            blockingColliderTransform.localPosition = placementBoundsTransform.localPosition;
+            blockingColliderTransform.localRotation = placementBoundsTransform.localRotation;
+            blockingColliderTransform.localScale = placementBoundsTransform.localScale;
+            blockingCollider.center = placementBoundsCollider.center;
+            blockingCollider.size = placementBoundsCollider.size;
+        }
+    }
+
+    private static void ApplySlotOverrides(Transform furnitureRoot, DisplayFurnitureBuildProfile profile)
+    {
+        if (furnitureRoot == null || profile?.slotOverrides == null || profile.slotOverrides.Count == 0)
+        {
+            return;
+        }
+
+        Transform slotsRoot = furnitureRoot.Find(SlotsRootObjectName);
+        if (slotsRoot == null)
+        {
+            return;
+        }
+
+        Dictionary<string, NamedTransformOverrideData> overridesById =
+            new Dictionary<string, NamedTransformOverrideData>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < profile.slotOverrides.Count; i++)
+        {
+            NamedTransformOverrideData slotOverride = profile.slotOverrides[i];
+            if (slotOverride == null || string.IsNullOrWhiteSpace(slotOverride.id))
+            {
+                continue;
+            }
+
+            overridesById[slotOverride.id] = slotOverride;
+        }
+
+        MemoryDisplaySlot[] slots = slotsRoot.GetComponentsInChildren<MemoryDisplaySlot>(true);
+        for (int i = 0; i < slots.Length; i++)
+        {
+            MemoryDisplaySlot slot = slots[i];
+            if (slot == null)
+            {
+                continue;
+            }
+
+            string slotId = string.IsNullOrWhiteSpace(slot.SlotId) ? slot.name : slot.SlotId;
+            if (!overridesById.TryGetValue(slotId, out NamedTransformOverrideData slotOverride))
+            {
+                continue;
+            }
+
+            slot.transform.localPosition = slotOverride.localPosition;
+            slot.transform.localRotation = Quaternion.Euler(slotOverride.localEulerAngles);
+            slot.transform.localScale = EnsureNonZeroScale(slotOverride.localScale);
+        }
+    }
+
+    private static BoxCollider FindPlacementBoundsCollider(Transform furnitureRoot)
+    {
+        Transform placementBoundsTransform = furnitureRoot != null ? furnitureRoot.Find(PlacementBoundsObjectName) : null;
+        return placementBoundsTransform != null ? placementBoundsTransform.GetComponent<BoxCollider>() : null;
+    }
+
+    private static Transform GetPrimaryModelAssetTransform(Transform furnitureRoot)
+    {
+        Transform modelContainer = furnitureRoot != null ? furnitureRoot.Find(ModelContainerObjectName) : null;
+        if (modelContainer == null)
+        {
+            return null;
+        }
+
+        return modelContainer.childCount > 0 ? modelContainer.GetChild(0) : null;
+    }
+
+    private static void SaveSceneTargetToPrefabAsset(GameObject target, string prefabAssetPath)
+    {
+        if (target == null || string.IsNullOrWhiteSpace(prefabAssetPath))
+        {
+            return;
+        }
+
+        string prefabFolderPath = Path.GetDirectoryName(NormalizeAssetPath(prefabAssetPath));
+        if (!string.IsNullOrWhiteSpace(prefabFolderPath))
+        {
+            EnsureAssetFolder(prefabFolderPath);
+        }
+
+        GameObject clone = UnityEngine.Object.Instantiate(target);
+        clone.name = Path.GetFileNameWithoutExtension(prefabAssetPath);
+        clone.transform.SetParent(null, true);
+        clone.transform.position = Vector3.zero;
+
+        try
+        {
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(clone, prefabAssetPath);
+            if (savedPrefab == null)
+            {
+                throw new InvalidOperationException($"Failed to overwrite prefab at {prefabAssetPath}.");
+            }
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(clone);
+        }
+    }
+
+    private static bool ConfirmSceneOverwrite(string subjectLabel, string prefabAssetPath)
+    {
+        if (Application.isBatchMode)
+        {
+            return true;
+        }
+
+        return EditorUtility.DisplayDialog(
+            $"Overwrite {subjectLabel}",
+            $"This will capture the current scene adjustments and overwrite the system prefab:\n{prefabAssetPath}\n\nDo you want to continue?",
+            "Overwrite",
+            "Cancel");
+    }
+
+    private static Vector3 EnsureNonZeroScale(Vector3 value)
+    {
+        return new Vector3(
+            Mathf.Approximately(value.x, 0f) ? 1f : value.x,
+            Mathf.Approximately(value.y, 0f) ? 1f : value.y,
+            Mathf.Approximately(value.z, 0f) ? 1f : value.z);
+    }
+
+    private static Vector3 EnsureMinSize(Vector3 value)
+    {
+        return new Vector3(
+            Mathf.Max(0.01f, value.x),
+            Mathf.Max(0.01f, value.y),
+            Mathf.Max(0.01f, value.z));
+    }
+
     private static void ShowSummary(string title, string message)
     {
         Debug.Log($"[MemoryDisplayFurnitureBuilderWindow] {message}");
@@ -1724,6 +2143,7 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         public bool AutoFitBoundsFromRenderers;
         public bool CreateBlockingCollider;
         public bool GenerateSlotsFromPlacementBounds;
+        public DisplayFurnitureBuildProfile PrefabProfile;
     }
 
     private sealed class BuildResult

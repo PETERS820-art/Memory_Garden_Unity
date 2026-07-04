@@ -44,4 +44,17 @@ public class SpaceSegmentDefinition : ScriptableObject
     public bool hasCollider;
     public bool canBeWallSegment;
     public bool canBeOpeningOverlay;
+
+    [Header("Placement Authoring Override")]
+    public bool hasPlacementAuthoringOverride;
+    public Vector3 placementAuthoringEulerAngles = Vector3.zero;
+    public Vector3 placementAuthoringScale = Vector3.one;
+
+    private void OnValidate()
+    {
+        placementAuthoringScale = new Vector3(
+            Mathf.Approximately(placementAuthoringScale.x, 0f) ? 1f : placementAuthoringScale.x,
+            Mathf.Approximately(placementAuthoringScale.y, 0f) ? 1f : placementAuthoringScale.y,
+            Mathf.Approximately(placementAuthoringScale.z, 0f) ? 1f : placementAuthoringScale.z);
+    }
 }

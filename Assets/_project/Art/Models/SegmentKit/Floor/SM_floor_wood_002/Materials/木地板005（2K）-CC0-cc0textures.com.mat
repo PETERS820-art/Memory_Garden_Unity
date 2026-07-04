@@ -28,7 +28,7 @@ Material:
     m_TexEnvs:
     - _BaseMap:
         m_Texture: {fileID: 2800000, guid: ebd5e24cc0e01b34997f3f9a8b431e58, type: 3}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 0.5, y: 0.5}
         m_Offset: {x: 0, y: 0}
     - _BrushGrainTex:
         m_Texture: {fileID: 2800000, guid: 03423703334ee1c42943d5ebc01627a1, type: 3}

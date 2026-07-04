@@ -141,6 +141,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     [SerializeField] private bool scenePlacementEnabled = true;
     [SerializeField] private bool sceneAutoPickWallSide = true;
     [SerializeField] private bool sceneDeleteMode;
+    [SerializeField] private bool hideCeilingsWhilePainting;
 
     private PreviewMode previewMode;
     private Vector2 scrollPosition;
@@ -153,6 +154,9 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     private readonly List<string> warningMessages = new List<string>();
     private readonly List<string> errorMessages = new List<string>();
     private readonly List<SlotPrefabPaletteEntry> slotPrefabPaletteEntries = new List<SlotPrefabPaletteEntry>();
+    private readonly List<GameObject> temporarilyHiddenCeilingObjects = new List<GameObject>();
+    private readonly HashSet<int> preHiddenCeilingObjectIds = new HashSet<int>();
+    private MemorySpaceBlock temporarilyHiddenCeilingBlock;
 
     [MenuItem(MenuPath)]
     private static void OpenWindow()
@@ -171,6 +175,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
     private void OnDisable()
     {
+        RestoreTemporaryCeilingVisibility();
         SceneView.duringSceneGui -= OnSceneGUI;
     }
 
@@ -305,9 +310,21 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     {
         EditorGUILayout.LabelField("Scene Placement", EditorStyles.boldLabel);
 
+        EditorGUI.BeginChangeCheck();
         scenePlacementEnabled = EditorGUILayout.Toggle("Enable Scene Placement", scenePlacementEnabled);
         sceneAutoPickWallSide = EditorGUILayout.Toggle("Auto Pick Wall Side", sceneAutoPickWallSide);
         sceneDeleteMode = EditorGUILayout.Toggle("Scene Delete Mode", sceneDeleteMode);
+        hideCeilingsWhilePainting = EditorGUILayout.Toggle("Temporarily Hide Ceilings While Painting", hideCeilingsWhilePainting);
+        if (EditorGUI.EndChangeCheck())
+        {
+            if (!hideCeilingsWhilePainting || !scenePlacementEnabled || previewMode == PreviewMode.None)
+            {
+                RestoreTemporaryCeilingVisibility();
+            }
+
+            RepaintPreviewIfNeeded();
+            SceneView.RepaintAll();
+        }
 
         using (new EditorGUILayout.HorizontalScope())
         {
@@ -450,13 +467,17 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     {
         if (!TryResolveTargetBlock(targetObject, out MemorySpaceBlock targetBlock, out _))
         {
+            RestoreTemporaryCeilingVisibility();
             return;
         }
 
         if (targetBlock == null || EditorUtility.IsPersistent(targetBlock.gameObject))
         {
+            RestoreTemporaryCeilingVisibility();
             return;
         }
+
+        UpdateTemporaryCeilingVisibility(targetBlock);
 
         sceneView.wantsMouseMove = scenePlacementEnabled || sceneDeleteMode;
         Event current = Event.current;
@@ -2208,6 +2229,138 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         {
             SceneView.RepaintAll();
         }
+    }
+
+    private void UpdateTemporaryCeilingVisibility(MemorySpaceBlock targetBlock)
+    {
+        if (!ShouldTemporarilyHideCeilings(targetBlock))
+        {
+            RestoreTemporaryCeilingVisibility();
+            return;
+        }
+
+        if (temporarilyHiddenCeilingBlock == targetBlock && temporarilyHiddenCeilingObjects.Count > 0)
+        {
+            return;
+        }
+
+        RestoreTemporaryCeilingVisibility();
+
+        List<GameObject> ceilingTargets = CollectCeilingVisibilityTargets(targetBlock);
+        if (ceilingTargets.Count == 0)
+        {
+            return;
+        }
+
+        SceneVisibilityManager visibilityManager = SceneVisibilityManager.instance;
+        for (int i = 0; i < ceilingTargets.Count; i++)
+        {
+            GameObject ceilingTarget = ceilingTargets[i];
+            if (ceilingTarget == null)
+            {
+                continue;
+            }
+
+            int instanceId = ceilingTarget.GetInstanceID();
+            if (visibilityManager.IsHidden(ceilingTarget, true))
+            {
+                preHiddenCeilingObjectIds.Add(instanceId);
+            }
+
+            visibilityManager.Hide(ceilingTarget, true);
+            temporarilyHiddenCeilingObjects.Add(ceilingTarget);
+        }
+
+        temporarilyHiddenCeilingBlock = targetBlock;
+    }
+
+    private void RestoreTemporaryCeilingVisibility()
+    {
+        if (temporarilyHiddenCeilingObjects.Count == 0)
+        {
+            temporarilyHiddenCeilingBlock = null;
+            preHiddenCeilingObjectIds.Clear();
+            return;
+        }
+
+        SceneVisibilityManager visibilityManager = SceneVisibilityManager.instance;
+        for (int i = 0; i < temporarilyHiddenCeilingObjects.Count; i++)
+        {
+            GameObject ceilingTarget = temporarilyHiddenCeilingObjects[i];
+            if (ceilingTarget == null)
+            {
+                continue;
+            }
+
+            if (preHiddenCeilingObjectIds.Contains(ceilingTarget.GetInstanceID()))
+            {
+                continue;
+            }
+
+            visibilityManager.Show(ceilingTarget, true);
+        }
+
+        temporarilyHiddenCeilingObjects.Clear();
+        preHiddenCeilingObjectIds.Clear();
+        temporarilyHiddenCeilingBlock = null;
+    }
+
+    private bool ShouldTemporarilyHideCeilings(MemorySpaceBlock targetBlock)
+    {
+        return hideCeilingsWhilePainting
+            && scenePlacementEnabled
+            && previewMode != PreviewMode.None
+            && targetBlock != null
+            && !EditorUtility.IsPersistent(targetBlock.gameObject);
+    }
+
+    private static List<GameObject> CollectCeilingVisibilityTargets(MemorySpaceBlock block)
+    {
+        List<GameObject> results = new List<GameObject>();
+        if (block == null)
+        {
+            return results;
+        }
+
+        HashSet<int> seenInstanceIds = new HashSet<int>();
+        string[] preferredRootNames = { "CeilingSegments", "CeilingRoot", "Ceilings", "Ceiling" };
+        for (int i = 0; i < preferredRootNames.Length; i++)
+        {
+            Transform child = block.transform.Find(preferredRootNames[i]);
+            if (child == null)
+            {
+                continue;
+            }
+
+            int instanceId = child.gameObject.GetInstanceID();
+            if (seenInstanceIds.Add(instanceId))
+            {
+                results.Add(child.gameObject);
+            }
+        }
+
+        if (results.Count > 0)
+        {
+            return results;
+        }
+
+        SpaceSegmentPlacementMetadata[] placements = block.GetComponentsInChildren<SpaceSegmentPlacementMetadata>(true);
+        for (int i = 0; i < placements.Length; i++)
+        {
+            SpaceSegmentPlacementMetadata placement = placements[i];
+            if (placement == null || placement.record == null || placement.record.category != SegmentCategory.Ceiling)
+            {
+                continue;
+            }
+
+            int instanceId = placement.gameObject.GetInstanceID();
+            if (seenInstanceIds.Add(instanceId))
+            {
+                results.Add(placement.gameObject);
+            }
+        }
+
+        return results;
     }
 
     private void ReportException(string actionLabel, Exception exception)

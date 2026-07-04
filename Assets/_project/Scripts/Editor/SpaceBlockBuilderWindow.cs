@@ -12,6 +12,9 @@ public class SpaceBlockBuilderWindow : EditorWindow
     private const float WallSlotHeight = 2.5f;
     private const string SpaceBlockDefinitionFolder = "Assets/_project/ScriptableObjects/SpaceBlocks";
     private const string SpaceBlockPrefabFolder = "Assets/_project/Prefabs/Environment/SpaceBlocks";
+    private const float PaletteButtonWidth = 96f;
+    private const float PaletteButtonHeight = 104f;
+    private const string AllPaletteSubFiltersLabel = "All";
 
     private enum BuilderMode
     {
@@ -19,9 +22,17 @@ public class SpaceBlockBuilderWindow : EditorWindow
         GridPaintMode
     }
 
+    private enum ConnectionPortAssignment
+    {
+        PortA,
+        PortB
+    }
+
     private struct SegmentPaletteEntry
     {
         public string Label;
+        public string ButtonLabel;
+        public string SecondaryLabel;
         public SpaceSegmentDefinition Definition;
     }
 
@@ -80,9 +91,30 @@ public class SpaceBlockBuilderWindow : EditorWindow
     [SerializeField] private SpaceOpeningPort connectionPortB;
     [SerializeField] private bool connectionAutoAlignBlockB = true;
     [SerializeField] private bool connectionAllowOverlapAnyway;
+    [SerializeField] private bool blockSettingsFoldout = true;
+    [SerializeField] private bool segmentPaletteFoldout = true;
+    [SerializeField] private bool selectedSegmentAssetFoldout = true;
+    [SerializeField] private bool blockDefinitionFoldout = true;
+    [SerializeField] private bool blockConnectionFoldout;
+    [SerializeField] private bool scenePaintSettingsFoldout;
+    [SerializeField] private Vector2 segmentPaletteScrollPosition;
+    [SerializeField] private string segmentPaletteSearch = string.Empty;
+    [SerializeField] private string segmentPaletteSubFilter = string.Empty;
+    [SerializeField] private Vector2 connectionPortBrowserScrollPosition;
+    [SerializeField] private string connectionPortSearch = string.Empty;
+    [SerializeField] private bool connectionShowOccupiedPorts = true;
 
     private readonly List<SegmentPaletteEntry> segmentPaletteEntries = new List<SegmentPaletteEntry>();
+    private readonly Dictionary<int, Texture> segmentPaletteThumbnailCache = new Dictionary<int, Texture>();
+    private readonly List<string> segmentPaletteSubFilterOptions = new List<string>();
     private bool deferredRepaintQueued;
+    private bool deferredSceneRepaintQueued;
+    private bool segmentPaletteDirty = true;
+    private SpaceSegmentKit cachedPaletteKit;
+    private SegmentCategory cachedPaletteCategory;
+    private string cachedPaletteSearch = string.Empty;
+    private string cachedPaletteSubFilter = string.Empty;
+    private GUIStyle segmentPaletteButtonStyle;
 
     [MenuItem(MenuItemPath)]
     public static void OpenWindow()
@@ -95,6 +127,7 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
     private void OnEnable()
     {
+        segmentPaletteDirty = true;
         SceneView.duringSceneGui += OnSceneGUI;
     }
 
@@ -159,134 +192,16 @@ public class SpaceBlockBuilderWindow : EditorWindow
     private void DrawGridPaintMode()
     {
         EditorGUILayout.HelpBox(
-            "Grid Paint Mode places SegmentKit assets on a 1m authoring grid. Use the manual gridX/gridZ/side fields for this MVP, then save to a SpaceBlockDefinition and bake a reusable prefab.",
+            "Grid Paint Mode places SegmentKit assets directly in Scene view on the block authoring grid. Pick a segment from the palette, paint in Scene view, then save to a SpaceBlockDefinition and bake a reusable prefab.",
             MessageType.Info);
 
-        selectedSegmentKit = (SpaceSegmentKit)EditorGUILayout.ObjectField(
-            "Segment Kit",
-            selectedSegmentKit,
-            typeof(SpaceSegmentKit),
-            false);
-
-        gridBlockId = EditorGUILayout.TextField("Block Id", gridBlockId);
-        gridWidth = Mathf.Max(1, EditorGUILayout.IntField("Grid Width", gridWidth));
-        gridDepth = Mathf.Max(1, EditorGUILayout.IntField("Grid Depth", gridDepth));
-        gridSize = Mathf.Max(0.1f, EditorGUILayout.FloatField("Grid Size", gridSize));
-
+        DrawGridBlockSettingsSection();
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Segment Palette", EditorStyles.boldLabel);
-        SegmentCategory nextCategoryFilter = DrawPlacementCategoryFilter(placementCategoryFilter);
-        if (nextCategoryFilter != placementCategoryFilter)
-        {
-            placementCategoryFilter = nextCategoryFilter;
-            selectedGridSegmentDefinition = null;
-            selectedPaletteIndex = 0;
-            SceneView.RepaintAll();
-        }
-
-        RebuildSegmentPalette();
-
-        EditorGUI.BeginChangeCheck();
-        SpaceSegmentDefinition nextSelectedDefinition = (SpaceSegmentDefinition)EditorGUILayout.ObjectField(
-            "Selected Segment",
-            selectedGridSegmentDefinition,
-            typeof(SpaceSegmentDefinition),
-            false);
-        if (EditorGUI.EndChangeCheck())
-        {
-            selectedGridSegmentDefinition = nextSelectedDefinition;
-            if (selectedGridSegmentDefinition != null)
-            {
-                placementCategoryFilter = GetSupportedPlacementCategory(selectedGridSegmentDefinition.category);
-                RebuildSegmentPalette();
-            }
-
-            SceneView.RepaintAll();
-        }
-
-        if (segmentPaletteEntries.Count > 0)
-        {
-            selectedPaletteIndex = Mathf.Clamp(selectedPaletteIndex, 0, segmentPaletteEntries.Count - 1);
-            string currentPaletteLabel = segmentPaletteEntries[selectedPaletteIndex].Label;
-            if (GUILayout.Button($"Palette: {currentPaletteLabel}", EditorStyles.popup))
-            {
-                ShowSegmentPaletteMenu();
-            }
-
-            if (selectedGridSegmentDefinition == null && selectedPaletteIndex >= 0 && selectedPaletteIndex < segmentPaletteEntries.Count)
-            {
-                selectedGridSegmentDefinition = segmentPaletteEntries[selectedPaletteIndex].Definition;
-            }
-        }
-        else
-        {
-            EditorGUILayout.HelpBox("No segments match the current category filter.", MessageType.Warning);
-        }
-
+        DrawSegmentPaletteSection();
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Placement", EditorStyles.boldLabel);
-        placeGridX = EditorGUILayout.IntField("Grid X", placeGridX);
-        placeGridZ = EditorGUILayout.IntField("Grid Z", placeGridZ);
-        if (placementCategoryFilter == SegmentCategory.Wall || placementCategoryFilter == SegmentCategory.OpeningOverlay)
-        {
-            placeWallSide = (WallSide)EditorGUILayout.EnumPopup("Wall Side", placeWallSide);
-        }
-
-        placeRotationY = NormalizeRotation(EditorGUILayout.IntField("Rotation Y", placeRotationY));
-        replaceExistingPlacement = EditorGUILayout.Toggle("Replace Overlap", replaceExistingPlacement);
-        markConnectorCandidate = EditorGUILayout.Toggle("Connector Candidate", markConnectorCandidate);
-        scenePlacementEnabled = EditorGUILayout.Toggle("Scene Placement", scenePlacementEnabled);
-        sceneAutoPickWallSide = EditorGUILayout.Toggle("Auto Pick Wall Side", sceneAutoPickWallSide);
-        sceneDeleteMode = EditorGUILayout.Toggle("Scene Delete Mode", sceneDeleteMode);
-
-        EditorGUILayout.HelpBox(
-            "Scene controls: hover the grid to preview, left-click to place, press R to rotate 90 degrees, and Shift+Click or enable Scene Delete Mode to remove a placed segment.",
-            MessageType.None);
-
+        DrawSelectedSegmentAssetSection();
         EditorGUILayout.Space();
-
-        if (GUILayout.Button("Create New Editable Block"))
-        {
-            CreateNewEditableBlock();
-        }
-
-        if (GUILayout.Button("Place Selected Segment"))
-        {
-            PlaceSelectedSegment();
-        }
-
-        if (GUILayout.Button("Delete Selected Segment"))
-        {
-            DeleteSelectedSegment();
-        }
-
-        EditorGUILayout.Space();
-        selectedBlockDefinitionAsset = (SpaceBlockDefinition)EditorGUILayout.ObjectField(
-            "Block Definition",
-            selectedBlockDefinitionAsset,
-            typeof(SpaceBlockDefinition),
-            false);
-        bakePrefabName = EditorGUILayout.TextField("Bake Prefab Name", bakePrefabName);
-
-        if (GUILayout.Button("Save Block Definition"))
-        {
-            SaveBlockDefinition();
-        }
-
-        if (GUILayout.Button("Load Block Definition"))
-        {
-            LoadBlockDefinition();
-        }
-
-        if (GUILayout.Button("Bake Block Prefab"))
-        {
-            BakeBlockPrefab();
-        }
-
-        if (GUILayout.Button("Validate Block"))
-        {
-            ValidateGridBlock();
-        }
+        DrawBlockDefinitionSection();
     }
 
     private void OnSceneGUI(SceneView sceneView)
@@ -358,8 +273,212 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
         if (current.type == EventType.MouseMove || current.type == EventType.MouseDrag)
         {
-            QueueDeferredRepaint();
+            QueueDeferredSceneRepaint();
         }
+    }
+
+    private void DrawGridBlockSettingsSection()
+    {
+        blockSettingsFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(blockSettingsFoldout, "Block Settings");
+        if (blockSettingsFoldout)
+        {
+            EditorGUI.BeginChangeCheck();
+            SpaceSegmentKit nextSegmentKit = (SpaceSegmentKit)EditorGUILayout.ObjectField(
+                "Segment Kit",
+                selectedSegmentKit,
+                typeof(SpaceSegmentKit),
+                false);
+            if (EditorGUI.EndChangeCheck())
+            {
+                selectedSegmentKit = nextSegmentKit;
+                MarkSegmentPaletteDirty();
+            }
+
+            DrawTwoColumnFieldRow(
+                () => gridBlockId = EditorGUILayout.TextField("Block Id", gridBlockId),
+                () => gridWidth = Mathf.Max(1, EditorGUILayout.IntField("Grid Width", gridWidth)));
+
+            DrawTwoColumnFieldRow(
+                () => gridDepth = Mathf.Max(1, EditorGUILayout.IntField("Grid Depth", gridDepth)),
+                () => gridSize = Mathf.Max(0.1f, EditorGUILayout.FloatField("Grid Size", gridSize)));
+
+            EditorGUILayout.Space(4f);
+            if (GUILayout.Button("Create New Editable Block"))
+            {
+                CreateNewEditableBlock();
+            }
+        }
+
+        EditorGUILayout.EndFoldoutHeaderGroup();
+    }
+
+    private void DrawSegmentPaletteSection()
+    {
+        segmentPaletteFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(segmentPaletteFoldout, "Segment Palette");
+        if (segmentPaletteFoldout)
+        {
+            SegmentCategory nextCategoryFilter = placementCategoryFilter;
+            string nextSubFilter = segmentPaletteSubFilter;
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                using (new EditorGUILayout.VerticalScope())
+                {
+                    nextCategoryFilter = DrawPlacementCategoryFilter(placementCategoryFilter);
+                }
+
+                using (new EditorGUILayout.VerticalScope())
+                {
+                    nextSubFilter = DrawPaletteSubFilterPopup(nextCategoryFilter, segmentPaletteSubFilter);
+                }
+            }
+
+            if (nextCategoryFilter != placementCategoryFilter)
+            {
+                placementCategoryFilter = nextCategoryFilter;
+                selectedGridSegmentDefinition = null;
+                selectedPaletteIndex = 0;
+                segmentPaletteSubFilter = string.Empty;
+                MarkSegmentPaletteDirty();
+                SceneView.RepaintAll();
+            }
+            else if (!string.Equals(nextSubFilter, segmentPaletteSubFilter, StringComparison.Ordinal))
+            {
+                segmentPaletteSubFilter = nextSubFilter;
+                selectedGridSegmentDefinition = null;
+                selectedPaletteIndex = 0;
+                MarkSegmentPaletteDirty();
+                SceneView.RepaintAll();
+            }
+
+            string nextSearch = EditorGUILayout.TextField("Search", segmentPaletteSearch);
+            if (!string.Equals(nextSearch, segmentPaletteSearch, StringComparison.Ordinal))
+            {
+                segmentPaletteSearch = nextSearch;
+                selectedPaletteIndex = 0;
+                MarkSegmentPaletteDirty();
+            }
+
+            EnsureSegmentPaletteIsCurrent();
+
+            EditorGUI.BeginChangeCheck();
+            SpaceSegmentDefinition nextSelectedDefinition = (SpaceSegmentDefinition)EditorGUILayout.ObjectField(
+                "Selected Segment",
+                selectedGridSegmentDefinition,
+                typeof(SpaceSegmentDefinition),
+                false);
+            if (EditorGUI.EndChangeCheck())
+            {
+                selectedGridSegmentDefinition = nextSelectedDefinition;
+                if (selectedGridSegmentDefinition != null)
+                {
+                    placementCategoryFilter = GetSupportedPlacementCategory(selectedGridSegmentDefinition.category);
+                    segmentPaletteSubFilter = BuildPaletteStyleFolder(selectedGridSegmentDefinition);
+                    MarkSegmentPaletteDirty();
+                    EnsureSegmentPaletteIsCurrent();
+                }
+
+                SceneView.RepaintAll();
+            }
+
+            if (segmentPaletteEntries.Count == 0)
+            {
+                EditorGUILayout.HelpBox("No segments match the current category filter or search.", MessageType.Warning);
+            }
+            else
+            {
+                DrawSegmentPaletteGrid();
+            }
+
+            scenePaintSettingsFoldout = EditorGUILayout.Foldout(scenePaintSettingsFoldout, "Scene Paint Settings", true);
+            if (scenePaintSettingsFoldout)
+            {
+                DrawTwoColumnFieldRow(
+                    () => placeRotationY = NormalizeRotation(EditorGUILayout.IntField("Rotation Y", placeRotationY)),
+                    () => replaceExistingPlacement = EditorGUILayout.Toggle("Replace Overlap", replaceExistingPlacement));
+
+                DrawTwoColumnFieldRow(
+                    () => markConnectorCandidate = EditorGUILayout.Toggle("Connector Candidate", markConnectorCandidate),
+                    () => scenePlacementEnabled = EditorGUILayout.Toggle("Scene Placement", scenePlacementEnabled));
+
+                DrawTwoColumnFieldRow(
+                    () => sceneAutoPickWallSide = EditorGUILayout.Toggle("Auto Pick Wall Side", sceneAutoPickWallSide),
+                    () => sceneDeleteMode = EditorGUILayout.Toggle("Scene Delete Mode", sceneDeleteMode));
+
+                if (!sceneAutoPickWallSide
+                    && (placementCategoryFilter == SegmentCategory.Wall || placementCategoryFilter == SegmentCategory.OpeningOverlay))
+                {
+                    placeWallSide = (WallSide)EditorGUILayout.EnumPopup("Wall Side", placeWallSide);
+                }
+
+                EditorGUILayout.HelpBox(
+                    "Scene controls: hover the grid to preview, left-click to place, press R to rotate 90 degrees, and Shift+Click or enable Scene Delete Mode to remove a placed segment.",
+                    MessageType.None);
+            }
+        }
+
+        EditorGUILayout.EndFoldoutHeaderGroup();
+    }
+
+    private void DrawSelectedSegmentAssetSection()
+    {
+        selectedSegmentAssetFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(selectedSegmentAssetFoldout, "Selected Segment Asset");
+        if (selectedSegmentAssetFoldout)
+        {
+            if (selectedGridSegmentDefinition == null)
+            {
+                EditorGUILayout.HelpBox("Pick a segment from the palette to inspect or edit its asset content here.", MessageType.Info);
+            }
+            else
+            {
+                string definitionPath = AssetDatabase.GetAssetPath(selectedGridSegmentDefinition);
+                EditorGUILayout.ObjectField("Definition Asset", selectedGridSegmentDefinition, typeof(SpaceSegmentDefinition), false);
+                EditorGUILayout.TextField("Definition Path", definitionPath);
+
+                GameObject prefabAsset = selectedGridSegmentDefinition.prefab;
+                EditorGUILayout.ObjectField("Prefab Asset", prefabAsset, typeof(GameObject), false);
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("Ping Definition"))
+                    {
+                        EditorGUIUtility.PingObject(selectedGridSegmentDefinition);
+                    }
+
+                    using (new EditorGUI.DisabledScope(prefabAsset == null))
+                    {
+                        if (GUILayout.Button("Ping Prefab"))
+                        {
+                            EditorGUIUtility.PingObject(prefabAsset);
+                        }
+                    }
+                }
+
+                EditorGUILayout.Space(4f);
+                DrawSelectedSegmentDefinitionInspector(selectedGridSegmentDefinition);
+            }
+        }
+
+        EditorGUILayout.EndFoldoutHeaderGroup();
+    }
+
+    private void DrawBlockDefinitionSection()
+    {
+        blockDefinitionFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(blockDefinitionFoldout, "Block Definition");
+        if (blockDefinitionFoldout)
+        {
+            selectedBlockDefinitionAsset = (SpaceBlockDefinition)EditorGUILayout.ObjectField(
+                "Block Definition",
+                selectedBlockDefinitionAsset,
+                typeof(SpaceBlockDefinition),
+                false);
+            bakePrefabName = EditorGUILayout.TextField("Bake Prefab Name", bakePrefabName);
+
+            DrawTwoColumnButtonRow("Save Block Definition", SaveBlockDefinition, "Load Block Definition", LoadBlockDefinition);
+            DrawTwoColumnButtonRow("Bake Block Prefab", BakeBlockPrefab, "Validate Block", ValidateGridBlock);
+        }
+
+        EditorGUILayout.EndFoldoutHeaderGroup();
     }
 
     private void DrawAuthoringGrid(Transform root, int width, int depth, float size)
@@ -416,6 +535,17 @@ public class SpaceBlockBuilderWindow : EditorWindow
         EditorApplication.delayCall += DeferredRepaint;
     }
 
+    private void QueueDeferredSceneRepaint()
+    {
+        if (deferredSceneRepaintQueued || deferredRepaintQueued)
+        {
+            return;
+        }
+
+        deferredSceneRepaintQueued = true;
+        EditorApplication.delayCall += DeferredSceneRepaint;
+    }
+
     private void DeferredRepaint()
     {
         deferredRepaintQueued = false;
@@ -426,6 +556,18 @@ public class SpaceBlockBuilderWindow : EditorWindow
         }
 
         Repaint();
+        SceneView.RepaintAll();
+    }
+
+    private void DeferredSceneRepaint()
+    {
+        deferredSceneRepaintQueued = false;
+
+        if (this == null)
+        {
+            return;
+        }
+
         SceneView.RepaintAll();
     }
 
@@ -665,6 +807,158 @@ public class SpaceBlockBuilderWindow : EditorWindow
         return new Color(0.35f, 1f, 0.55f, 0.95f);
     }
 
+    private void DrawSegmentPaletteGrid()
+    {
+        segmentPaletteScrollPosition = EditorGUILayout.BeginScrollView(
+            segmentPaletteScrollPosition,
+            GUILayout.MinHeight(140f),
+            GUILayout.MaxHeight(320f));
+
+        int columns = Mathf.Max(1, Mathf.FloorToInt((position.width - 32f) / PaletteButtonWidth));
+        for (int index = 0; index < segmentPaletteEntries.Count; index += columns)
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                for (int column = 0; column < columns; column++)
+                {
+                    int entryIndex = index + column;
+                    if (entryIndex >= segmentPaletteEntries.Count)
+                    {
+                        GUILayout.FlexibleSpace();
+                        continue;
+                    }
+
+                    DrawSegmentPaletteButton(segmentPaletteEntries[entryIndex], entryIndex);
+                }
+            }
+        }
+
+        EditorGUILayout.EndScrollView();
+    }
+
+    private void DrawSegmentPaletteButton(SegmentPaletteEntry entry, int entryIndex)
+    {
+        if (entry.Definition == null)
+        {
+            return;
+        }
+
+        Texture previewTexture = GetSegmentPaletteThumbnail(entry.Definition);
+
+        GUIContent content = new GUIContent(
+            $"{entry.ButtonLabel}\n{entry.SecondaryLabel}",
+            previewTexture,
+            entry.Label);
+
+        Color previousColor = GUI.backgroundColor;
+        if (entry.Definition == selectedGridSegmentDefinition)
+        {
+            GUI.backgroundColor = new Color(0.45f, 0.8f, 1f, 1f);
+        }
+
+        if (GUILayout.Button(
+                content,
+                GetSegmentPaletteButtonStyle(),
+                GUILayout.Width(PaletteButtonWidth),
+                GUILayout.Height(PaletteButtonHeight)))
+        {
+            selectedPaletteIndex = entryIndex;
+            selectedGridSegmentDefinition = entry.Definition;
+            SceneView.RepaintAll();
+            Repaint();
+        }
+
+        GUI.backgroundColor = previousColor;
+    }
+
+    private GUIStyle GetSegmentPaletteButtonStyle()
+    {
+        if (segmentPaletteButtonStyle != null)
+        {
+            return segmentPaletteButtonStyle;
+        }
+
+        segmentPaletteButtonStyle = new GUIStyle(GUI.skin.button)
+        {
+            wordWrap = true,
+            imagePosition = ImagePosition.ImageAbove,
+            alignment = TextAnchor.UpperCenter,
+            fixedWidth = PaletteButtonWidth,
+            fixedHeight = PaletteButtonHeight,
+            padding = new RectOffset(6, 6, 6, 6)
+        };
+        return segmentPaletteButtonStyle;
+    }
+
+    private void DrawSelectedSegmentDefinitionInspector(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return;
+        }
+
+        SerializedObject serializedDefinition = new SerializedObject(definition);
+        serializedDefinition.UpdateIfRequiredOrScript();
+        SerializedProperty iterator = serializedDefinition.GetIterator();
+        bool enterChildren = true;
+
+        while (iterator.NextVisible(enterChildren))
+        {
+            enterChildren = false;
+            if (string.Equals(iterator.propertyPath, "m_Script", StringComparison.Ordinal))
+            {
+                using (new EditorGUI.DisabledScope(true))
+                {
+                    EditorGUILayout.PropertyField(iterator, true);
+                }
+
+                continue;
+            }
+
+            EditorGUILayout.PropertyField(iterator, true);
+        }
+
+        if (serializedDefinition.ApplyModifiedProperties())
+        {
+            EditorUtility.SetDirty(definition);
+            MarkSegmentPaletteDirty();
+            SceneView.RepaintAll();
+            Repaint();
+        }
+    }
+
+    private static void DrawTwoColumnFieldRow(Action drawLeft, Action drawRight)
+    {
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            using (new EditorGUILayout.VerticalScope())
+            {
+                drawLeft?.Invoke();
+            }
+
+            using (new EditorGUILayout.VerticalScope())
+            {
+                drawRight?.Invoke();
+            }
+        }
+    }
+
+    private void DrawTwoColumnButtonRow(string leftLabel, Action leftAction, string rightLabel, Action rightAction)
+    {
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            if (GUILayout.Button(leftLabel))
+            {
+                leftAction?.Invoke();
+            }
+
+            if (GUILayout.Button(rightLabel))
+            {
+                rightAction?.Invoke();
+            }
+        }
+    }
+
     private SegmentCategory DrawPlacementCategoryFilter(SegmentCategory currentValue)
     {
         string[] labels =
@@ -722,9 +1016,21 @@ public class SpaceBlockBuilderWindow : EditorWindow
                 continue;
             }
 
+            if (!SegmentMatchesSearch(definition, segmentPaletteSearch))
+            {
+                continue;
+            }
+
+            if (!SegmentMatchesSubFilter(definition, segmentPaletteSubFilter))
+            {
+                continue;
+            }
+
             segmentPaletteEntries.Add(new SegmentPaletteEntry
             {
                 Label = BuildSegmentPalettePath(definition),
+                ButtonLabel = GetPaletteLeafLabel(definition),
+                SecondaryLabel = $"{BuildPaletteStyleFolder(definition)} | {GetDefinitionDisplaySizeLabel(definition)}",
                 Definition = definition
             });
         }
@@ -746,30 +1052,65 @@ public class SpaceBlockBuilderWindow : EditorWindow
         if (segmentPaletteEntries.Count > 0)
         {
             selectedPaletteIndex = Mathf.Clamp(selectedPaletteIndex, 0, segmentPaletteEntries.Count - 1);
+            if (selectedGridSegmentDefinition == null)
+            {
+                selectedGridSegmentDefinition = segmentPaletteEntries[selectedPaletteIndex].Definition;
+            }
         }
     }
 
-    private void ShowSegmentPaletteMenu()
+    private void EnsureSegmentPaletteIsCurrent()
     {
-        GenericMenu menu = new GenericMenu();
-        for (int i = 0; i < segmentPaletteEntries.Count; i++)
+        string normalizedSearch = segmentPaletteSearch ?? string.Empty;
+        string normalizedSubFilter = segmentPaletteSubFilter ?? string.Empty;
+        if (!segmentPaletteDirty
+            && cachedPaletteKit == selectedSegmentKit
+            && cachedPaletteCategory == placementCategoryFilter
+            && string.Equals(cachedPaletteSearch, normalizedSearch, StringComparison.Ordinal)
+            && string.Equals(cachedPaletteSubFilter, normalizedSubFilter, StringComparison.Ordinal))
         {
-            int entryIndex = i;
-            SegmentPaletteEntry entry = segmentPaletteEntries[i];
-            bool isSelected = entry.Definition == selectedGridSegmentDefinition;
-            menu.AddItem(
-                new GUIContent(entry.Label),
-                isSelected,
-                () =>
-                {
-                    selectedPaletteIndex = entryIndex;
-                    selectedGridSegmentDefinition = entry.Definition;
-                    SceneView.RepaintAll();
-                    Repaint();
-                });
+            return;
         }
 
-        menu.ShowAsContext();
+        RebuildSegmentPalette();
+        cachedPaletteKit = selectedSegmentKit;
+        cachedPaletteCategory = placementCategoryFilter;
+        cachedPaletteSearch = normalizedSearch;
+        cachedPaletteSubFilter = normalizedSubFilter;
+        segmentPaletteDirty = false;
+    }
+
+    private void MarkSegmentPaletteDirty()
+    {
+        segmentPaletteDirty = true;
+    }
+
+    private Texture GetSegmentPaletteThumbnail(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return null;
+        }
+
+        UnityEngine.Object thumbnailSource = definition.prefab != null ? (UnityEngine.Object)definition.prefab : definition;
+        int cacheKey = thumbnailSource.GetInstanceID();
+        if (segmentPaletteThumbnailCache.TryGetValue(cacheKey, out Texture cachedTexture) && cachedTexture != null)
+        {
+            return cachedTexture;
+        }
+
+        Texture previewTexture = AssetPreview.GetMiniThumbnail(thumbnailSource);
+        if (previewTexture == null && thumbnailSource != definition)
+        {
+            previewTexture = AssetPreview.GetMiniThumbnail(definition);
+        }
+
+        if (previewTexture != null)
+        {
+            segmentPaletteThumbnailCache[cacheKey] = previewTexture;
+        }
+
+        return previewTexture;
     }
 
     private static string BuildSegmentPalettePath(SpaceSegmentDefinition definition)
@@ -784,6 +1125,34 @@ public class SpaceBlockBuilderWindow : EditorWindow
         string size = GetDefinitionDisplaySizeLabel(definition);
         string leaf = GetPaletteLeafLabel(definition);
         return $"{category}/{style}/{size}/{leaf}";
+    }
+
+    private static bool SegmentMatchesSearch(SpaceSegmentDefinition definition, string search)
+    {
+        if (definition == null || string.IsNullOrWhiteSpace(search))
+        {
+            return true;
+        }
+
+        string haystack = string.Join(
+            " ",
+            definition.segmentId,
+            definition.styleId,
+            definition.category.ToString(),
+            definition.variant.ToString(),
+            BuildSegmentPalettePath(definition));
+
+        return haystack.IndexOf(search.Trim(), StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private static bool SegmentMatchesSubFilter(SpaceSegmentDefinition definition, string subFilter)
+    {
+        if (definition == null || string.IsNullOrWhiteSpace(subFilter))
+        {
+            return true;
+        }
+
+        return string.Equals(BuildPaletteStyleFolder(definition), subFilter, StringComparison.OrdinalIgnoreCase);
     }
 
     private static SegmentCategory GetSupportedPlacementCategory(SegmentCategory rawCategory)
@@ -816,6 +1185,47 @@ public class SpaceBlockBuilderWindow : EditorWindow
         }
 
         return style;
+    }
+
+    private string DrawPaletteSubFilterPopup(SegmentCategory category, string currentValue)
+    {
+        segmentPaletteSubFilterOptions.Clear();
+        segmentPaletteSubFilterOptions.Add(AllPaletteSubFiltersLabel);
+
+        if (selectedSegmentKit != null && selectedSegmentKit.segments != null)
+        {
+            HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < selectedSegmentKit.segments.Count; i++)
+            {
+                SpaceSegmentDefinition definition = selectedSegmentKit.segments[i];
+                if (definition == null || GetSupportedPlacementCategory(definition.category) != category)
+                {
+                    continue;
+                }
+
+                string style = BuildPaletteStyleFolder(definition);
+                if (!string.IsNullOrWhiteSpace(style) && seen.Add(style))
+                {
+                    segmentPaletteSubFilterOptions.Add(style);
+                }
+            }
+        }
+
+        if (segmentPaletteSubFilterOptions.Count > 2)
+        {
+            segmentPaletteSubFilterOptions.Sort(1, segmentPaletteSubFilterOptions.Count - 1, StringComparer.OrdinalIgnoreCase);
+        }
+
+        string normalizedCurrent = string.IsNullOrWhiteSpace(currentValue) ? AllPaletteSubFiltersLabel : currentValue;
+        int selectedIndex = segmentPaletteSubFilterOptions.FindIndex(option => string.Equals(option, normalizedCurrent, StringComparison.OrdinalIgnoreCase));
+        if (selectedIndex < 0)
+        {
+            selectedIndex = 0;
+        }
+
+        int nextIndex = EditorGUILayout.Popup("Sub Filter", selectedIndex, segmentPaletteSubFilterOptions.ToArray());
+        string selectedValue = segmentPaletteSubFilterOptions[Mathf.Clamp(nextIndex, 0, segmentPaletteSubFilterOptions.Count - 1)];
+        return string.Equals(selectedValue, AllPaletteSubFiltersLabel, StringComparison.Ordinal) ? string.Empty : selectedValue;
     }
 
     private static string GetPaletteLeafLabel(SpaceSegmentDefinition definition)
@@ -1361,36 +1771,37 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
     private void DrawBlockConnectionTool()
     {
-        EditorGUILayout.LabelField("Block Connection Tool", EditorStyles.boldLabel);
-        connectionPortA = (SpaceOpeningPort)EditorGUILayout.ObjectField("Port A", connectionPortA, typeof(SpaceOpeningPort), true);
-        connectionPortB = (SpaceOpeningPort)EditorGUILayout.ObjectField("Port B", connectionPortB, typeof(SpaceOpeningPort), true);
-        connectionAutoAlignBlockB = EditorGUILayout.Toggle("Auto Align Block B", connectionAutoAlignBlockB);
-        connectionAllowOverlapAnyway = EditorGUILayout.Toggle("Allow Overlap Anyway", connectionAllowOverlapAnyway);
-
-        if (GUILayout.Button("Auto Find Matching Ports"))
+        blockConnectionFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(blockConnectionFoldout, "Block Connection Tool");
+        if (blockConnectionFoldout)
         {
-            AutoFindMatchingPorts();
+            connectionPortA = (SpaceOpeningPort)EditorGUILayout.ObjectField("Port A", connectionPortA, typeof(SpaceOpeningPort), true);
+            connectionPortB = (SpaceOpeningPort)EditorGUILayout.ObjectField("Port B", connectionPortB, typeof(SpaceOpeningPort), true);
+
+            DrawTwoColumnFieldRow(
+                () => connectionAutoAlignBlockB = EditorGUILayout.Toggle("Auto Align Block B", connectionAutoAlignBlockB),
+                () => connectionAllowOverlapAnyway = EditorGUILayout.Toggle("Allow Overlap Anyway", connectionAllowOverlapAnyway));
+
+            DrawTwoColumnButtonRow("Use Selected As A", AssignSelectedPortToConnectionA, "Use Selected As B", AssignSelectedPortToConnectionB);
+            DrawTwoColumnButtonRow("Swap A / B", SwapConnectionPorts, "Clear A / B", ClearConnectionPortSelection);
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Port Browser", EditorStyles.boldLabel);
+            DrawTwoColumnFieldRow(
+                () => connectionPortSearch = EditorGUILayout.TextField("Search", connectionPortSearch),
+                () => connectionShowOccupiedPorts = EditorGUILayout.Toggle("Show Occupied", connectionShowOccupiedPorts));
+            EditorGUILayout.HelpBox("Click Set A / Set B below to assign ports directly from the scene without selecting objects one by one in the Hierarchy.", MessageType.None);
+            DrawConnectionPortBrowser();
+
+            DrawTwoColumnButtonRow("Auto Find Matching Ports", AutoFindMatchingPorts, "Preview Connection", PreviewSelectedConnection);
+            DrawTwoColumnButtonRow("Connect Selected Doorways", ConnectSelectedDoorways, "Clear Connection", ClearSelectedConnection);
+
+            if (GUILayout.Button("Validate Ports"))
+            {
+                ValidateSelectedPorts();
+            }
         }
 
-        if (GUILayout.Button("Preview Connection"))
-        {
-            PreviewSelectedConnection();
-        }
-
-        if (GUILayout.Button("Connect Selected Doorways"))
-        {
-            ConnectSelectedDoorways();
-        }
-
-        if (GUILayout.Button("Clear Connection"))
-        {
-            ClearSelectedConnection();
-        }
-
-        if (GUILayout.Button("Validate Ports"))
-        {
-            ValidateSelectedPorts();
-        }
+        EditorGUILayout.EndFoldoutHeaderGroup();
     }
 
     private void AutoFindMatchingPorts()
@@ -1663,6 +2074,214 @@ public class SpaceBlockBuilderWindow : EditorWindow
         string aId = a != null ? a.openingId : string.Empty;
         string bId = b != null ? b.openingId : string.Empty;
         return string.Compare(aId, bId, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void AssignSelectedPortToConnectionA()
+    {
+        AssignSelectedPort(ConnectionPortAssignment.PortA);
+    }
+
+    private void AssignSelectedPortToConnectionB()
+    {
+        AssignSelectedPort(ConnectionPortAssignment.PortB);
+    }
+
+    private void AssignSelectedPort(ConnectionPortAssignment assignment)
+    {
+        SpaceOpeningPort selectedPort = GetSelectedOpeningPort();
+        if (selectedPort == null)
+        {
+            ShowSummary("Select a doorway port or a baked block in the scene first.");
+            return;
+        }
+
+        AssignConnectionPort(assignment, selectedPort);
+    }
+
+    private void SwapConnectionPorts()
+    {
+        SpaceOpeningPort previousA = connectionPortA;
+        connectionPortA = connectionPortB;
+        connectionPortB = previousA;
+        Repaint();
+        SceneView.RepaintAll();
+    }
+
+    private void ClearConnectionPortSelection()
+    {
+        connectionPortA = null;
+        connectionPortB = null;
+        Repaint();
+    }
+
+    private void DrawConnectionPortBrowser()
+    {
+        List<SpaceOpeningPort> ports = GetSceneOpeningPorts();
+        if (ports.Count == 0)
+        {
+            EditorGUILayout.HelpBox("No scene ports found for the current filter.", MessageType.Info);
+            return;
+        }
+
+        connectionPortBrowserScrollPosition = EditorGUILayout.BeginScrollView(
+            connectionPortBrowserScrollPosition,
+            GUILayout.MinHeight(160f),
+            GUILayout.MaxHeight(300f));
+
+        for (int i = 0; i < ports.Count; i++)
+        {
+            DrawConnectionPortBrowserRow(ports[i]);
+        }
+
+        EditorGUILayout.EndScrollView();
+    }
+
+    private void DrawConnectionPortBrowserRow(SpaceOpeningPort port)
+    {
+        if (port == null)
+        {
+            return;
+        }
+
+        using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField(BuildConnectionPortLabel(port), GUILayout.MinWidth(260f));
+
+                using (new EditorGUI.DisabledScope(port == connectionPortA))
+                {
+                    if (GUILayout.Button(port == connectionPortA ? "A Selected" : "Set A", GUILayout.Width(72f)))
+                    {
+                        AssignConnectionPort(ConnectionPortAssignment.PortA, port);
+                    }
+                }
+
+                using (new EditorGUI.DisabledScope(port == connectionPortB))
+                {
+                    if (GUILayout.Button(port == connectionPortB ? "B Selected" : "Set B", GUILayout.Width(72f)))
+                    {
+                        AssignConnectionPort(ConnectionPortAssignment.PortB, port);
+                    }
+                }
+
+                if (GUILayout.Button("Ping", GUILayout.Width(48f)))
+                {
+                    EditorGUIUtility.PingObject(port.gameObject);
+                    Selection.activeGameObject = port.gameObject;
+                }
+            }
+        }
+    }
+
+    private void AssignConnectionPort(ConnectionPortAssignment assignment, SpaceOpeningPort port)
+    {
+        if (port == null)
+        {
+            return;
+        }
+
+        switch (assignment)
+        {
+            case ConnectionPortAssignment.PortA:
+                connectionPortA = port;
+                if (connectionPortB == connectionPortA)
+                {
+                    connectionPortB = null;
+                }
+                break;
+            case ConnectionPortAssignment.PortB:
+                connectionPortB = port;
+                if (connectionPortA == connectionPortB)
+                {
+                    connectionPortA = null;
+                }
+                break;
+        }
+
+        Selection.activeGameObject = port.gameObject;
+        Repaint();
+        SceneView.RepaintAll();
+    }
+
+    private List<SpaceOpeningPort> GetSceneOpeningPorts()
+    {
+        SpaceOpeningPort[] allPorts = Resources.FindObjectsOfTypeAll<SpaceOpeningPort>();
+        List<SpaceOpeningPort> ports = new List<SpaceOpeningPort>();
+        for (int i = 0; i < allPorts.Length; i++)
+        {
+            SpaceOpeningPort port = allPorts[i];
+            if (port == null
+                || EditorUtility.IsPersistent(port)
+                || port.gameObject == null
+                || !port.gameObject.scene.IsValid())
+            {
+                continue;
+            }
+
+            if (!connectionShowOccupiedPorts
+                && port != connectionPortA
+                && port != connectionPortB
+                && (port.isOccupied || port.connectedPort != null))
+            {
+                continue;
+            }
+
+            if (!ConnectionPortMatchesSearch(port, connectionPortSearch))
+            {
+                continue;
+            }
+
+            ports.Add(port);
+        }
+
+        ports.Sort(CompareSceneOpeningPorts);
+        return ports;
+    }
+
+    private static int CompareSceneOpeningPorts(SpaceOpeningPort a, SpaceOpeningPort b)
+    {
+        string blockA = a != null && a.OwningBlock != null ? a.OwningBlock.spaceBlockId : string.Empty;
+        string blockB = b != null && b.OwningBlock != null ? b.OwningBlock.spaceBlockId : string.Empty;
+        int blockCompare = string.Compare(blockA, blockB, StringComparison.OrdinalIgnoreCase);
+        if (blockCompare != 0)
+        {
+            return blockCompare;
+        }
+
+        return CompareOpeningPorts(a, b);
+    }
+
+    private static bool ConnectionPortMatchesSearch(SpaceOpeningPort port, string search)
+    {
+        if (port == null || string.IsNullOrWhiteSpace(search))
+        {
+            return true;
+        }
+
+        string ownerId = port.OwningBlock != null ? port.OwningBlock.spaceBlockId : string.Empty;
+        string haystack = string.Join(
+            " ",
+            port.openingId,
+            ownerId,
+            port.wallSide.ToString(),
+            port.gridPosition.x.ToString(),
+            port.gridPosition.y.ToString(),
+            port.isOccupied ? "occupied" : "free");
+
+        return haystack.IndexOf(search.Trim(), StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private static string BuildConnectionPortLabel(SpaceOpeningPort port)
+    {
+        if (port == null)
+        {
+            return "Missing port";
+        }
+
+        string ownerId = port.OwningBlock != null ? port.OwningBlock.spaceBlockId : "NoBlock";
+        string occupancy = port.isOccupied || port.connectedPort != null ? "Occupied" : "Free";
+        return $"{ownerId} | {port.openingId} | {port.wallSide} ({port.gridPosition.x}, {port.gridPosition.y}) | {occupancy}";
     }
 
     private void PlaceOverlayOnSelectedWall(MemorySpaceBlock block, SpaceSegmentKit kit)
@@ -2400,27 +3019,31 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
     private void ApplyGenericPlacementTransform(Transform instanceTransform, SpaceSegmentPlacementRecord record, SpaceSegmentDefinition definition)
     {
+        Quaternion authoringRotation = GetSegmentAuthoringPlacementRotation(definition);
+        Vector3 authoringScale = GetSegmentAuthoringPlacementScale(definition);
+        instanceTransform.localScale = authoringScale;
+
         switch (record.category)
         {
             case SegmentCategory.Floor:
-                instanceTransform.localRotation = Quaternion.Euler(-90f, record.rotationY, 0f);
+                instanceTransform.localRotation = Quaternion.Euler(-90f, record.rotationY, 0f) * authoringRotation;
                 AlignInstanceToLocalBounds(instanceTransform, 0f, 0f, 0f);
                 break;
             case SegmentCategory.Ceiling:
-                instanceTransform.localRotation = Quaternion.Euler(90f, record.rotationY, 0f);
+                instanceTransform.localRotation = Quaternion.Euler(90f, record.rotationY, 0f) * authoringRotation;
                 AlignInstanceToBoundsAtHeight(instanceTransform, 0f, GetAuthoringCeilingHeight(), 0f);
                 break;
             case SegmentCategory.Threshold:
-                instanceTransform.localRotation = Quaternion.Euler(0f, record.rotationY, 0f);
+                instanceTransform.localRotation = Quaternion.Euler(0f, record.rotationY, 0f) * authoringRotation;
                 AlignInstanceToLocalBounds(instanceTransform, 0f, 0f, 0f);
                 break;
             case SegmentCategory.Beam:
-                instanceTransform.localRotation = Quaternion.Euler(0f, record.rotationY, 0f);
+                instanceTransform.localRotation = Quaternion.Euler(0f, record.rotationY, 0f) * authoringRotation;
                 AlignInstanceToBoundsAtHeight(instanceTransform, 0f, GetAuthoringCeilingHeight(), 0f);
                 break;
             default:
                 instanceTransform.localPosition = Vector3.zero;
-                instanceTransform.localRotation = Quaternion.identity;
+                instanceTransform.localRotation = authoringRotation;
                 break;
         }
     }
@@ -2440,6 +3063,30 @@ public class SpaceBlockBuilderWindow : EditorWindow
                     0f,
                     -halfDepth + ((record.gridZ + (record.footprint.y * 0.5f)) * gridSize));
         }
+    }
+
+    private static Quaternion GetSegmentAuthoringPlacementRotation(SpaceSegmentDefinition definition)
+    {
+        if (definition == null || !definition.hasPlacementAuthoringOverride)
+        {
+            return Quaternion.identity;
+        }
+
+        return Quaternion.Euler(definition.placementAuthoringEulerAngles);
+    }
+
+    private static Vector3 GetSegmentAuthoringPlacementScale(SpaceSegmentDefinition definition)
+    {
+        if (definition == null || !definition.hasPlacementAuthoringOverride)
+        {
+            return Vector3.one;
+        }
+
+        Vector3 scale = definition.placementAuthoringScale;
+        return new Vector3(
+            Mathf.Approximately(scale.x, 0f) ? 1f : scale.x,
+            Mathf.Approximately(scale.y, 0f) ? 1f : scale.y,
+            Mathf.Approximately(scale.z, 0f) ? 1f : scale.z);
     }
 
     private Vector3 GetScenePreviewSize(SpaceSegmentPlacementRecord record)
@@ -3174,7 +3821,9 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
                 GameObject instance = Instantiate(floorDefinition.prefab, floorGridRoot, false);
                 instance.name = $"Floor_{x:00}_{z:00}";
-                instance.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+                instance.transform.localScale = GetSegmentAuthoringPlacementScale(floorDefinition);
+                instance.transform.localRotation =
+                    Quaternion.Euler(-90f, 0f, 0f) * GetSegmentAuthoringPlacementRotation(floorDefinition);
                 AlignInstanceToLocalBounds(
                     instance.transform,
                     -width * 0.5f + 0.5f + x,

@@ -20,3 +20,46 @@ MonoBehaviour:
   createPlacementBounds: 1
   createBlockingCollider: 1
   generateSlotsFromPlacementBounds: 1
+  prefabRootTransform:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 90, y: 0, z: 0}
+    localScale: {x: 60, y: 60, z: 60}
+  modelContainerTransform:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  modelAssetTransform:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  placementBoundsOverride:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    center: {x: 0.000119177625, y: -0.0001545432, z: -0.011558242}
+    size: {x: 0.018, y: 0.01, z: 0.023116488}
+  slotOverrides:
+  - id: Slot_Left
+    localPosition: {x: -0.00022148, y: -0.00069, z: -0.02562}
+    localEulerAngles: {x: -0, y: 180, z: 0}
+    localScale: {x: 0.063084, y: 0.063084, z: 0.063084}
+  - id: Slot_Right
+    localPosition: {x: 0.00045983, y: -0.00069, z: -0.01037}
+    localEulerAngles: {x: -0, y: 180, z: 0}
+    localScale: {x: 0.063084, y: 0.063084, z: 0.063084}
+  - id: Slot_Left
+    localPosition: {x: -0.00022148, y: -0.00069, z: -0.02562}
+    localEulerAngles: {x: -0, y: 180, z: 0}
+    localScale: {x: 0.063084, y: 0.063084, z: 0.063084}
+  - id: Slot_Center
+    localPosition: {x: 0.000119177625, y: -0.00069, z: -0.01769}
+    localEulerAngles: {x: -0, y: 180, z: 0}
+    localScale: {x: 0.063084, y: 0.063084, z: 0.063084}
+  - id: Slot_Right
+    localPosition: {x: 0.00045983, y: -0.00069, z: -0.01037}
+    localEulerAngles: {x: -0, y: 180, z: 0}
+    localScale: {x: 0.063084, y: 0.063084, z: 0.063084}

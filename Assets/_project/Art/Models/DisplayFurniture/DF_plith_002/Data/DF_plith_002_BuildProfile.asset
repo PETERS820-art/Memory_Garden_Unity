@@ -20,3 +20,30 @@ MonoBehaviour:
   createPlacementBounds: 1
   createBlockingCollider: 1
   generateSlotsFromPlacementBounds: 1
+  prefabRootTransform:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 270, y: 251.55699, z: 0}
+    localScale: {x: 0.15, y: 0.15, z: 0.15}
+  modelContainerTransform:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  modelAssetTransform:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  placementBoundsOverride:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    center: {x: 1.2763036, y: 1.728648, z: 4.043961}
+    size: {x: 10.159802, y: 10.342501, z: 8.061225}
+  slotOverrides:
+  - id: Slot_Large
+    localPosition: {x: 1.2763035, y: 0.80990136, z: 4.040175}
+    localEulerAngles: {x: 89.74359, y: 180, z: 180}
+    localScale: {x: 8.1418, y: 8.1418, z: 8.1418}

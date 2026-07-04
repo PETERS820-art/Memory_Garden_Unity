@@ -417,14 +417,17 @@ public class WallSegmentSlot : MonoBehaviour
 
     private static Quaternion GetPlacementRotation(SpaceSegmentDefinition definition, CornerPlacement placement, WallSide wallSide)
     {
+        Quaternion authoringRotation = GetAuthoringPlacementRotation(definition);
+
         if (definition != null
             && definition.category == SegmentCategory.OpeningOverlay
             && IsDoorwayDefinition(definition))
         {
-            return GetSideRotation(wallSide) * Quaternion.Euler(-90f, 0f, 90f);
+            return GetSideRotation(wallSide) * Quaternion.Euler(-90f, 0f, 90f) * authoringRotation;
         }
 
-        return GetSegmentRotation(definition != null ? definition.variant : SegmentVariant.Default, placement, wallSide);
+        return GetSegmentRotation(definition != null ? definition.variant : SegmentVariant.Default, placement, wallSide)
+            * authoringRotation;
     }
 
     private Vector2 GetWallFaceOffset()
@@ -448,6 +451,8 @@ public class WallSegmentSlot : MonoBehaviour
         {
             return;
         }
+
+        instanceTransform.localScale = GetAuthoringPlacementScale(definition);
 
         switch (definition.category)
         {
@@ -492,6 +497,8 @@ public class WallSegmentSlot : MonoBehaviour
             return;
         }
 
+        instanceTransform.localScale = GetAuthoringPlacementScale(definition);
+
         if (definition.category == SegmentCategory.OpeningOverlay || definition.category == SegmentCategory.Wall)
         {
             instanceTransform.localRotation = GetPlacementRotation(definition, cornerPlacement, side);
@@ -516,6 +523,30 @@ public class WallSegmentSlot : MonoBehaviour
 
         instanceTransform.localPosition = Vector3.zero;
         instanceTransform.localRotation = Quaternion.identity;
+    }
+
+    private static Quaternion GetAuthoringPlacementRotation(SpaceSegmentDefinition definition)
+    {
+        if (definition == null || !definition.hasPlacementAuthoringOverride)
+        {
+            return Quaternion.identity;
+        }
+
+        return Quaternion.Euler(definition.placementAuthoringEulerAngles);
+    }
+
+    private static Vector3 GetAuthoringPlacementScale(SpaceSegmentDefinition definition)
+    {
+        if (definition == null || !definition.hasPlacementAuthoringOverride)
+        {
+            return Vector3.one;
+        }
+
+        Vector3 scale = definition.placementAuthoringScale;
+        return new Vector3(
+            Mathf.Approximately(scale.x, 0f) ? 1f : scale.x,
+            Mathf.Approximately(scale.y, 0f) ? 1f : scale.y,
+            Mathf.Approximately(scale.z, 0f) ? 1f : scale.z);
     }
 
     private void ApplyPreservedOverlayTransform(Transform instanceTransform, SpaceSegmentDefinition definition)
