@@ -934,7 +934,7 @@ public class MemoryGardenPlacementManagerWindow : EditorWindow
         {
             if (sceneFurniture[i] != null)
             {
-                sceneFurniture[i].AutoCollectSlots();
+                sceneFurniture[i].AutoCollectFeatures();
             }
         }
 
@@ -949,7 +949,7 @@ public class MemoryGardenPlacementManagerWindow : EditorWindow
             return slots;
         }
 
-        furniture.AutoCollectSlots();
+        furniture.AutoCollectFeatures();
         IReadOnlyList<MemoryDisplaySlot> sourceSlots = furniture.Slots;
         for (int i = 0; i < sourceSlots.Count; i++)
         {

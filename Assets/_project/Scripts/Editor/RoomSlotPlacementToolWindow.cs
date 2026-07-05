@@ -1400,7 +1400,14 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
             if (displaySlots.Length == 0)
             {
-                result.AddError($"Missing MemoryDisplaySlot on {metadata.name}.");
+                if (furniture == null)
+                {
+                    result.AddError($"Missing MemoryDisplayFurniture and MemoryDisplaySlot on {metadata.name}.");
+                }
+                else
+                {
+                    result.AddInfo($"No MemoryDisplaySlot found on {metadata.name}; treating it as non-slot furniture.");
+                }
             }
 
             metadata.slotIds = new List<string>(displaySlots.Length);
@@ -1497,11 +1504,6 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         MemoryDisplayFurniture rootFurniture = prefab.GetComponent<MemoryDisplayFurniture>();
         MemoryDisplaySlot[] slots = prefab.GetComponentsInChildren<MemoryDisplaySlot>(true);
-        if (slots.Length == 0)
-        {
-            result.AddError("Slot prefab must contain at least one MemoryDisplaySlot.");
-        }
-
         if (rootFurniture == null)
         {
             if (slots.Length > 0)
@@ -1515,7 +1517,14 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         }
         else
         {
-            result.AddInfo($"Found root MemoryDisplayFurniture with {slots.Length} slot(s).");
+            if (slots.Length == 0)
+            {
+                result.AddInfo("Found root MemoryDisplayFurniture with no MemoryDisplaySlot children. This prefab will be treated as non-slot furniture.");
+            }
+            else
+            {
+                result.AddInfo($"Found root MemoryDisplayFurniture with {slots.Length} slot(s).");
+            }
         }
 
         return result;
@@ -1534,14 +1543,14 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             return result;
         }
 
+        MemoryDisplayFurniture furniture = instance.GetComponent<MemoryDisplayFurniture>();
         MemoryDisplaySlot[] slots = instance.GetComponentsInChildren<MemoryDisplaySlot>(true);
-        if (slots.Length == 0)
+        if (furniture == null && slots.Length == 0)
         {
-            result.AddError("Placed instance does not contain any MemoryDisplaySlot.");
+            result.AddError("Placed instance must contain a root MemoryDisplayFurniture or child MemoryDisplaySlot components.");
             return result;
         }
 
-        MemoryDisplayFurniture furniture = instance.GetComponent<MemoryDisplayFurniture>();
         if (furniture == null)
         {
             furniture = context != null && !context.IsPrefabAssetEdit
@@ -1550,7 +1559,11 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             result.AddWarning($"Created MemoryDisplayFurniture on {instance.name} because the prefab only exposed child MemoryDisplaySlot components.");
         }
 
-        furniture.AutoCollectSlots();
+        furniture.AutoCollectFeatures();
+        if (slots.Length == 0)
+        {
+            result.AddInfo($"Placed {instance.name} as non-slot furniture.");
+        }
 
         if (candidate.SurfaceType == RoomSlotSurfaceType.Wall)
         {
@@ -1582,7 +1595,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             }
 
             usedFurnitureIds.Add(currentFurnitureId);
-            furniture.AutoCollectSlots();
+            furniture.AutoCollectFeatures();
         }
 
         for (int i = 0; i < slots.Length; i++)
@@ -1630,6 +1643,9 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         metadata.wallSurfaceHeight = candidate.SurfaceType == RoomSlotSurfaceType.Wall ? Mathf.Max(0f, candidate.WallSurfaceHeight) : 0f;
         metadata.furnitureId = furniture != null ? GetSerializedString(furniture, "furnitureId") : string.Empty;
         metadata.slotIds = new List<string>(slots.Length);
+        metadata.hasDisplaySlots = slots.Length > 0;
+        metadata.lightFeatureCount = furniture != null ? furniture.GetComponentsInChildren<MemoryDisplayLight>(true).Length : 0;
+        metadata.frameSurfaceCount = furniture != null ? furniture.GetComponentsInChildren<MemoryDisplayFrameSurface>(true).Length : 0;
         for (int i = 0; i < slots.Length; i++)
         {
             metadata.slotIds.Add(GetSerializedString(slots[i], "slotId"));

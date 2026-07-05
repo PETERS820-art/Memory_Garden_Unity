@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86c1487e29c64bdcad9efc283ff5f1fe, type: 3}
+  m_Name: DF_lamp_002_BuildProfile
+  m_EditorClassIdentifier: 
+  furnitureId: DF_lamp_002
+  authoringMode: 1
+  enableDisplayFeature: 0
+  enableLightFeature: 1
+  enableFrameFeature: 0
+  furnitureType: 4
+  slotPreset: 4
+  lightFeaturePreset: 3
+  frameSurfacePreset: 0
+  slotHeightOffset: 0.02
+  boundsPadding: {x: 0, y: 0, z: 0}
+  createPlacementBounds: 1
+  createBlockingCollider: 1
+  generateSlotsFromPlacementBounds: 1
+  prefabRootTransform:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  modelContainerTransform:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  modelAssetTransform:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+  placementBoundsOverride:
+    enabled: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    center: {x: 0.00015068054, y: 0.73684764, z: -0.096155584}
+    size: {x: 0.7218666, y: 1.4720705, z: 0.6253773}
+  slotOverrides: []
+  lightOverrides:
+  - id: Light_Main
+    lightRole: 4
+    allowRuntimeAdjustment: 1
+    gameObjectActive: 1
+    lightEnabled: 1
+    localPosition: {x: 0, y: 1.392, z: 0}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    lightType: 2
+    color: {r: 1, g: 1, b: 1, a: 1}
+    intensity: 1
+    range: 10
+    spotAngle: 30
+    innerSpotAngle: 21.80208
+    shadows: 0
+  frameSurfaceOverrides: []

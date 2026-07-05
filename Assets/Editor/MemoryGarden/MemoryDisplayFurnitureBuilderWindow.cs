@@ -22,6 +22,8 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
     private const string MenuItemPath = "Tools/Memory Garden/Display Furniture Builder";
     private const string ModelContainerObjectName = "Model";
     private const string SlotsRootObjectName = "Slots";
+    private const string LightsRootObjectName = "_Lights";
+    private const string FrameSurfacesRootObjectName = "_FrameSurfaces";
     private const string PlacementBoundsObjectName = "_PlacementBounds";
     private const string BlockingColliderObjectName = "_BlockingCollider";
     private const string SourceModelFolder = "Assets/_project/Art/Models/DisplayFurniture";
@@ -41,8 +43,14 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
     private BuilderMode builderMode = BuilderMode.SceneUtility;
 
     private GameObject furnitureTarget;
-    private FurnitureType furnitureType = FurnitureType.Shelf;
-    private SlotPreset slotPreset = SlotPreset.ShelfLeftCenterRight;
+    private DisplayFurnitureAuthoringMode authoringMode = DisplayFurnitureAuthoringMode.Display;
+    private FurnitureType displayFurnitureType = FurnitureType.Shelf;
+    private SlotPreset displaySlotPreset = SlotPreset.ShelfLeftCenterRight;
+    private LightFeaturePreset lightFeaturePreset = LightFeaturePreset.SinglePoint;
+    private FrameSurfacePreset frameSurfacePreset = FrameSurfacePreset.SingleQuad;
+    private bool customEnableDisplayFeature = true;
+    private bool customEnableLightFeature;
+    private bool customEnableFrameFeature;
     private float slotHeightOffset = DefaultSlotHeightOffset;
     private Vector3 boundsPadding = Vector3.zero;
     private bool clearExistingSlots = true;
@@ -108,15 +116,22 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Build Settings", EditorStyles.boldLabel);
-        furnitureType = (FurnitureType)EditorGUILayout.EnumPopup("Furniture Type", furnitureType);
-        slotPreset = (SlotPreset)EditorGUILayout.EnumPopup("Slot Preset", slotPreset);
-        slotHeightOffset = EditorGUILayout.FloatField("Slot Height Offset", slotHeightOffset);
+        authoringMode = (DisplayFurnitureAuthoringMode)EditorGUILayout.EnumPopup("Furniture Typing", authoringMode);
+        DrawAuthoringFeatureSettings();
+
+        bool sceneDisplayFeatureEnabled = authoringMode == DisplayFurnitureAuthoringMode.Display
+            || (authoringMode == DisplayFurnitureAuthoringMode.Custom && customEnableDisplayFeature);
+        if (sceneDisplayFeatureEnabled)
+        {
+            slotHeightOffset = EditorGUILayout.FloatField("Slot Height Offset", slotHeightOffset);
+            generateSlotsFromPlacementBounds = EditorGUILayout.Toggle("Generate Slots From Placement Bounds", generateSlotsFromPlacementBounds);
+        }
+
         boundsPadding = EditorGUILayout.Vector3Field("Bounds Padding", boundsPadding);
         clearExistingSlots = EditorGUILayout.Toggle("Clear Existing Slots", clearExistingSlots);
         createOrUpdatePlacementBounds = EditorGUILayout.Toggle("Create / Update Placement Bounds", createOrUpdatePlacementBounds);
         autoFitBoundsFromRenderers = EditorGUILayout.Toggle("Auto Fit Bounds From Renderers", autoFitBoundsFromRenderers);
         createBlockingColliderOption = EditorGUILayout.Toggle("Create Blocking Collider", createBlockingColliderOption);
-        generateSlotsFromPlacementBounds = EditorGUILayout.Toggle("Generate Slots From Placement Bounds", generateSlotsFromPlacementBounds);
         saveAsPrefab = EditorGUILayout.Toggle("Save As Prefab", saveAsPrefab);
         using (new EditorGUI.DisabledScope(!saveAsPrefab))
         {
@@ -196,6 +211,109 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
                 BuildDisplayFurniturePrefabs(BatchBuildFilter.ExistingOnly);
             }
         }
+    }
+
+    private void DrawAuthoringFeatureSettings()
+    {
+        switch (authoringMode)
+        {
+            case DisplayFurnitureAuthoringMode.Display:
+                displayFurnitureType = (FurnitureType)EditorGUILayout.EnumPopup("Display Shape", displayFurnitureType);
+                displaySlotPreset = (SlotPreset)EditorGUILayout.EnumPopup("Slot Preset", displaySlotPreset);
+                DrawDisplayPresetHelp(displaySlotPreset);
+                EditorGUILayout.HelpBox(
+                    "Display mode focuses on slot-bearing furniture such as shelves, plinths, floor pads, and wall shelves.",
+                    MessageType.Info);
+                break;
+
+            case DisplayFurnitureAuthoringMode.Light:
+                lightFeaturePreset = (LightFeaturePreset)EditorGUILayout.EnumPopup("Light Scheme", lightFeaturePreset);
+                DrawLightPresetHelp(lightFeaturePreset);
+                break;
+
+            case DisplayFurnitureAuthoringMode.Frame:
+                frameSurfacePreset = (FrameSurfacePreset)EditorGUILayout.EnumPopup("Image Area Scheme", frameSurfacePreset);
+                DrawFramePresetHelp(frameSurfacePreset);
+                break;
+
+            case DisplayFurnitureAuthoringMode.Custom:
+                customEnableDisplayFeature = EditorGUILayout.Toggle("Enable Display", customEnableDisplayFeature);
+                if (customEnableDisplayFeature)
+                {
+                    displayFurnitureType = (FurnitureType)EditorGUILayout.EnumPopup("Display Shape", displayFurnitureType);
+                    displaySlotPreset = (SlotPreset)EditorGUILayout.EnumPopup("Slot Preset", displaySlotPreset);
+                    DrawDisplayPresetHelp(displaySlotPreset);
+                }
+
+                customEnableLightFeature = EditorGUILayout.Toggle("Enable Lighting", customEnableLightFeature);
+                if (customEnableLightFeature)
+                {
+                    lightFeaturePreset = (LightFeaturePreset)EditorGUILayout.EnumPopup("Light Scheme", lightFeaturePreset);
+                    DrawLightPresetHelp(lightFeaturePreset);
+                }
+
+                customEnableFrameFeature = EditorGUILayout.Toggle("Enable Frame", customEnableFrameFeature);
+                if (customEnableFrameFeature)
+                {
+                    frameSurfacePreset = (FrameSurfacePreset)EditorGUILayout.EnumPopup("Image Area Scheme", frameSurfacePreset);
+                    DrawFramePresetHelp(frameSurfacePreset);
+                }
+
+                if (!customEnableDisplayFeature && !customEnableLightFeature && !customEnableFrameFeature)
+                {
+                    EditorGUILayout.HelpBox(
+                        "No feature is enabled. Build will keep only the furniture root/model container, which is useful for an empty custom object.",
+                        MessageType.Info);
+                }
+                else if (customEnableDisplayFeature && customEnableLightFeature)
+                {
+                    EditorGUILayout.HelpBox(
+                        "Custom mode can combine display and lighting, so a furniture piece can behave like both a shelf and a lamp.",
+                        MessageType.Info);
+                }
+                break;
+        }
+
+        EditorGUILayout.HelpBox(
+            "For manual authoring, place MemoryDisplayLight or MemoryDisplayFrameSurface on child objects, then use overwrite/save to capture those adjustments into the build profile.",
+            MessageType.None);
+    }
+
+    private static void DrawDisplayPresetHelp(SlotPreset preset)
+    {
+        if (preset != SlotPreset.Custom)
+        {
+            return;
+        }
+
+        EditorGUILayout.HelpBox(
+            "Custom slot preset does not auto-generate MemoryDisplaySlot objects. Use it when you want to author slot transforms manually or disable auto slot creation.",
+            MessageType.Info);
+    }
+
+    private static void DrawLightPresetHelp(LightFeaturePreset preset)
+    {
+        string message = preset switch
+        {
+            LightFeaturePreset.SinglePoint => "Single Point creates one managed point light under _Lights.",
+            LightFeaturePreset.SingleSpot => "Single Spot creates one managed spotlight under _Lights.",
+            LightFeaturePreset.Custom => "Custom does not auto-create lights. Add or adjust MemoryDisplayLight children manually, then overwrite/save.",
+            _ => "None skips light generation."
+        };
+
+        EditorGUILayout.HelpBox(message, MessageType.Info);
+    }
+
+    private static void DrawFramePresetHelp(FrameSurfacePreset preset)
+    {
+        string message = preset switch
+        {
+            FrameSurfacePreset.SingleQuad => "Single Quad creates one managed image display surface under _FrameSurfaces.",
+            FrameSurfacePreset.Custom => "Custom does not auto-create image areas. Add or adjust MemoryDisplayFrameSurface children manually, then overwrite/save.",
+            _ => "None skips frame surface generation."
+        };
+
+        EditorGUILayout.HelpBox(message, MessageType.Info);
     }
 
     private void BuildOrUpdateSelectedSceneFurniture()
@@ -439,6 +557,8 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             BuildFurniture(root, settings, useUndo: false);
             ApplyPlacementBoundsOverride(root.transform, settings.PrefabProfile);
             ApplySlotOverrides(root.transform, settings.PrefabProfile);
+            ApplyLightOverrides(root.transform, settings.PrefabProfile);
+            ApplyFrameSurfaceOverrides(root.transform, settings.PrefabProfile);
 
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, source.PrefabAssetPath);
             if (savedPrefab == null)
@@ -488,24 +608,53 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
                 RemoveChildIfExists(target.transform, BlockingColliderObjectName, useUndo);
             }
 
-            Transform slotsRoot = FindOrCreateChild(target.transform, SlotsRootObjectName, useUndo);
-            if (settings.ClearExistingSlots)
+            List<SlotDefinition> slotDefinitions = new List<SlotDefinition>();
+            Transform slotsRoot = target.transform.Find(SlotsRootObjectName);
+            if (settings.EnableDisplayFeature)
             {
-                ClearExistingSlotChildren(slotsRoot, useUndo);
+                slotsRoot = FindOrCreateChild(target.transform, SlotsRootObjectName, useUndo);
+                if (settings.ClearExistingSlots)
+                {
+                    ClearExistingSlotChildren(slotsRoot, useUndo);
+                }
+
+                slotDefinitions = CreateSlotDefinitions(target.transform, settings, placementBoundsCollider);
+                for (int i = 0; i < slotDefinitions.Count; i++)
+                {
+                    CreateOrUpdateSlot(slotsRoot, slotDefinitions[i], useUndo);
+                }
+            }
+            else
+            {
+                RemoveChildIfExists(target.transform, SlotsRootObjectName, useUndo);
             }
 
-            List<SlotDefinition> slotDefinitions =
-                CreateSlotDefinitions(target.transform, settings, placementBoundsCollider);
-            for (int i = 0; i < slotDefinitions.Count; i++)
+            if (settings.EnableLightFeature)
             {
-                CreateOrUpdateSlot(slotsRoot, slotDefinitions[i], useUndo);
+                ConfigureLightFeatures(target.transform, settings, useUndo);
+            }
+            else
+            {
+                RemoveChildIfExists(target.transform, LightsRootObjectName, useUndo);
             }
 
-            furniture.AutoCollectSlots();
+            if (settings.EnableFrameFeature)
+            {
+                ConfigureFrameSurfaces(target.transform, settings, useUndo);
+            }
+            else
+            {
+                RemoveChildIfExists(target.transform, FrameSurfacesRootObjectName, useUndo);
+            }
+
+            furniture.AutoCollectFeatures();
 
             SetDirty(target);
             SetDirty(furniture);
-            SetDirty(slotsRoot.gameObject);
+            if (slotsRoot != null)
+            {
+                SetDirty(slotsRoot.gameObject);
+            }
 
             IReadOnlyList<MemoryDisplaySlot> slots = furniture.Slots;
             for (int i = 0; i < slots.Count; i++)
@@ -553,7 +702,7 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         SerializedProperty usePlacementBoundsForSlotsProperty = serializedFurniture.FindProperty("usePlacementBoundsForSlots");
         if (usePlacementBoundsForSlotsProperty != null)
         {
-            usePlacementBoundsForSlotsProperty.boolValue = settings.GenerateSlotsFromPlacementBounds;
+            usePlacementBoundsForSlotsProperty.boolValue = settings.EnableDisplayFeature && settings.GenerateSlotsFromPlacementBounds;
         }
 
         SerializedProperty createBlockingColliderProperty = serializedFurniture.FindProperty("createBlockingCollider");
@@ -707,7 +856,7 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         collider.size = Vector3.Max(max - min, Vector3.one * 0.01f);
     }
 
-    private Transform FindOrCreateChild(Transform parent, string childName, bool useUndo)
+    private static Transform FindOrCreateChild(Transform parent, string childName, bool useUndo)
     {
         Transform child = parent.Find(childName);
         if (child != null)
@@ -775,6 +924,84 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             {
                 UnityEngine.Object.DestroyImmediate(slotsRoot.GetChild(i).gameObject);
             }
+        }
+    }
+
+    private static void ClearChildObjects(Transform parent, bool useUndo)
+    {
+        if (parent == null)
+        {
+            return;
+        }
+
+        for (int i = parent.childCount - 1; i >= 0; i--)
+        {
+            if (useUndo)
+            {
+                Undo.DestroyObjectImmediate(parent.GetChild(i).gameObject);
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(parent.GetChild(i).gameObject);
+            }
+        }
+    }
+
+    private void ConfigureLightFeatures(Transform furnitureRoot, FurnitureBuildSettings settings, bool useUndo)
+    {
+        if (furnitureRoot == null)
+        {
+            return;
+        }
+
+        switch (settings.LightFeaturePreset)
+        {
+            case LightFeaturePreset.None:
+                RemoveChildIfExists(furnitureRoot, LightsRootObjectName, useUndo);
+                return;
+
+            case LightFeaturePreset.Custom:
+                return;
+        }
+
+        Transform lightsRoot = FindOrCreateChild(furnitureRoot, LightsRootObjectName, useUndo);
+        ClearChildObjects(lightsRoot, useUndo);
+
+        switch (settings.LightFeaturePreset)
+        {
+            case LightFeaturePreset.SinglePoint:
+                CreateDisplayLight(lightsRoot, "Light_Main", LightType.Point);
+                break;
+
+            case LightFeaturePreset.SingleSpot:
+                CreateDisplayLight(lightsRoot, "Light_Main", LightType.Spot);
+                break;
+        }
+    }
+
+    private void ConfigureFrameSurfaces(Transform furnitureRoot, FurnitureBuildSettings settings, bool useUndo)
+    {
+        if (furnitureRoot == null)
+        {
+            return;
+        }
+
+        switch (settings.FrameSurfacePreset)
+        {
+            case FrameSurfacePreset.None:
+                RemoveChildIfExists(furnitureRoot, FrameSurfacesRootObjectName, useUndo);
+                return;
+
+            case FrameSurfacePreset.Custom:
+                return;
+        }
+
+        Transform frameRoot = FindOrCreateChild(furnitureRoot, FrameSurfacesRootObjectName, useUndo);
+        ClearChildObjects(frameRoot, useUndo);
+
+        if (settings.FrameSurfacePreset == FrameSurfacePreset.SingleQuad)
+        {
+            CreateFrameSurface(frameRoot, "FrameSurface_Main", createQuadIfMissing: true);
         }
     }
 
@@ -882,7 +1109,7 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         FurnitureBuildSettings settings,
         BoxCollider placementBoundsCollider)
     {
-        if (settings.SlotPreset == SlotPreset.Custom)
+        if (!settings.EnableDisplayFeature || settings.SlotPreset == SlotPreset.Custom)
         {
             return new List<SlotDefinition>();
         }
@@ -1006,13 +1233,97 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         return result;
     }
 
+    private void ResolveSceneFeatureFlags(
+        out bool enableDisplayFeature,
+        out bool enableLightFeature,
+        out bool enableFrameFeature)
+    {
+        switch (authoringMode)
+        {
+            case DisplayFurnitureAuthoringMode.Display:
+                enableDisplayFeature = true;
+                enableLightFeature = false;
+                enableFrameFeature = false;
+                break;
+
+            case DisplayFurnitureAuthoringMode.Light:
+                enableDisplayFeature = false;
+                enableLightFeature = true;
+                enableFrameFeature = false;
+                break;
+
+            case DisplayFurnitureAuthoringMode.Frame:
+                enableDisplayFeature = false;
+                enableLightFeature = false;
+                enableFrameFeature = true;
+                break;
+
+            case DisplayFurnitureAuthoringMode.Custom:
+            default:
+                enableDisplayFeature = customEnableDisplayFeature;
+                enableLightFeature = customEnableLightFeature;
+                enableFrameFeature = customEnableFrameFeature;
+                break;
+        }
+    }
+
+    private static void ResolveProfileFeatureFlags(
+        DisplayFurnitureBuildProfile profile,
+        out bool enableDisplayFeature,
+        out bool enableLightFeature,
+        out bool enableFrameFeature)
+    {
+        if (profile == null)
+        {
+            enableDisplayFeature = true;
+            enableLightFeature = false;
+            enableFrameFeature = false;
+            return;
+        }
+
+        switch (profile.authoringMode)
+        {
+            case DisplayFurnitureAuthoringMode.Display:
+                enableDisplayFeature = true;
+                enableLightFeature = false;
+                enableFrameFeature = false;
+                break;
+
+            case DisplayFurnitureAuthoringMode.Light:
+                enableDisplayFeature = false;
+                enableLightFeature = true;
+                enableFrameFeature = false;
+                break;
+
+            case DisplayFurnitureAuthoringMode.Frame:
+                enableDisplayFeature = false;
+                enableLightFeature = false;
+                enableFrameFeature = true;
+                break;
+
+            case DisplayFurnitureAuthoringMode.Custom:
+            default:
+                enableDisplayFeature = profile.enableDisplayFeature;
+                enableLightFeature = profile.enableLightFeature;
+                enableFrameFeature = profile.enableFrameFeature;
+                break;
+        }
+    }
+
     private FurnitureBuildSettings CreateSceneBuildSettings()
     {
+        ResolveSceneFeatureFlags(out bool enableDisplayFeature, out bool enableLightFeature, out bool enableFrameFeature);
         return new FurnitureBuildSettings
         {
             FurnitureId = furnitureTarget != null ? furnitureTarget.name : string.Empty,
-            FurnitureType = furnitureType,
-            SlotPreset = slotPreset,
+            AuthoringMode = authoringMode,
+            EnableDisplayFeature = enableDisplayFeature,
+            EnableLightFeature = enableLightFeature,
+            EnableFrameFeature = enableFrameFeature,
+            FurnitureType = enableDisplayFeature ? displayFurnitureType : FurnitureType.Custom,
+            SlotPreset = enableDisplayFeature ? displaySlotPreset : SlotPreset.Custom,
+            LightFeaturePreset = enableLightFeature ? lightFeaturePreset : LightFeaturePreset.None,
+            FrameSurfacePreset = enableFrameFeature ? frameSurfacePreset : FrameSurfacePreset.None,
             SlotHeightOffset = slotHeightOffset,
             BoundsPadding = boundsPadding,
             ClearExistingSlots = clearExistingSlots,
@@ -1028,15 +1339,21 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         string modelId,
         DisplayFurnitureBuildProfile profile)
     {
-        InferTypeAndPreset(modelId, out FurnitureType inferredType, out SlotPreset inferredPreset);
+        InferDisplayTypeAndPreset(modelId, out FurnitureType inferredType, out SlotPreset inferredPreset);
 
         if (profile == null)
         {
             return new FurnitureBuildSettings
             {
                 FurnitureId = modelId,
+                AuthoringMode = DisplayFurnitureAuthoringMode.Display,
+                EnableDisplayFeature = true,
+                EnableLightFeature = false,
+                EnableFrameFeature = false,
                 FurnitureType = inferredType,
                 SlotPreset = inferredPreset,
+                LightFeaturePreset = LightFeaturePreset.None,
+                FrameSurfacePreset = FrameSurfacePreset.None,
                 SlotHeightOffset = DefaultSlotHeightOffset,
                 BoundsPadding = Vector3.zero,
                 ClearExistingSlots = true,
@@ -1047,11 +1364,19 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             };
         }
 
+        ResolveProfileFeatureFlags(profile, out bool enableDisplayFeature, out bool enableLightFeature, out bool enableFrameFeature);
+
         return new FurnitureBuildSettings
         {
             FurnitureId = string.IsNullOrWhiteSpace(profile.furnitureId) ? modelId : profile.furnitureId,
-            FurnitureType = profile.furnitureType,
-            SlotPreset = profile.slotPreset,
+            AuthoringMode = profile.authoringMode,
+            EnableDisplayFeature = enableDisplayFeature,
+            EnableLightFeature = enableLightFeature,
+            EnableFrameFeature = enableFrameFeature,
+            FurnitureType = enableDisplayFeature ? profile.furnitureType : FurnitureType.Custom,
+            SlotPreset = enableDisplayFeature ? profile.slotPreset : SlotPreset.Custom,
+            LightFeaturePreset = enableLightFeature ? profile.lightFeaturePreset : LightFeaturePreset.None,
+            FrameSurfacePreset = enableFrameFeature ? profile.frameSurfacePreset : FrameSurfacePreset.None,
             SlotHeightOffset = profile.slotHeightOffset,
             BoundsPadding = ClampToNonNegative(profile.boundsPadding),
             ClearExistingSlots = true,
@@ -1078,11 +1403,17 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         EnsureAssetFolder(source.DataFolderAssetPath);
 
         DisplayFurnitureBuildProfile profile = CreateInstance<DisplayFurnitureBuildProfile>();
-        InferTypeAndPreset(source.ModelId, out FurnitureType inferredType, out SlotPreset inferredPreset);
+        InferDisplayTypeAndPreset(source.ModelId, out FurnitureType inferredType, out SlotPreset inferredPreset);
 
         profile.furnitureId = source.ModelId;
+        profile.authoringMode = DisplayFurnitureAuthoringMode.Display;
+        profile.enableDisplayFeature = true;
+        profile.enableLightFeature = false;
+        profile.enableFrameFeature = false;
         profile.furnitureType = inferredType;
         profile.slotPreset = inferredPreset;
+        profile.lightFeaturePreset = LightFeaturePreset.None;
+        profile.frameSurfacePreset = FrameSurfacePreset.None;
         profile.slotHeightOffset = DefaultSlotHeightOffset;
         profile.boundsPadding = Vector3.zero;
         profile.createPlacementBounds = true;
@@ -1096,7 +1427,7 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         return profile;
     }
 
-    private static void InferTypeAndPreset(string modelId, out FurnitureType furnitureType, out SlotPreset slotPreset)
+    private static void InferDisplayTypeAndPreset(string modelId, out FurnitureType furnitureType, out SlotPreset slotPreset)
     {
         if (modelId.StartsWith("DF_WallShelf_", StringComparison.OrdinalIgnoreCase))
         {
@@ -1798,6 +2129,8 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
             return;
         }
 
+        ApplyFeatureSettingsFromSceneTarget(target, profile);
+
         CaptureRootRotationScaleOverride(target.transform, profile.prefabRootTransform);
 
         Transform modelContainer = target.transform.Find(ModelContainerObjectName);
@@ -1809,7 +2142,66 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         BoxCollider placementBoundsCollider = FindPlacementBoundsCollider(target.transform);
         CapturePlacementBoundsOverride(placementBoundsCollider, profile.placementBoundsOverride);
         CaptureSlotOverrides(target.transform, profile.slotOverrides);
+        CaptureLightOverrides(target.transform, profile.lightOverrides);
+        CaptureFrameSurfaceOverrides(target.transform, profile.frameSurfaceOverrides);
         SetDirty(profile);
+    }
+
+    private static void ApplyFeatureSettingsFromSceneTarget(GameObject target, DisplayFurnitureBuildProfile profile)
+    {
+        MemoryDisplayFurniture furniture = target != null ? target.GetComponent<MemoryDisplayFurniture>() : null;
+        int slotCount = target != null ? target.GetComponentsInChildren<MemoryDisplaySlot>(true).Length : 0;
+        int lightCount = target != null ? target.GetComponentsInChildren<MemoryDisplayLight>(true).Length : 0;
+        int frameCount = target != null ? target.GetComponentsInChildren<MemoryDisplayFrameSurface>(true).Length : 0;
+
+        profile.enableDisplayFeature = slotCount > 0;
+        profile.enableLightFeature = lightCount > 0;
+        profile.enableFrameFeature = frameCount > 0;
+
+        int enabledFeatureCount = (profile.enableDisplayFeature ? 1 : 0)
+            + (profile.enableLightFeature ? 1 : 0)
+            + (profile.enableFrameFeature ? 1 : 0);
+
+        if (enabledFeatureCount == 1)
+        {
+            profile.authoringMode = profile.enableDisplayFeature
+                ? DisplayFurnitureAuthoringMode.Display
+                : profile.enableLightFeature
+                    ? DisplayFurnitureAuthoringMode.Light
+                    : DisplayFurnitureAuthoringMode.Frame;
+        }
+        else
+        {
+            profile.authoringMode = DisplayFurnitureAuthoringMode.Custom;
+        }
+
+        if (furniture != null)
+        {
+            profile.furnitureType = furniture.Type;
+        }
+
+        if (!profile.enableDisplayFeature)
+        {
+            profile.slotPreset = SlotPreset.Custom;
+        }
+
+        if (profile.enableLightFeature && profile.lightFeaturePreset == LightFeaturePreset.None)
+        {
+            profile.lightFeaturePreset = LightFeaturePreset.Custom;
+        }
+        else if (!profile.enableLightFeature)
+        {
+            profile.lightFeaturePreset = LightFeaturePreset.None;
+        }
+
+        if (profile.enableFrameFeature && profile.frameSurfacePreset == FrameSurfacePreset.None)
+        {
+            profile.frameSurfacePreset = FrameSurfacePreset.Custom;
+        }
+        else if (!profile.enableFrameFeature)
+        {
+            profile.frameSurfacePreset = FrameSurfacePreset.None;
+        }
     }
 
     private static void CaptureRootRotationScaleOverride(Transform source, PrefabTransformOverrideData target)
@@ -1916,6 +2308,102 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
                 localPosition = slot.transform.localPosition,
                 localEulerAngles = slot.transform.localEulerAngles,
                 localScale = EnsureNonZeroScale(slot.transform.localScale)
+            });
+        }
+    }
+
+    private static void CaptureLightOverrides(Transform furnitureRoot, List<NamedLightOverrideData> lightOverrides)
+    {
+        if (lightOverrides == null)
+        {
+            return;
+        }
+
+        lightOverrides.Clear();
+        if (furnitureRoot == null)
+        {
+            return;
+        }
+
+        MemoryDisplayLight[] displayLights = furnitureRoot.GetComponentsInChildren<MemoryDisplayLight>(true);
+        for (int i = 0; i < displayLights.Length; i++)
+        {
+            MemoryDisplayLight displayLight = displayLights[i];
+            if (displayLight == null)
+            {
+                continue;
+            }
+
+            Light targetLight = displayLight.TargetLight;
+            if (targetLight == null)
+            {
+                targetLight = displayLight.GetComponent<Light>();
+            }
+
+            lightOverrides.Add(new NamedLightOverrideData
+            {
+                id = displayLight.LightId,
+                lightRole = displayLight.LightRole,
+                allowRuntimeAdjustment = displayLight.AllowRuntimeAdjustment,
+                gameObjectActive = displayLight.gameObject.activeSelf,
+                lightEnabled = targetLight == null || targetLight.enabled,
+                localPosition = displayLight.transform.localPosition,
+                localEulerAngles = displayLight.transform.localEulerAngles,
+                localScale = EnsureNonZeroScale(displayLight.transform.localScale),
+                lightType = targetLight != null ? targetLight.type : LightType.Point,
+                color = targetLight != null ? targetLight.color : Color.white,
+                intensity = targetLight != null ? targetLight.intensity : 1f,
+                range = targetLight != null ? targetLight.range : 10f,
+                spotAngle = targetLight != null ? targetLight.spotAngle : 30f,
+                innerSpotAngle = targetLight != null ? targetLight.innerSpotAngle : 21.8f,
+                shadows = targetLight != null ? targetLight.shadows : LightShadows.None
+            });
+        }
+    }
+
+    private static void CaptureFrameSurfaceOverrides(Transform furnitureRoot, List<NamedFrameSurfaceOverrideData> frameSurfaceOverrides)
+    {
+        if (frameSurfaceOverrides == null)
+        {
+            return;
+        }
+
+        frameSurfaceOverrides.Clear();
+        if (furnitureRoot == null)
+        {
+            return;
+        }
+
+        MemoryDisplayFrameSurface[] frameSurfaces = furnitureRoot.GetComponentsInChildren<MemoryDisplayFrameSurface>(true);
+        for (int i = 0; i < frameSurfaces.Length; i++)
+        {
+            MemoryDisplayFrameSurface frameSurface = frameSurfaces[i];
+            if (frameSurface == null)
+            {
+                continue;
+            }
+
+            Renderer targetRenderer = frameSurface.TargetRenderer;
+            if (targetRenderer == null)
+            {
+                targetRenderer = frameSurface.GetComponent<Renderer>();
+            }
+
+            frameSurfaceOverrides.Add(new NamedFrameSurfaceOverrideData
+            {
+                id = frameSurface.SurfaceId,
+                contentType = frameSurface.ContentType,
+                createQuadIfMissing = targetRenderer != null,
+                gameObjectActive = frameSurface.gameObject.activeSelf,
+                rendererEnabled = targetRenderer == null || targetRenderer.enabled,
+                localPosition = frameSurface.transform.localPosition,
+                localEulerAngles = frameSurface.transform.localEulerAngles,
+                localScale = EnsureNonZeroScale(frameSurface.transform.localScale),
+                emissiveDisplay = frameSurface.EmissiveDisplay,
+                emissionColor = frameSurface.EmissionColor,
+                texturePropertyName = frameSurface.TexturePropertyName,
+                emissionColorPropertyName = frameSurface.EmissionColorPropertyName,
+                emissionTexturePropertyName = frameSurface.EmissionTexturePropertyName
             });
         }
     }
@@ -2028,6 +2516,217 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
         }
     }
 
+    private static void ApplyLightOverrides(Transform furnitureRoot, DisplayFurnitureBuildProfile profile)
+    {
+        if (furnitureRoot == null || profile?.lightOverrides == null || profile.lightOverrides.Count == 0)
+        {
+            return;
+        }
+
+        Dictionary<string, MemoryDisplayLight> lightsById =
+            new Dictionary<string, MemoryDisplayLight>(StringComparer.OrdinalIgnoreCase);
+        MemoryDisplayLight[] displayLights = furnitureRoot.GetComponentsInChildren<MemoryDisplayLight>(true);
+        for (int i = 0; i < displayLights.Length; i++)
+        {
+            MemoryDisplayLight displayLight = displayLights[i];
+            if (displayLight == null || string.IsNullOrWhiteSpace(displayLight.LightId))
+            {
+                continue;
+            }
+
+            lightsById[displayLight.LightId] = displayLight;
+        }
+
+        for (int i = 0; i < profile.lightOverrides.Count; i++)
+        {
+            NamedLightOverrideData lightOverride = profile.lightOverrides[i];
+            if (lightOverride == null || string.IsNullOrWhiteSpace(lightOverride.id))
+            {
+                continue;
+            }
+
+            if (!lightsById.TryGetValue(lightOverride.id, out MemoryDisplayLight displayLight) || displayLight == null)
+            {
+                Transform lightsRoot = FindOrCreateChild(furnitureRoot, LightsRootObjectName, useUndo: false);
+                displayLight = CreateDisplayLight(lightsRoot, lightOverride.id, lightOverride.lightType);
+                lightsById[lightOverride.id] = displayLight;
+            }
+
+            displayLight.transform.localPosition = lightOverride.localPosition;
+            displayLight.transform.localRotation = Quaternion.Euler(lightOverride.localEulerAngles);
+            displayLight.transform.localScale = EnsureNonZeroScale(lightOverride.localScale);
+            displayLight.gameObject.SetActive(lightOverride.gameObjectActive);
+
+            Light targetLight = displayLight.TargetLight;
+            if (targetLight == null)
+            {
+                targetLight = displayLight.GetComponent<Light>();
+            }
+
+            if (targetLight == null)
+            {
+                targetLight = displayLight.gameObject.AddComponent<Light>();
+            }
+
+            targetLight.enabled = lightOverride.lightEnabled;
+            targetLight.type = lightOverride.lightType;
+            targetLight.color = lightOverride.color;
+            targetLight.intensity = Mathf.Max(0f, lightOverride.intensity);
+            targetLight.range = Mathf.Max(0.01f, lightOverride.range);
+            targetLight.spotAngle = Mathf.Clamp(lightOverride.spotAngle, 1f, 179f);
+            targetLight.innerSpotAngle = Mathf.Clamp(lightOverride.innerSpotAngle, 0f, targetLight.spotAngle);
+            targetLight.shadows = lightOverride.shadows;
+
+            displayLight.ApplyAuthoringData(
+                lightOverride.id,
+                lightOverride.lightRole,
+                targetLight,
+                lightOverride.allowRuntimeAdjustment);
+        }
+    }
+
+    private static void ApplyFrameSurfaceOverrides(Transform furnitureRoot, DisplayFurnitureBuildProfile profile)
+    {
+        if (furnitureRoot == null || profile?.frameSurfaceOverrides == null || profile.frameSurfaceOverrides.Count == 0)
+        {
+            return;
+        }
+
+        Dictionary<string, MemoryDisplayFrameSurface> surfacesById =
+            new Dictionary<string, MemoryDisplayFrameSurface>(StringComparer.OrdinalIgnoreCase);
+        MemoryDisplayFrameSurface[] frameSurfaces = furnitureRoot.GetComponentsInChildren<MemoryDisplayFrameSurface>(true);
+        for (int i = 0; i < frameSurfaces.Length; i++)
+        {
+            MemoryDisplayFrameSurface frameSurface = frameSurfaces[i];
+            if (frameSurface == null || string.IsNullOrWhiteSpace(frameSurface.SurfaceId))
+            {
+                continue;
+            }
+
+            surfacesById[frameSurface.SurfaceId] = frameSurface;
+        }
+
+        for (int i = 0; i < profile.frameSurfaceOverrides.Count; i++)
+        {
+            NamedFrameSurfaceOverrideData frameOverride = profile.frameSurfaceOverrides[i];
+            if (frameOverride == null || string.IsNullOrWhiteSpace(frameOverride.id))
+            {
+                continue;
+            }
+
+            if (!surfacesById.TryGetValue(frameOverride.id, out MemoryDisplayFrameSurface frameSurface) || frameSurface == null)
+            {
+                Transform frameRoot = FindOrCreateChild(furnitureRoot, FrameSurfacesRootObjectName, useUndo: false);
+                frameSurface = CreateFrameSurface(frameRoot, frameOverride.id, frameOverride.createQuadIfMissing);
+                surfacesById[frameOverride.id] = frameSurface;
+            }
+
+            frameSurface.transform.localPosition = frameOverride.localPosition;
+            frameSurface.transform.localRotation = Quaternion.Euler(frameOverride.localEulerAngles);
+            frameSurface.transform.localScale = EnsureNonZeroScale(frameOverride.localScale);
+            frameSurface.gameObject.SetActive(frameOverride.gameObjectActive);
+
+            Renderer targetRenderer = frameSurface.TargetRenderer;
+            if (targetRenderer == null)
+            {
+                targetRenderer = frameSurface.GetComponent<Renderer>();
+            }
+
+            if (targetRenderer != null)
+            {
+                targetRenderer.enabled = frameOverride.rendererEnabled;
+            }
+
+            frameSurface.ApplyAuthoringData(
+                frameOverride.id,
+                frameOverride.contentType,
+                targetRenderer,
+                frameOverride.emissiveDisplay,
+                frameOverride.emissionColor,
+                frameOverride.texturePropertyName,
+                frameOverride.emissionColorPropertyName,
+                frameOverride.emissionTexturePropertyName);
+        }
+    }
+
+    private static MemoryDisplayLight CreateDisplayLight(Transform parentRoot, string lightId, LightType lightType)
+    {
+        string childName = $"Light_{SanitizeFeatureChildName(lightId)}";
+        GameObject lightObject = new GameObject(childName);
+        lightObject.transform.SetParent(parentRoot, false);
+        lightObject.transform.localPosition = Vector3.zero;
+        lightObject.transform.localRotation = Quaternion.identity;
+        lightObject.transform.localScale = Vector3.one;
+
+        Light lightComponent = lightObject.AddComponent<Light>();
+        lightComponent.type = lightType;
+        MemoryDisplayLight displayLight = lightObject.AddComponent<MemoryDisplayLight>();
+        displayLight.ApplyAuthoringData(lightId, FurnitureLightRole.Decorative, lightComponent, allowAdjustment: true);
+        return displayLight;
+    }
+
+    private static MemoryDisplayFrameSurface CreateFrameSurface(Transform parentRoot, string surfaceId, bool createQuadIfMissing)
+    {
+        string childName = $"FrameSurface_{SanitizeFeatureChildName(surfaceId)}";
+        GameObject surfaceObject;
+        if (createQuadIfMissing)
+        {
+            surfaceObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            surfaceObject.name = childName;
+            Collider quadCollider = surfaceObject.GetComponent<Collider>();
+            if (quadCollider != null)
+            {
+                UnityEngine.Object.DestroyImmediate(quadCollider);
+            }
+        }
+        else
+        {
+            surfaceObject = new GameObject(childName);
+        }
+
+        surfaceObject.transform.SetParent(parentRoot, false);
+        surfaceObject.transform.localPosition = Vector3.zero;
+        surfaceObject.transform.localRotation = Quaternion.identity;
+        surfaceObject.transform.localScale = Vector3.one;
+
+        MemoryDisplayFrameSurface frameSurface = surfaceObject.GetComponent<MemoryDisplayFrameSurface>();
+        if (frameSurface == null)
+        {
+            frameSurface = surfaceObject.AddComponent<MemoryDisplayFrameSurface>();
+        }
+
+        Renderer targetRenderer = surfaceObject.GetComponent<Renderer>();
+        frameSurface.ApplyAuthoringData(
+            surfaceId,
+            FrameSurfaceContentType.MemoryItemImage,
+            targetRenderer,
+            isEmissive: false,
+            targetEmissionColor: Color.white,
+            targetTexturePropertyName: "_BaseMap",
+            targetEmissionColorPropertyName: "_EmissionColor",
+            targetEmissionTexturePropertyName: "_EmissionMap");
+        return frameSurface;
+    }
+
+    private static string SanitizeFeatureChildName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Feature";
+        }
+
+        return value
+            .Replace('/', '_')
+            .Replace('\\', '_')
+            .Replace(':', '_')
+            .Replace('*', '_')
+            .Replace('?', '_')
+            .Replace('"', '_')
+            .Replace('<', '_')
+            .Replace('>', '_')
+            .Replace('|', '_');
+    }
+
     private static BoxCollider FindPlacementBoundsCollider(Transform furnitureRoot)
     {
         Transform placementBoundsTransform = furnitureRoot != null ? furnitureRoot.Find(PlacementBoundsObjectName) : null;
@@ -2134,8 +2833,14 @@ public class MemoryDisplayFurnitureBuilderWindow : EditorWindow
     private sealed class FurnitureBuildSettings
     {
         public string FurnitureId;
+        public DisplayFurnitureAuthoringMode AuthoringMode;
+        public bool EnableDisplayFeature;
+        public bool EnableLightFeature;
+        public bool EnableFrameFeature;
         public FurnitureType FurnitureType;
         public SlotPreset SlotPreset;
+        public LightFeaturePreset LightFeaturePreset;
+        public FrameSurfacePreset FrameSurfacePreset;
         public float SlotHeightOffset;
         public Vector3 BoundsPadding;
         public bool ClearExistingSlots;

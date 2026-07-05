@@ -7,6 +7,44 @@ public enum FurnitureType
     Custom
 }
 
+public enum DisplayFurnitureAuthoringMode
+{
+    Display,
+    Light,
+    Frame,
+    Custom
+}
+
+public enum LightFeaturePreset
+{
+    None,
+    SinglePoint,
+    SingleSpot,
+    Custom
+}
+
+public enum FrameSurfacePreset
+{
+    None,
+    SingleQuad,
+    Custom
+}
+
+public enum FurnitureLightRole
+{
+    Ambient,
+    Accent,
+    Task,
+    Spot,
+    Decorative
+}
+
+public enum FrameSurfaceContentType
+{
+    MemoryItemImage,
+    CustomTexture
+}
+
 public enum SlotPreset
 {
     SingleCenter,

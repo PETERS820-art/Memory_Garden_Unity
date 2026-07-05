@@ -16,8 +16,9 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 1
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
+  m_CustomRenderQueue: 2000
+  stringTagMap:
+    RenderType: Opaque
   disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
@@ -135,8 +136,8 @@ Material:
     - _GrowthRadius: 0
     - _GrowthSoftness: 1.2
     - _LightRangeCompression: 0.825
-    - _Metallic: 0
     - _MemoryBlend: 1
+    - _Metallic: 0
     - _NormalFlatten: 0.55
     - _OcclusionStrength: 1
     - _PainterlyScale: 1
@@ -146,6 +147,7 @@ Material:
     - _ReceiveShadows: 1
     - _RimPower: 1.17
     - _RimStrength: 0.479
+    - _RuntimeTransitionActive: 0
     - _Saturation: 1
     - _ScreenGrainStrength: 0.482
     - _ShadeSteps: 3.95
@@ -177,6 +179,7 @@ Material:
     - _EmotionTintColor: {r: 0.94, g: 0.9, b: 0.86, a: 1}
     - _GrowthOrigin: {r: 0, g: 0, b: 0, a: 0}
     - _LightTintColor: {r: 1, g: 1, b: 1, a: 1}
+    - _PainterlyBaseColor: {r: 1, g: 1, b: 1, a: 0}
     - _RimColor: {r: 1, g: 0.93757534, b: 0.8632076, a: 1}
     - _ShadowColor: {r: 0.17111667, g: 0.011213949, b: 0.26415092, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

@@ -32,6 +32,9 @@ public class RoomSlotPlacementMetadata : MonoBehaviour
     public float wallSurfaceHeight;
     public string furnitureId;
     public List<string> slotIds = new List<string>();
+    public bool hasDisplaySlots = true;
+    public int lightFeatureCount;
+    public int frameSurfaceCount;
     public Vector3 localPosition;
     public Vector3 localEulerAngles;
     public Vector3 localScale = Vector3.one;
@@ -70,6 +73,8 @@ public class RoomSlotPlacementMetadata : MonoBehaviour
 
         wallLayerCount = Mathf.Max(1, wallLayerCount);
         wallLayerIndex = Mathf.Clamp(wallLayerIndex, 0, wallLayerCount - 1);
+        lightFeatureCount = Mathf.Max(0, lightFeatureCount);
+        frameSurfaceCount = Mathf.Max(0, frameSurfaceCount);
         CaptureTransformData();
     }
 }

@@ -125,7 +125,7 @@ public class MemoryGardenPlacementManager : MonoBehaviour
         {
             if (registeredFurniture[i] != null)
             {
-                registeredFurniture[i].AutoCollectSlots();
+                registeredFurniture[i].AutoCollectFeatures();
             }
         }
     }
