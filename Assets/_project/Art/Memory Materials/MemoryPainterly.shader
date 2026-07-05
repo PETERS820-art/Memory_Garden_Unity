@@ -85,7 +85,9 @@ Shader "MemoryGarden/Memory Painterly"
             #pragma fragment frag
             #pragma multi_compile_instancing
             #pragma multi_compile_fog
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -234,6 +236,21 @@ Shader "MemoryGarden/Memory Painterly"
                 half3 normalWS = normalize(input.normalWS);
                 half3 viewDirWS = normalize(input.viewDirWS);
                 Light mainLight = GetMainLight(input.shadowCoord);
+                half additionalLightMaskBoost = 0.0h;
+                half3 combinedAdditionalLightColor = 0.0h.xxx;
+
+                #if defined(_ADDITIONAL_LIGHTS)
+                    uint additionalLightsCount = GetAdditionalLightsCount();
+                    LIGHT_LOOP_BEGIN(additionalLightsCount)
+                        Light additionalLight = GetAdditionalLight(lightIndex, input.positionWS);
+                        half3 additionalLightDirWS = normalize(additionalLight.direction);
+                        half additionalShadowAttenuation = saturate(additionalLight.shadowAttenuation * additionalLight.distanceAttenuation);
+                        half additionalNdotL = saturate(dot(normalWS, additionalLightDirWS));
+
+                        additionalLightMaskBoost += additionalNdotL * additionalShadowAttenuation;
+                        combinedAdditionalLightColor += additionalLight.color * additionalShadowAttenuation;
+                    LIGHT_LOOP_END
+                #endif
 
                 float2 worldUV = input.positionWS.xz;
                 float2 screenUV = GetNormalizedScreenSpaceUV(input.positionCS);
@@ -308,6 +325,7 @@ Shader "MemoryGarden/Memory Painterly"
                 half lightMask = saturate(lerp(toonMask, rampValue, _RampInfluence));
                 half realtimeShadow = saturate(mainLight.shadowAttenuation * mainLight.distanceAttenuation);
                 lightMask *= lerp(1.0h, realtimeShadow, 0.78h);
+                lightMask = saturate(lightMask + saturate(additionalLightMaskBoost));
 
                 half watercolorMask = watercolor * _WatercolorStrength;
                 half3 baseColor = _BaseColor.rgb;
@@ -342,7 +360,7 @@ Shader "MemoryGarden/Memory Painterly"
                 half3 grainTint = 1.0h.xxx + brushGrain * (_BrushGrainStrength * 0.16h);
                 color *= grainTint;
 
-                half3 lightHue = lerp(1.0h.xxx, mainLight.color, 0.2h);
+                half3 lightHue = lerp(1.0h.xxx, saturate(mainLight.color + combinedAdditionalLightColor), 0.2h);
                 color *= lightHue;
                 half emotionBrushMask = StrokeMask(saturate(watercolor01 * 0.58h + grain01 * 0.22h + edge01 * 0.2h), saturate(_StrokeDensity - 0.16h), _StrokeContrast * 0.75h);
                 color = lerp(color, color * _EmotionTintColor.rgb, saturate(_EmotionTintStrength) * lerp(0.38h, 0.92h, emotionBrushMask));

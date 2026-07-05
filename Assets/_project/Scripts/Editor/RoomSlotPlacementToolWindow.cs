@@ -23,6 +23,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     private const float WallHeightTolerance = 0.1f;
     private const int FullWallLayerCount = 3;
     private const int HalfWallLayerCount = 1;
+    private const bool EnableWallPlacementDebugLogs = true;
 
     private enum PreviewMode
     {
@@ -141,6 +142,8 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         public SpaceSegmentDefinition Definition;
         public WallSegmentSlot WallSlot;
         public WallSide Side;
+        public int WallGridPosition;
+        public int WidthUnits;
         public Vector3 LocalHitPoint;
         public float SurfaceHeight;
         public int LayerCount;
@@ -188,6 +191,10 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     private int hoveredWallLayerIndex;
     private int hoveredWallLayerCount = 1;
     private float hoveredWallSurfaceHeight;
+    private WallSurfaceContext cachedHoveredWallSurfaceContext;
+    private bool hasCachedHoveredWallSurfaceContext;
+    private string lastWallDebugLogKey = string.Empty;
+    private double lastWallDebugLogTime;
 
     [MenuItem(MenuPath)]
     private static void OpenWindow()
@@ -207,11 +214,17 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     private void OnDisable()
     {
         RestoreTemporaryCeilingVisibility();
+        ClearCachedWallSurfaceContext();
         SceneView.duringSceneGui -= OnSceneGUI;
     }
 
     private void OnSelectionChange()
     {
+        if (scenePlacementEnabled && previewMode != PreviewMode.None)
+        {
+            return;
+        }
+
         TryAutoAssignTargetFromSelection();
         Repaint();
     }
@@ -513,6 +526,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         if (!TryResolveTargetBlock(targetObject, out MemorySpaceBlock targetBlock, out _))
         {
             RestoreTemporaryCeilingVisibility();
+            ClearCachedWallSurfaceContext();
             InvalidateScenePreviewCache();
             return;
         }
@@ -520,6 +534,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         if (targetBlock == null || EditorUtility.IsPersistent(targetBlock.gameObject))
         {
             RestoreTemporaryCeilingVisibility();
+            ClearCachedWallSurfaceContext();
             InvalidateScenePreviewCache();
             return;
         }
@@ -530,6 +545,16 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         Event current = Event.current;
         RequestLiveScenePreviewRefresh(current);
         bool isRepaintEvent = current != null && current.type == EventType.Repaint;
+
+        if (previewMode == PreviewMode.Wall
+            && scenePlacementEnabled
+            && current != null
+            && (current.type == EventType.MouseMove || current.type == EventType.MouseDrag || current.type == EventType.MouseDown))
+        {
+            DebugWallPlacement(
+                "OnSceneGUI",
+                $"event={current.type} mouse={current.mousePosition} target={(targetBlock != null ? targetBlock.name : "null")} deleteMode={sceneDeleteMode}");
+        }
 
         if (isRepaintEvent && (scenePlacementEnabled || sceneDeleteMode))
         {
@@ -575,6 +600,8 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
             return;
         }
+
+        ClearCachedWallSurfaceContext();
     }
 
     private void RequestLiveScenePreviewRefresh(Event current)
@@ -667,6 +694,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             hoveredWallLayerIndex = 0;
             hoveredWallLayerCount = 1;
             hoveredWallSurfaceHeight = 0f;
+            ClearCachedWallSurfaceContext();
         }
     }
 
@@ -715,6 +743,12 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         if (!TryBuildPlacementCandidateFromScenePoint(targetBlock, surfaceType, current.mousePosition, out PlacementCandidate candidate, out string message))
         {
+            if (surfaceType == RoomSlotSurfaceType.Wall)
+            {
+                DebugWallPlacement("PreviewBlocked", $"TryBuildPlacementCandidateFromScenePoint failed: {message}");
+                return false;
+            }
+
             preview.HasPreview = true;
             preview.CanPlace = false;
             preview.Message = message;
@@ -726,6 +760,24 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         if (!TryResolvePlacementCandidate(targetBlock, ref candidate, out Vector3 localPosition, out Quaternion localRotation, out string errorMessage))
         {
+            if (candidate.SurfaceType == RoomSlotSurfaceType.Wall)
+            {
+                DebugWallPlacement(
+                    "PreviewResolveFailed",
+                    $"side={candidate.WallSide} wallGridPos={candidate.WallGridPosition} layer={candidate.WallLayerIndex + 1}/{Mathf.Max(1, candidate.WallLayerCount)} error={errorMessage}");
+            }
+
+            if (candidate.SurfaceType == RoomSlotSurfaceType.Wall)
+            {
+                localPosition = RoomSlotGridUtility.GetWallLocalPosition(
+                    targetBlock,
+                    candidate.WallSide,
+                    candidate.WallGridPosition,
+                    candidate.WidthUnits,
+                    candidate.HeightOffset);
+                localRotation = RoomSlotGridUtility.GetWallLocalRotation(candidate.WallSide, candidate.RotationY);
+            }
+
             preview.HasPreview = true;
             preview.CanPlace = false;
             preview.Candidate = candidate;
@@ -769,6 +821,13 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             : GetWallPreviewSize(targetBlock, candidate);
         preview.CanPlace = overlaps.Count == 0 || replaceOverlappingSlots;
         PopulateWallGuidePreview(ref preview, candidate, localPosition, targetBlock);
+
+        if (candidate.SurfaceType == RoomSlotSurfaceType.Wall)
+        {
+            DebugWallPlacement(
+                "PreviewReady",
+                $"side={candidate.WallSide} wallGridPos={candidate.WallGridPosition} grid=({candidate.GridX},{candidate.GridZ}) layer={candidate.WallLayerIndex + 1}/{Mathf.Max(1, candidate.WallLayerCount)} canPlace={preview.CanPlace} overlaps={(overlaps != null ? overlaps.Count : 0)} localPos={localPosition}");
+        }
 
         if (overlaps.Count > 0 && !replaceOverlappingSlots)
         {
@@ -902,7 +961,13 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         preview.WallLayerCount = candidate.WallLayerCount;
         preview.ActiveWallLayerIndex = Mathf.Clamp(candidate.WallLayerIndex, 0, candidate.WallLayerCount - 1);
         preview.WallGuideSide = candidate.WallSide;
-        preview.WallGuideLocalCenter = placementLocalPosition + Vector3.up * (candidate.WallSurfaceHeight * 0.5f);
+        Vector3 wallBaseLocalPosition = RoomSlotGridUtility.GetWallLocalPosition(
+            block,
+            candidate.WallSide,
+            candidate.WallGridPosition,
+            candidate.WidthUnits,
+            0f);
+        preview.WallGuideLocalCenter = wallBaseLocalPosition + Vector3.up * (candidate.WallSurfaceHeight * 0.5f);
         preview.WallGuideLocalSize = candidate.WallSide == WallSide.North || candidate.WallSide == WallSide.South
             ? new Vector3(width, candidate.WallSurfaceHeight, PreviewThickness)
             : new Vector3(PreviewThickness, candidate.WallSurfaceHeight, width);
@@ -948,35 +1013,22 @@ public class RoomSlotPlacementToolWindow : EditorWindow
                        blockRoot.rotation,
                        Vector3.one)))
         {
+            float layerHeight = preview.WallGuideLocalSize.y / preview.WallLayerCount;
+            Vector3 layerSize = new Vector3(
+                preview.WallGuideLocalSize.x,
+                layerHeight,
+                preview.WallGuideLocalSize.z);
+
             Handles.color = new Color(0.35f, 0.75f, 1f, 0.4f);
             Handles.DrawWireCube(Vector3.zero, preview.WallGuideLocalSize);
 
-            float layerHeight = preview.WallGuideLocalSize.y / preview.WallLayerCount;
-            float activeLayerCenterY = -preview.WallGuideLocalSize.y * 0.5f + (layerHeight * (preview.ActiveWallLayerIndex + 0.5f));
-            Vector3 activeLayerSize = preview.WallGuideSide == WallSide.North || preview.WallGuideSide == WallSide.South
-                ? new Vector3(preview.WallGuideLocalSize.x, layerHeight, preview.WallGuideLocalSize.z)
-                : new Vector3(preview.WallGuideLocalSize.x, layerHeight, preview.WallGuideLocalSize.z);
-            Handles.color = new Color(0.15f, 1f, 0.75f, 0.7f);
-            Handles.DrawWireCube(new Vector3(0f, activeLayerCenterY, 0f), activeLayerSize);
-
-            Handles.color = new Color(0.35f, 0.75f, 1f, 0.4f);
-            for (int layer = 1; layer < preview.WallLayerCount; layer++)
+            for (int layer = 0; layer < preview.WallLayerCount; layer++)
             {
-                float y = -preview.WallGuideLocalSize.y * 0.5f + (layerHeight * layer);
-                Vector3 from;
-                Vector3 to;
-                if (preview.WallGuideSide == WallSide.North || preview.WallGuideSide == WallSide.South)
-                {
-                    from = new Vector3(-preview.WallGuideLocalSize.x * 0.5f, y, 0f);
-                    to = new Vector3(preview.WallGuideLocalSize.x * 0.5f, y, 0f);
-                }
-                else
-                {
-                    from = new Vector3(0f, y, -preview.WallGuideLocalSize.z * 0.5f);
-                    to = new Vector3(0f, y, preview.WallGuideLocalSize.z * 0.5f);
-                }
-
-                Handles.DrawLine(from, to);
+                float centerY = -preview.WallGuideLocalSize.y * 0.5f + (layerHeight * (layer + 0.5f));
+                Handles.color = layer == preview.ActiveWallLayerIndex
+                    ? new Color(0.15f, 1f, 0.75f, 0.9f)
+                    : new Color(0.35f, 0.75f, 1f, 0.25f);
+                Handles.DrawWireCube(new Vector3(0f, centerY, 0f), layerSize);
             }
         }
     }
@@ -1014,7 +1066,18 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         if (preview.CanPlace)
         {
+            if (preview.Candidate.SurfaceType == RoomSlotSurfaceType.Wall)
+            {
+                DebugWallPlacement(
+                    "ClickPlace",
+                    $"side={preview.Candidate.WallSide} wallGridPos={preview.Candidate.WallGridPosition} layer={preview.Candidate.WallLayerIndex + 1}/{Mathf.Max(1, preview.Candidate.WallLayerCount)} localCenter={preview.LocalCenter}");
+            }
+
             PlaceRoomSlot(preview.Candidate);
+        }
+        else if (preview.Candidate.SurfaceType == RoomSlotSurfaceType.Wall)
+        {
+            DebugWallPlacement("ClickBlocked", $"message={preview.Message}");
         }
 
         current.Use();
@@ -1047,6 +1110,13 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     {
         try
         {
+            if (candidate.SurfaceType == RoomSlotSurfaceType.Wall)
+            {
+                DebugWallPlacement(
+                    "PlaceRoomSlot",
+                    $"start side={candidate.WallSide} wallGridPos={candidate.WallGridPosition} grid=({candidate.GridX},{candidate.GridZ}) layer={candidate.WallLayerIndex + 1}/{Mathf.Max(1, candidate.WallLayerCount)}");
+            }
+
             ValidationResult prefabValidation = ValidateSlotPrefab(slotPrefab);
             if (prefabValidation.HasErrors)
             {
@@ -1063,8 +1133,18 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
                 if (!TryResolvePlacementCandidate(context.WorkingBlock, ref candidate, out Vector3 localPosition, out Quaternion localRotation, out string errorMessage))
                 {
+                    if (candidate.SurfaceType == RoomSlotSurfaceType.Wall)
+                    {
+                        DebugWallPlacement("PlaceResolveFailed", errorMessage);
+                    }
+
                     SetStatus(errorMessage, MessageType.Error);
                     return;
+                }
+
+                if (candidate.SurfaceType == RoomSlotSurfaceType.Wall)
+                {
+                    DebugWallPlacement("PlaceResolved", $"localPosition={localPosition} localRotation={localRotation.eulerAngles}");
                 }
 
                 RoomSlotPlacementMetadata previewSnapshot = BuildPreviewSnapshot(candidate);
@@ -1160,6 +1240,11 @@ public class RoomSlotPlacementToolWindow : EditorWindow
                 EditorUtility.SetDirty(instance);
                 EditorUtility.SetDirty(context.WorkingBlock);
                 SaveEditedTarget(context);
+
+                if (candidate.SurfaceType == RoomSlotSurfaceType.Wall)
+                {
+                    DebugWallPlacement("PlaceCompleted", $"slotPlacementId={slotPlacementId}");
+                }
 
                 ValidationResult placementValidation = ValidateCurrentBlockSlotsInternal(context.WorkingBlock);
                 placementValidation.Merge(setupValidation);
@@ -1894,6 +1979,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
         if (!TryPickWallSurfaceContext(block, mousePosition, out WallSurfaceContext surfaceContext, out message))
         {
+            DebugWallPlacement("WallCandidateFailed", message);
             return false;
         }
 
@@ -1909,22 +1995,36 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         int maxAnchor = Mathf.Max(0, wallSpan - Mathf.Max(1, candidate.WidthUnits));
 
         candidate.WallSide = surfaceContext.Side;
-        switch (surfaceContext.Side)
+        if (surfaceContext.WidthUnits > 0)
         {
-            case WallSide.North:
-            case WallSide.South:
-                candidate.WallGridPosition = Mathf.Clamp(
-                    Mathf.FloorToInt((surfaceContext.LocalHitPoint.x + halfWidth) / gridSize),
-                    0,
-                    maxAnchor);
-                break;
-            case WallSide.East:
-            case WallSide.West:
-                candidate.WallGridPosition = Mathf.Clamp(
-                    Mathf.FloorToInt((surfaceContext.LocalHitPoint.z + halfDepth) / gridSize),
-                    0,
-                    maxAnchor);
-                break;
+            int placementStart = surfaceContext.WallGridPosition;
+            int placementWidth = surfaceContext.WidthUnits;
+            int rawWallGridPosition = GetWallGridPositionFromLocalHitPoint(block, surfaceContext.Side, surfaceContext.LocalHitPoint);
+            int placementMaxAnchor = placementStart + Mathf.Max(0, placementWidth - Mathf.Max(1, candidate.WidthUnits));
+            candidate.WallGridPosition = Mathf.Clamp(
+                rawWallGridPosition,
+                placementStart,
+                Mathf.Min(maxAnchor, placementMaxAnchor));
+        }
+        else
+        {
+            switch (surfaceContext.Side)
+            {
+                case WallSide.North:
+                case WallSide.South:
+                    candidate.WallGridPosition = Mathf.Clamp(
+                        Mathf.FloorToInt((surfaceContext.LocalHitPoint.x + halfWidth) / gridSize),
+                        0,
+                        maxAnchor);
+                    break;
+                case WallSide.East:
+                case WallSide.West:
+                    candidate.WallGridPosition = Mathf.Clamp(
+                        Mathf.FloorToInt((surfaceContext.LocalHitPoint.z + halfDepth) / gridSize),
+                        0,
+                        maxAnchor);
+                    break;
+            }
         }
 
         float layerHeight = surfaceContext.LayerCount > 0
@@ -1938,10 +2038,19 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         candidate.WallSurfaceHeight = surfaceContext.SurfaceHeight;
         hoveredWallLayerIndex = candidate.WallLayerIndex;
 
+        DebugWallPlacement(
+            "WallSurfacePicked",
+            $"side={surfaceContext.Side} hit={surfaceContext.LocalHitPoint} surfaceHeight={surfaceContext.SurfaceHeight:0.###} layers={surfaceContext.LayerCount} pickedLayer={candidate.WallLayerIndex + 1}");
+
         if (!TryResolveWallPlacementCandidate(block, ref candidate, out message))
         {
+            DebugWallPlacement("WallResolveFailed", message);
             return false;
         }
+
+        DebugWallPlacement(
+            "WallCandidateReady",
+            $"side={candidate.WallSide} wallGridPos={candidate.WallGridPosition} grid=({candidate.GridX},{candidate.GridZ}) layer={candidate.WallLayerIndex + 1}/{Mathf.Max(1, candidate.WallLayerCount)} heightOffset={candidate.HeightOffset:0.###}");
 
         return true;
     }
@@ -2031,34 +2140,382 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             return false;
         }
 
-        if (TryRaycastRoomSlotPlacementUnderCursor(block, mousePosition, out RoomSlotPlacementMetadata pickedSlotPlacement, out RaycastHit slotHit)
-            && pickedSlotPlacement.surfaceType == RoomSlotSurfaceType.Wall)
+        if (TryFindWallSurfaceContextFromPlacements(block, mousePosition, out context, out message))
         {
-            float slotWallHeight = pickedSlotPlacement.wallSurfaceHeight > 0f ? pickedSlotPlacement.wallSurfaceHeight : FullWallHeight;
-            int slotLayerCount = Mathf.Max(1, pickedSlotPlacement.wallLayerCount);
-
-            context = new WallSurfaceContext
-            {
-                PlacementMetadata = null,
-                Definition = null,
-                WallSlot = null,
-                Side = pickedSlotPlacement.wallSide,
-                LocalHitPoint = block.transform.InverseTransformPoint(slotHit.point),
-                SurfaceHeight = slotWallHeight,
-                LayerCount = slotLayerCount
-            };
+            DebugWallPlacement(
+                "WallContext",
+                $"direct placement hit side={context.Side} surfaceHeight={context.SurfaceHeight:0.###} layers={context.LayerCount} localHit={context.LocalHitPoint}");
             return true;
         }
 
-        if (!TryRaycastSegmentPlacementUnderCursor(block, mousePosition, out SpaceSegmentPlacementMetadata placementMetadata, out RaycastHit segmentHit))
+        bool fallbackResult = TryFindWallSurfaceContextFromProjectedPlanePoint(block, mousePosition, out context, out message);
+        if (fallbackResult)
         {
-            message = "Hover a painted wall segment to place a wall slot.";
+            DebugWallPlacement(
+                "WallContext",
+                $"fallback projected hit side={context.Side} surfaceHeight={context.SurfaceHeight:0.###} layers={context.LayerCount} localHit={context.LocalHitPoint}");
+        }
+        else
+        {
+            DebugWallPlacement("WallContextFailed", message);
+        }
+
+        return fallbackResult;
+    }
+
+    private bool TryFindWallSurfaceContextFromPlacements(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        out WallSurfaceContext context,
+        out string message)
+    {
+        context = null;
+        message = "Hover a painted wall segment to place a wall slot.";
+        if (block == null)
+        {
             return false;
         }
 
-        if (placementMetadata == null
-            || placementMetadata.record == null
-            || placementMetadata.record.category != SegmentCategory.Wall)
+        Event currentEvent = Event.current;
+        bool canUseScenePick = IsScenePointerEvent(currentEvent);
+
+        if (!canUseScenePick
+            && hasCachedHoveredWallSurfaceContext
+            && TryGetCachedWallSurfaceContext(block, out context))
+        {
+            message = string.Empty;
+            return true;
+        }
+
+        if (canUseScenePick && TryPickSegmentPlacementGameObjectUnderCursor(block, mousePosition, out SpaceSegmentPlacementMetadata pickedPlacement))
+        {
+            if (TryBuildWallSurfaceContextFromPlacement(
+                    block,
+                    pickedPlacement,
+                    mousePosition,
+                    out context,
+                    out message))
+            {
+                CacheWallSurfaceContext(context);
+                DebugWallPlacement(
+                    "PlacementScenePickHit",
+                    $"placementId={pickedPlacement.record.placementId} side={pickedPlacement.record.side} source=HandleUtility.PickGameObject");
+                return true;
+            }
+
+            ClearCachedWallSurfaceContext();
+            DebugWallPlacement("PlacementScenePickRejected", message);
+        }
+
+        if (canUseScenePick && TryPickWallSegmentSlotGameObjectUnderCursor(block, mousePosition, out WallSegmentSlot pickedWallSlot))
+        {
+            if (TryBuildWallSurfaceContextFromWallSlot(
+                    block,
+                    pickedWallSlot,
+                    mousePosition,
+                    out context,
+                    out message))
+            {
+                CacheWallSurfaceContext(context);
+                DebugWallPlacement(
+                    "WallSlotScenePickHit",
+                    $"side={pickedWallSlot.side} segmentId={pickedWallSlot.segmentId} source=HandleUtility.PickGameObject");
+                return true;
+            }
+
+            ClearCachedWallSurfaceContext();
+            DebugWallPlacement("WallSlotScenePickRejected", message);
+        }
+
+        if (TryRaycastSegmentPlacementUnderCursor(block, mousePosition, out SpaceSegmentPlacementMetadata hoveredPlacement, out RaycastHit hoveredHit))
+        {
+            Vector3 explicitLocalHitPoint = block.transform.InverseTransformPoint(hoveredHit.point);
+            if (TryBuildWallSurfaceContextFromPlacement(
+                    block,
+                    hoveredPlacement,
+                    mousePosition,
+                    out context,
+                    out message,
+                    true,
+                    explicitLocalHitPoint))
+            {
+                CacheWallSurfaceContext(context);
+                DebugWallPlacement(
+                    "PlacementRaycastHit",
+                    $"placementId={hoveredPlacement.record.placementId} side={hoveredPlacement.record.side} worldHit={hoveredHit.point} localHit={explicitLocalHitPoint}");
+                return true;
+            }
+
+            ClearCachedWallSurfaceContext();
+            DebugWallPlacement("PlacementRaycastRejected", message);
+        }
+
+        if (TryRaycastWallSegmentSlotUnderCursor(block, mousePosition, out WallSegmentSlot hoveredWallSlot, out RaycastHit hoveredWallHit))
+        {
+            Vector3 explicitLocalHitPoint = block.transform.InverseTransformPoint(hoveredWallHit.point);
+            if (TryBuildWallSurfaceContextFromWallSlot(
+                    block,
+                    hoveredWallSlot,
+                    mousePosition,
+                    out context,
+                    out message,
+                    true,
+                    explicitLocalHitPoint))
+            {
+                CacheWallSurfaceContext(context);
+                DebugWallPlacement(
+                    "WallSlotRaycastHit",
+                    $"side={hoveredWallSlot.side} segmentId={hoveredWallSlot.segmentId} worldHit={hoveredWallHit.point} localHit={explicitLocalHitPoint}");
+                return true;
+            }
+
+            ClearCachedWallSurfaceContext();
+            DebugWallPlacement("WallSlotRaycastRejected", message);
+        }
+
+        SpaceSegmentPlacementMetadata[] placements = block.GetComponentsInChildren<SpaceSegmentPlacementMetadata>(true);
+        if (placements == null || placements.Length == 0)
+        {
+            return TryFindWallSurfaceContextFromWallSlots(block, mousePosition, out context, out message);
+        }
+
+        Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
+        float bestDistance = float.MaxValue;
+        bool foundWallHit = false;
+
+        for (int i = 0; i < placements.Length; i++)
+        {
+            SpaceSegmentPlacementMetadata placement = placements[i];
+            if (placement == null || placement.record == null || placement.record.category != SegmentCategory.Wall)
+            {
+                continue;
+            }
+
+            SpaceSegmentDefinition definition = placement.definition;
+            if (definition == null && block.segmentKit != null && !string.IsNullOrWhiteSpace(placement.record.segmentId))
+            {
+                definition = block.segmentKit.GetSegment(placement.record.segmentId);
+            }
+
+            if (definition == null || definition.category != SegmentCategory.Wall)
+            {
+                continue;
+            }
+
+            int widthUnits = Mathf.Max(1, placement.record.footprint.x);
+            int wallGridPosition = GetWallGridPosition(placement.record);
+            Vector3 wallBaseLocalPosition = RoomSlotGridUtility.GetWallLocalPosition(
+                block,
+                placement.record.side,
+                wallGridPosition,
+                widthUnits,
+                0f);
+
+            if (!TryIntersectWallPlacementSurface(
+                    block,
+                    placement.record.side,
+                    wallBaseLocalPosition,
+                    widthUnits,
+                    ray,
+                    out Vector3 localHitPoint,
+                    out float hitDistance))
+            {
+                continue;
+            }
+
+            float surfaceHeight = ResolveWallSurfaceHeight(definition);
+            if (localHitPoint.y < 0f || localHitPoint.y > surfaceHeight)
+            {
+                continue;
+            }
+
+            foundWallHit = true;
+            if (hitDistance >= bestDistance)
+            {
+                continue;
+            }
+
+            bestDistance = hitDistance;
+
+            WallSegmentSlot wallSlot = placement.GetComponent<WallSegmentSlot>();
+            bool hasOverlay = placement.overlayDefinition != null
+                || (wallSlot != null && !string.IsNullOrWhiteSpace(wallSlot.overlayId));
+            if (hasOverlay)
+            {
+                context = null;
+                message = "Window/opening wall segments cannot host room slots.";
+                continue;
+            }
+
+            int layerCount = GetWallLayerCountForHeight(surfaceHeight);
+            if (layerCount <= 0)
+            {
+                context = null;
+                message = $"Unsupported wall height {surfaceHeight:0.###}. Only {HalfWallHeight:0.##} and {FullWallHeight:0.##} are paintable.";
+                continue;
+            }
+
+            context = new WallSurfaceContext
+            {
+                PlacementMetadata = placement,
+                Definition = definition,
+                WallSlot = wallSlot,
+                Side = placement.record.side,
+                WallGridPosition = wallGridPosition,
+                WidthUnits = widthUnits,
+                LocalHitPoint = localHitPoint,
+                SurfaceHeight = surfaceHeight,
+                LayerCount = layerCount
+            };
+            message = string.Empty;
+        }
+
+        if (context != null)
+        {
+            CacheWallSurfaceContext(context);
+            DebugWallPlacement(
+                "PlacementScanHit",
+                $"side={context.Side} surfaceHeight={context.SurfaceHeight:0.###} layers={context.LayerCount} localHit={context.LocalHitPoint}");
+            return true;
+        }
+
+        if (TryFindWallSurfaceContextFromWallSlots(block, mousePosition, out context, out message))
+        {
+            CacheWallSurfaceContext(context);
+            DebugWallPlacement(
+                "WallSlotScanHit",
+                $"side={context.Side} wallGridPos={context.WallGridPosition} width={context.WidthUnits} surfaceHeight={context.SurfaceHeight:0.###} layers={context.LayerCount} localHit={context.LocalHitPoint}");
+            return true;
+        }
+
+        if (!foundWallHit)
+        {
+            message = "Hover a painted wall segment to place a wall slot.";
+        }
+        else
+        {
+            DebugWallPlacement("PlacementScanRejected", message);
+        }
+
+        return false;
+    }
+
+    private static bool IsScenePointerEvent(Event current)
+    {
+        if (current == null)
+        {
+            return false;
+        }
+
+        switch (current.type)
+        {
+            case EventType.MouseMove:
+            case EventType.MouseDrag:
+            case EventType.MouseDown:
+            case EventType.MouseUp:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private bool TryGetCachedWallSurfaceContext(MemorySpaceBlock block, out WallSurfaceContext context)
+    {
+        context = null;
+        if (!hasCachedHoveredWallSurfaceContext || cachedHoveredWallSurfaceContext == null)
+        {
+            return false;
+        }
+
+        SpaceSegmentPlacementMetadata placement = cachedHoveredWallSurfaceContext.PlacementMetadata;
+        if (placement == null || placement.record == null || placement.GetComponentInParent<MemorySpaceBlock>() != block)
+        {
+            ClearCachedWallSurfaceContext();
+            return false;
+        }
+
+        context = CloneWallSurfaceContext(cachedHoveredWallSurfaceContext);
+        return context != null;
+    }
+
+    private void CacheWallSurfaceContext(WallSurfaceContext context)
+    {
+        cachedHoveredWallSurfaceContext = CloneWallSurfaceContext(context);
+        hasCachedHoveredWallSurfaceContext = cachedHoveredWallSurfaceContext != null;
+    }
+
+    private void ClearCachedWallSurfaceContext()
+    {
+        cachedHoveredWallSurfaceContext = null;
+        hasCachedHoveredWallSurfaceContext = false;
+    }
+
+    private static WallSurfaceContext CloneWallSurfaceContext(WallSurfaceContext source)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        return new WallSurfaceContext
+        {
+            PlacementMetadata = source.PlacementMetadata,
+            Definition = source.Definition,
+            WallSlot = source.WallSlot,
+            Side = source.Side,
+            WallGridPosition = source.WallGridPosition,
+            WidthUnits = source.WidthUnits,
+            LocalHitPoint = source.LocalHitPoint,
+            SurfaceHeight = source.SurfaceHeight,
+            LayerCount = source.LayerCount
+        };
+    }
+
+    private bool TryFindWallSurfaceContextFromProjectedPlanePoint(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        out WallSurfaceContext context,
+        out string message)
+    {
+        context = null;
+        message = "Hover a painted wall segment to place a wall slot.";
+        if (block == null)
+        {
+            return false;
+        }
+
+        if (!TryRaycastAuthoringPlane(block.transform, mousePosition, out Vector3 localPlanePoint))
+        {
+            return false;
+        }
+
+        Vector3 clampedPlanePoint = ClampLocalPointToBlockBounds(block, localPlanePoint);
+        DebugWallPlacement("ProjectedPlanePoint", $"raw={localPlanePoint} clamped={clampedPlanePoint}");
+
+        if (!TryFindNearestWallPlacementMetadata(block, clampedPlanePoint, out SpaceSegmentPlacementMetadata placement))
+        {
+            DebugWallPlacement("ProjectedPlaneNoWall", $"planePoint={localPlanePoint} clamped={clampedPlanePoint}");
+            return false;
+        }
+
+        DebugWallPlacement(
+            "ProjectedPlaneNearestWall",
+            $"planePoint={localPlanePoint} clamped={clampedPlanePoint} placementId={placement.record.placementId} side={placement.record.side} grid=({placement.record.gridX},{placement.record.gridZ})");
+        return TryBuildWallSurfaceContextFromPlacement(block, placement, mousePosition, out context, out message);
+    }
+
+    private bool TryBuildWallSurfaceContextFromPlacement(
+        MemorySpaceBlock block,
+        SpaceSegmentPlacementMetadata placementMetadata,
+        Vector2 mousePosition,
+        out WallSurfaceContext context,
+        out string message,
+        bool hasExplicitLocalHitPoint = false,
+        Vector3 explicitLocalHitPoint = default)
+    {
+        context = null;
+        message = string.Empty;
+        if (block == null || placementMetadata == null || placementMetadata.record == null || placementMetadata.record.category != SegmentCategory.Wall)
         {
             message = "Wall slot painting only works on real wall segments inside the selected block.";
             return false;
@@ -2093,17 +2550,467 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             return false;
         }
 
+        int widthUnits = Mathf.Max(1, placementMetadata.record.footprint.x);
+        int wallGridPosition = GetWallGridPosition(placementMetadata.record);
+        Vector3 wallBaseLocalPosition = RoomSlotGridUtility.GetWallLocalPosition(
+            block,
+            placementMetadata.record.side,
+            wallGridPosition,
+            widthUnits,
+            0f);
+
+        Vector3 localHitPoint;
+        if (hasExplicitLocalHitPoint)
+        {
+            localHitPoint = explicitLocalHitPoint;
+        }
+        else if (!TryRaycastWallSurfaceLocalPoint(
+                     block,
+                     placementMetadata.record.side,
+                     block.transform.TransformPoint(wallBaseLocalPosition),
+                     mousePosition,
+                     out localHitPoint))
+        {
+            message = "Could not raycast onto the hovered wall surface.";
+            return false;
+        }
+
+        localHitPoint = ConstrainLocalHitPointToWallSurface(
+            block,
+            placementMetadata.record.side,
+            wallBaseLocalPosition,
+            widthUnits,
+            surfaceHeight,
+            localHitPoint);
+
         context = new WallSurfaceContext
         {
             PlacementMetadata = placementMetadata,
             Definition = definition,
             WallSlot = wallSlot,
             Side = placementMetadata.record.side,
-            LocalHitPoint = block.transform.InverseTransformPoint(segmentHit.point),
+            WallGridPosition = wallGridPosition,
+            WidthUnits = widthUnits,
+            LocalHitPoint = localHitPoint,
             SurfaceHeight = surfaceHeight,
             LayerCount = layerCount
         };
+        message = string.Empty;
+        DebugWallPlacement(
+            "BuildContextFromPlacement",
+            $"placementId={placementMetadata.record.placementId} side={placementMetadata.record.side} localHit={localHitPoint} surfaceHeight={surfaceHeight:0.###} layers={layerCount}");
         return true;
+    }
+
+    private bool TryFindWallSurfaceContextFromWallSlots(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        out WallSurfaceContext context,
+        out string message)
+    {
+        context = null;
+        message = "Hover a painted wall segment to place a wall slot.";
+        if (block == null || block.wallSegments == null || block.wallSegments.Count == 0)
+        {
+            return false;
+        }
+
+        Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
+        float bestDistance = float.MaxValue;
+
+        for (int i = 0; i < block.wallSegments.Count; i++)
+        {
+            WallSegmentSlot wallSlot = block.wallSegments[i];
+            if (!TryResolveWallSlotPlacement(block, wallSlot, out SpaceSegmentDefinition definition, out int wallGridPosition, out int widthUnits, out float surfaceHeight, out int layerCount, out string resolveMessage))
+            {
+                if (!string.IsNullOrWhiteSpace(resolveMessage))
+                {
+                    message = resolveMessage;
+                }
+
+                continue;
+            }
+
+            Vector3 wallBaseLocalPosition = RoomSlotGridUtility.GetWallLocalPosition(
+                block,
+                wallSlot.side,
+                wallGridPosition,
+                widthUnits,
+                0f);
+
+            if (!TryIntersectWallPlacementSurface(
+                    block,
+                    wallSlot.side,
+                    wallBaseLocalPosition,
+                    widthUnits,
+                    ray,
+                    out Vector3 localHitPoint,
+                    out float hitDistance))
+            {
+                continue;
+            }
+
+            if (localHitPoint.y < 0f || localHitPoint.y > surfaceHeight || hitDistance >= bestDistance)
+            {
+                continue;
+            }
+
+            bestDistance = hitDistance;
+            context = new WallSurfaceContext
+            {
+                PlacementMetadata = null,
+                Definition = definition,
+                WallSlot = wallSlot,
+                Side = wallSlot.side,
+                WallGridPosition = wallGridPosition,
+                WidthUnits = widthUnits,
+                LocalHitPoint = localHitPoint,
+                SurfaceHeight = surfaceHeight,
+                LayerCount = layerCount
+            };
+            message = string.Empty;
+        }
+
+        return context != null;
+    }
+
+    private bool TryBuildWallSurfaceContextFromWallSlot(
+        MemorySpaceBlock block,
+        WallSegmentSlot wallSlot,
+        Vector2 mousePosition,
+        out WallSurfaceContext context,
+        out string message,
+        bool hasExplicitLocalHitPoint = false,
+        Vector3 explicitLocalHitPoint = default)
+    {
+        context = null;
+        message = string.Empty;
+        if (!TryResolveWallSlotPlacement(block, wallSlot, out SpaceSegmentDefinition definition, out int wallGridPosition, out int widthUnits, out float surfaceHeight, out int layerCount, out message))
+        {
+            return false;
+        }
+
+        Vector3 wallBaseLocalPosition = RoomSlotGridUtility.GetWallLocalPosition(
+            block,
+            wallSlot.side,
+            wallGridPosition,
+            widthUnits,
+            0f);
+
+        Vector3 localHitPoint;
+        if (hasExplicitLocalHitPoint)
+        {
+            localHitPoint = explicitLocalHitPoint;
+        }
+        else if (!TryRaycastWallSurfaceLocalPoint(
+                     block,
+                     wallSlot.side,
+                     block.transform.TransformPoint(wallBaseLocalPosition),
+                     mousePosition,
+                     out localHitPoint))
+        {
+            message = "Could not raycast onto the hovered baked wall surface.";
+            return false;
+        }
+
+        localHitPoint = ConstrainLocalHitPointToWallSurface(
+            block,
+            wallSlot.side,
+            wallBaseLocalPosition,
+            widthUnits,
+            surfaceHeight,
+            localHitPoint);
+
+        context = new WallSurfaceContext
+        {
+            PlacementMetadata = null,
+            Definition = definition,
+            WallSlot = wallSlot,
+            Side = wallSlot.side,
+            WallGridPosition = wallGridPosition,
+            WidthUnits = widthUnits,
+            LocalHitPoint = localHitPoint,
+            SurfaceHeight = surfaceHeight,
+            LayerCount = layerCount
+        };
+        message = string.Empty;
+        DebugWallPlacement(
+            "BuildContextFromWallSlot",
+            $"side={wallSlot.side} wallGridPos={wallGridPosition} width={widthUnits} localHit={localHitPoint} surfaceHeight={surfaceHeight:0.###} layers={layerCount} segmentId={wallSlot.segmentId}");
+        return true;
+    }
+
+    private bool TryResolveWallSlotPlacement(
+        MemorySpaceBlock block,
+        WallSegmentSlot wallSlot,
+        out SpaceSegmentDefinition definition,
+        out int wallGridPosition,
+        out int widthUnits,
+        out float surfaceHeight,
+        out int layerCount,
+        out string message)
+    {
+        definition = null;
+        wallGridPosition = 0;
+        widthUnits = 0;
+        surfaceHeight = 0f;
+        layerCount = 0;
+        message = string.Empty;
+
+        if (block == null || wallSlot == null)
+        {
+            message = "Wall slot data is missing.";
+            return false;
+        }
+
+        if (block.segmentKit == null || string.IsNullOrWhiteSpace(wallSlot.segmentId))
+        {
+            message = "The baked wall slot is missing its segment definition.";
+            return false;
+        }
+
+        definition = block.segmentKit.GetSegment(wallSlot.segmentId);
+        if (definition == null || definition.category != SegmentCategory.Wall)
+        {
+            message = $"Missing valid wall definition for baked slot: {wallSlot.segmentId}.";
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(wallSlot.overlayId))
+        {
+            message = "Window/opening wall segments cannot host room slots.";
+            return false;
+        }
+
+        surfaceHeight = ResolveWallSurfaceHeight(definition);
+        layerCount = GetWallLayerCountForHeight(surfaceHeight);
+        if (layerCount <= 0)
+        {
+            message = $"Unsupported wall height {surfaceHeight:0.###}. Only {HalfWallHeight:0.##} and {FullWallHeight:0.##} are paintable.";
+            return false;
+        }
+
+        widthUnits = ResolveWallDefinitionWidthUnits(definition);
+        if (!TryResolveBakedWallGridPosition(block, wallSlot, widthUnits, out wallGridPosition))
+        {
+            message = $"Could not resolve a grid position for baked wall slot {wallSlot.segmentId}.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static Vector3 ConstrainLocalHitPointToWallSurface(
+        MemorySpaceBlock block,
+        WallSide wallSide,
+        Vector3 wallBaseLocalPosition,
+        int widthUnits,
+        float surfaceHeight,
+        Vector3 localHitPoint)
+    {
+        if (block == null)
+        {
+            return localHitPoint;
+        }
+
+        float gridSize = RoomSlotGridUtility.GetGridSize(block);
+        float halfLength = Mathf.Max(1, widthUnits) * gridSize * 0.5f;
+
+        switch (wallSide)
+        {
+            case WallSide.North:
+            case WallSide.South:
+                localHitPoint.x = Mathf.Clamp(localHitPoint.x, wallBaseLocalPosition.x - halfLength, wallBaseLocalPosition.x + halfLength);
+                localHitPoint.z = wallBaseLocalPosition.z;
+                break;
+
+            case WallSide.East:
+            case WallSide.West:
+                localHitPoint.x = wallBaseLocalPosition.x;
+                localHitPoint.z = Mathf.Clamp(localHitPoint.z, wallBaseLocalPosition.z - halfLength, wallBaseLocalPosition.z + halfLength);
+                break;
+        }
+
+        localHitPoint.y = Mathf.Clamp(localHitPoint.y, 0f, Mathf.Max(0f, surfaceHeight));
+        return localHitPoint;
+    }
+
+    private static int GetWallGridPosition(SpaceSegmentPlacementRecord record)
+    {
+        if (record == null)
+        {
+            return 0;
+        }
+
+        return record.side == WallSide.North || record.side == WallSide.South
+            ? record.gridX
+            : record.gridZ;
+    }
+
+    private bool TryFindNearestWallPlacementMetadata(
+        MemorySpaceBlock block,
+        Vector3 localPoint,
+        out SpaceSegmentPlacementMetadata metadata)
+    {
+        metadata = null;
+        if (block == null)
+        {
+            return false;
+        }
+
+        float gridSize = RoomSlotGridUtility.GetGridSize(block);
+        float bestDistanceSqr = float.MaxValue;
+        float maxDistance = gridSize * 3f;
+        float maxDistanceSqr = maxDistance * maxDistance;
+        SpaceSegmentPlacementMetadata[] placements = block.GetComponentsInChildren<SpaceSegmentPlacementMetadata>(true);
+
+        for (int i = 0; i < placements.Length; i++)
+        {
+            SpaceSegmentPlacementMetadata candidate = placements[i];
+            if (candidate == null || candidate.record == null || candidate.record.category != SegmentCategory.Wall)
+            {
+                continue;
+            }
+
+            int widthUnits = Mathf.Max(1, candidate.record.footprint.x);
+            int wallGridPosition = GetWallGridPosition(candidate.record);
+            Vector3 wallBaseLocalPosition = RoomSlotGridUtility.GetWallLocalPosition(
+                block,
+                candidate.record.side,
+                wallGridPosition,
+                widthUnits,
+                0f);
+            float halfLength = widthUnits * gridSize * 0.5f;
+
+            float distanceSqr;
+            switch (candidate.record.side)
+            {
+                case WallSide.North:
+                case WallSide.South:
+                {
+                    float clampedX = Mathf.Clamp(localPoint.x, wallBaseLocalPosition.x - halfLength, wallBaseLocalPosition.x + halfLength);
+                    Vector2 nearest = new Vector2(clampedX, wallBaseLocalPosition.z);
+                    distanceSqr = (new Vector2(localPoint.x, localPoint.z) - nearest).sqrMagnitude;
+                    break;
+                }
+                case WallSide.East:
+                case WallSide.West:
+                {
+                    float clampedZ = Mathf.Clamp(localPoint.z, wallBaseLocalPosition.z - halfLength, wallBaseLocalPosition.z + halfLength);
+                    Vector2 nearest = new Vector2(wallBaseLocalPosition.x, clampedZ);
+                    distanceSqr = (new Vector2(localPoint.x, localPoint.z) - nearest).sqrMagnitude;
+                    break;
+                }
+                default:
+                    continue;
+            }
+
+            if (distanceSqr > maxDistanceSqr || distanceSqr >= bestDistanceSqr)
+            {
+                continue;
+            }
+
+            bestDistanceSqr = distanceSqr;
+            metadata = candidate;
+        }
+
+        return metadata != null;
+    }
+
+    private static int GetWallGridPositionFromLocalHitPoint(
+        MemorySpaceBlock block,
+        WallSide side,
+        Vector3 localHitPoint)
+    {
+        if (block == null)
+        {
+            return 0;
+        }
+
+        int gridWidth = RoomSlotGridUtility.GetGridWidth(block);
+        int gridDepth = RoomSlotGridUtility.GetGridDepth(block);
+        float gridSize = RoomSlotGridUtility.GetGridSize(block);
+        float halfWidth = gridWidth * gridSize * 0.5f;
+        float halfDepth = gridDepth * gridSize * 0.5f;
+
+        switch (side)
+        {
+            case WallSide.North:
+            case WallSide.South:
+                return Mathf.FloorToInt((localHitPoint.x + halfWidth) / gridSize);
+            case WallSide.East:
+            case WallSide.West:
+                return Mathf.FloorToInt((localHitPoint.z + halfDepth) / gridSize);
+            default:
+                return 0;
+        }
+    }
+
+    private static Vector3 ClampLocalPointToBlockBounds(MemorySpaceBlock block, Vector3 localPoint)
+    {
+        if (block == null)
+        {
+            return localPoint;
+        }
+
+        int gridWidth = RoomSlotGridUtility.GetGridWidth(block);
+        int gridDepth = RoomSlotGridUtility.GetGridDepth(block);
+        float gridSize = RoomSlotGridUtility.GetGridSize(block);
+        float halfWidth = gridWidth * gridSize * 0.5f;
+        float halfDepth = gridDepth * gridSize * 0.5f;
+
+        localPoint.x = Mathf.Clamp(localPoint.x, -halfWidth, halfWidth);
+        localPoint.z = Mathf.Clamp(localPoint.z, -halfDepth, halfDepth);
+        return localPoint;
+    }
+
+    private static bool TryIntersectWallPlacementSurface(
+        MemorySpaceBlock block,
+        WallSide wallSide,
+        Vector3 wallBaseLocalPosition,
+        int widthUnits,
+        Ray ray,
+        out Vector3 localHitPoint,
+        out float hitDistance)
+    {
+        localHitPoint = Vector3.zero;
+        hitDistance = 0f;
+        if (block == null)
+        {
+            return false;
+        }
+
+        Vector3 planePointWorld = block.transform.TransformPoint(wallBaseLocalPosition);
+        Vector3 worldNormal = block.transform.TransformDirection(GetWallPlaneLocalNormal(wallSide));
+        Plane plane = new Plane(worldNormal, planePointWorld);
+        if (!plane.Raycast(ray, out hitDistance) || hitDistance < 0f)
+        {
+            return false;
+        }
+
+        localHitPoint = block.transform.InverseTransformPoint(ray.GetPoint(hitDistance));
+
+        float gridSize = RoomSlotGridUtility.GetGridSize(block);
+        float halfLength = Mathf.Max(1, widthUnits) * gridSize * 0.5f;
+        float tolerance = Mathf.Max(0.02f, gridSize * 0.08f);
+
+        switch (wallSide)
+        {
+            case WallSide.North:
+            case WallSide.South:
+                return Mathf.Abs(localHitPoint.z - wallBaseLocalPosition.z) <= tolerance
+                    && localHitPoint.x >= wallBaseLocalPosition.x - halfLength - tolerance
+                    && localHitPoint.x <= wallBaseLocalPosition.x + halfLength + tolerance;
+
+            case WallSide.East:
+            case WallSide.West:
+                return Mathf.Abs(localHitPoint.x - wallBaseLocalPosition.x) <= tolerance
+                    && localHitPoint.z >= wallBaseLocalPosition.z - halfLength - tolerance
+                    && localHitPoint.z <= wallBaseLocalPosition.z + halfLength + tolerance;
+
+            default:
+                return false;
+        }
     }
 
     private static int CompareRaycastHitDistance(RaycastHit a, RaycastHit b)
@@ -2150,6 +3057,60 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         return false;
     }
 
+    private static bool TryPickSegmentPlacementGameObjectUnderCursor(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        out SpaceSegmentPlacementMetadata metadata)
+    {
+        metadata = null;
+        if (block == null)
+        {
+            return false;
+        }
+
+        GameObject pickedObject = HandleUtility.PickGameObject(mousePosition, false);
+        if (pickedObject == null)
+        {
+            return false;
+        }
+
+        SpaceSegmentPlacementMetadata candidate = pickedObject.GetComponentInParent<SpaceSegmentPlacementMetadata>();
+        if (candidate == null || candidate.GetComponentInParent<MemorySpaceBlock>() != block)
+        {
+            return false;
+        }
+
+        metadata = candidate;
+        return true;
+    }
+
+    private static bool TryPickWallSegmentSlotGameObjectUnderCursor(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        out WallSegmentSlot wallSlot)
+    {
+        wallSlot = null;
+        if (block == null)
+        {
+            return false;
+        }
+
+        GameObject pickedObject = HandleUtility.PickGameObject(mousePosition, false);
+        if (pickedObject == null)
+        {
+            return false;
+        }
+
+        WallSegmentSlot candidate = pickedObject.GetComponentInParent<WallSegmentSlot>();
+        if (candidate == null || candidate.GetComponentInParent<MemorySpaceBlock>() != block)
+        {
+            return false;
+        }
+
+        wallSlot = candidate;
+        return true;
+    }
+
     private static bool TryRaycastSegmentPlacementUnderCursor(
         MemorySpaceBlock block,
         Vector2 mousePosition,
@@ -2187,6 +3148,111 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         }
 
         return false;
+    }
+
+    private static bool TryRaycastWallSegmentSlotUnderCursor(
+        MemorySpaceBlock block,
+        Vector2 mousePosition,
+        out WallSegmentSlot wallSlot,
+        out RaycastHit hit)
+    {
+        wallSlot = null;
+        hit = default;
+        if (block == null)
+        {
+            return false;
+        }
+
+        Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
+        RaycastHit[] hits = Physics.RaycastAll(ray, 1000f, ~0, QueryTriggerInteraction.Collide);
+        if (hits == null || hits.Length == 0)
+        {
+            return false;
+        }
+
+        Array.Sort(hits, CompareRaycastHitDistance);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            WallSegmentSlot candidate = hits[i].collider != null
+                ? hits[i].collider.GetComponentInParent<WallSegmentSlot>()
+                : null;
+            if (candidate == null || candidate.GetComponentInParent<MemorySpaceBlock>() != block)
+            {
+                continue;
+            }
+
+            wallSlot = candidate;
+            hit = hits[i];
+            return true;
+        }
+
+        return false;
+    }
+
+    private static int ResolveWallDefinitionWidthUnits(SpaceSegmentDefinition definition)
+    {
+        if (definition == null)
+        {
+            return 1;
+        }
+
+        if (definition.sizeXZ.x > 0f)
+        {
+            return Mathf.Max(1, Mathf.RoundToInt(definition.sizeXZ.x));
+        }
+
+        if (TryExtractDefinitionSize(definition, out float parsedWidth, out _))
+        {
+            return Mathf.Max(1, Mathf.RoundToInt(parsedWidth));
+        }
+
+        return 1;
+    }
+
+    private static bool TryResolveBakedWallGridPosition(
+        MemorySpaceBlock block,
+        WallSegmentSlot wallSlot,
+        int widthUnits,
+        out int wallGridPosition)
+    {
+        wallGridPosition = 0;
+        if (block == null || wallSlot == null)
+        {
+            return false;
+        }
+
+        Transform referenceTransform = wallSlot.segmentRoot != null ? wallSlot.segmentRoot : wallSlot.transform;
+        if (referenceTransform == null)
+        {
+            return false;
+        }
+
+        int gridWidth = RoomSlotGridUtility.GetGridWidth(block);
+        int gridDepth = RoomSlotGridUtility.GetGridDepth(block);
+        float gridSize = RoomSlotGridUtility.GetGridSize(block);
+        float halfWidth = gridWidth * gridSize * 0.5f;
+        float halfDepth = gridDepth * gridSize * 0.5f;
+        Vector3 localCenter = referenceTransform.localPosition;
+
+        switch (wallSlot.side)
+        {
+            case WallSide.North:
+            case WallSide.South:
+                wallGridPosition = Mathf.RoundToInt(((localCenter.x + halfWidth) / gridSize) - (Mathf.Max(1, widthUnits) * 0.5f));
+                break;
+
+            case WallSide.East:
+            case WallSide.West:
+                wallGridPosition = Mathf.RoundToInt(((localCenter.z + halfDepth) / gridSize) - (Mathf.Max(1, widthUnits) * 0.5f));
+                break;
+
+            default:
+                return false;
+        }
+
+        int maxAnchor = Mathf.Max(0, RoomSlotGridUtility.GetWallSlotCount(block, wallSlot.side) - Mathf.Max(1, widthUnits));
+        wallGridPosition = Mathf.Clamp(wallGridPosition, 0, maxAnchor);
+        return true;
     }
 
     private bool TryGetWallSurfaceContextForEdge(
@@ -2267,10 +3333,67 @@ public class RoomSlotPlacementToolWindow : EditorWindow
                 Definition = definition,
                 WallSlot = wallSlot,
                 Side = placement.record.side,
+                WallGridPosition = GetWallGridPosition(placement.record),
+                WidthUnits = Mathf.Max(1, placement.record.footprint.x),
                 SurfaceHeight = surfaceHeight,
                 LayerCount = layerCount
             };
             return true;
+        }
+
+        if (block.wallSegments != null)
+        {
+            for (int i = 0; i < block.wallSegments.Count; i++)
+            {
+                WallSegmentSlot wallSlot = block.wallSegments[i];
+                if (!TryResolveWallSlotPlacement(block, wallSlot, out SpaceSegmentDefinition definition, out int wallGridPosition, out int widthUnits, out float surfaceHeight, out int layerCount, out string resolveMessage))
+                {
+                    if (!string.IsNullOrWhiteSpace(resolveMessage))
+                    {
+                        message = resolveMessage;
+                    }
+
+                    continue;
+                }
+
+                if (!RoomSlotGridUtility.TryGetWallAnchorGrid(block, wallSlot.side, wallGridPosition, widthUnits, out int resolvedGridX, out int resolvedGridZ))
+                {
+                    continue;
+                }
+
+                List<string> slotKeys = RoomSlotGridUtility.GetWallEdgeKeys(
+                    resolvedGridX,
+                    resolvedGridZ,
+                    wallSlot.side,
+                    widthUnits);
+                bool matches = false;
+                for (int keyIndex = 0; keyIndex < slotKeys.Count; keyIndex++)
+                {
+                    if (string.Equals(slotKeys[keyIndex], wallEdgeKey, StringComparison.OrdinalIgnoreCase))
+                    {
+                        matches = true;
+                        break;
+                    }
+                }
+
+                if (!matches)
+                {
+                    continue;
+                }
+
+                context = new WallSurfaceContext
+                {
+                    PlacementMetadata = null,
+                    Definition = definition,
+                    WallSlot = wallSlot,
+                    Side = wallSlot.side,
+                    WallGridPosition = wallGridPosition,
+                    WidthUnits = widthUnits,
+                    SurfaceHeight = surfaceHeight,
+                    LayerCount = layerCount
+                };
+                return true;
+            }
         }
 
         message = $"No painted wall segment was found for wall edge {wallEdgeKey}.";
@@ -3164,6 +4287,27 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     {
         Debug.LogError($"[RoomSlotPlacementTool] {actionLabel} failed: {exception}");
         SetStatus($"{actionLabel} failed: {exception.Message}", MessageType.Error);
+    }
+
+    private void DebugWallPlacement(string stage, string message)
+    {
+        if (!EnableWallPlacementDebugLogs || string.IsNullOrWhiteSpace(stage))
+        {
+            return;
+        }
+
+        string finalMessage = string.IsNullOrWhiteSpace(message) ? stage : $"{stage}: {message}";
+        string key = $"{stage}|{message}";
+        double now = EditorApplication.timeSinceStartup;
+        if (string.Equals(lastWallDebugLogKey, key, StringComparison.Ordinal)
+            && (now - lastWallDebugLogTime) < 0.2d)
+        {
+            return;
+        }
+
+        lastWallDebugLogKey = key;
+        lastWallDebugLogTime = now;
+        Debug.Log($"[RoomSlotPlacementTool][WallDebug] {finalMessage}");
     }
 }
 #endif

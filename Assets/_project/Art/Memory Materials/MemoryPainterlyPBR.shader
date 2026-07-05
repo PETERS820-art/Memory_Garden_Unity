@@ -113,7 +113,9 @@ Shader "MemoryGarden/Memory Painterly PBR"
             #pragma fragment frag
             #pragma multi_compile_instancing
             #pragma multi_compile_fog
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
@@ -320,20 +322,43 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half ndotlPBR = saturate(dot(normalWS, lightDirWS));
                 half shadowAttenuation = saturate(mainLight.shadowAttenuation * mainLight.distanceAttenuation);
                 shadowAttenuation = lerp(1.0h, shadowAttenuation, saturate(_ReceiveShadows));
+                half specularPower = exp2(2.0h + smoothness * 10.0h);
+                half3 specularColor = lerp(half3(0.04h, 0.04h, 0.04h), pbrAlbedo, metallic);
 
                 half3 ambient = SampleSH(normalWS) * pbrAlbedo * occlusion;
                 ambient *= saturate(_EnvironmentReflections);
                 half3 diffuse = pbrAlbedo * mainLight.color * ndotlPBR * shadowAttenuation;
+                half3 additionalDiffuse = 0.0h.xxx;
+                half3 additionalSpecular = 0.0h.xxx;
+                half additionalLightMaskBoost = 0.0h;
+                half3 combinedAdditionalLightColor = 0.0h.xxx;
+
+                #if defined(_ADDITIONAL_LIGHTS)
+                    uint additionalLightsCount = GetAdditionalLightsCount();
+                    LIGHT_LOOP_BEGIN(additionalLightsCount)
+                        Light additionalLight = GetAdditionalLight(lightIndex, input.positionWS);
+                        half3 additionalLightDirWS = normalize(additionalLight.direction);
+                        half additionalShadowAttenuation = saturate(additionalLight.shadowAttenuation * additionalLight.distanceAttenuation);
+                        half additionalNdotLPBR = saturate(dot(normalWS, additionalLightDirWS));
+                        half3 additionalHalfDirWS = SafeNormalize(additionalLightDirWS + viewDirWS);
+                        half additionalNdotH = saturate(dot(normalWS, additionalHalfDirWS));
+                        half additionalSpecularTerm = pow(additionalNdotH, specularPower) * additionalNdotLPBR * additionalShadowAttenuation;
+
+                        additionalDiffuse += pbrAlbedo * additionalLight.color * additionalNdotLPBR * additionalShadowAttenuation;
+                        additionalSpecular += specularColor * additionalLight.color * additionalSpecularTerm * lerp(0.35h, 1.2h, smoothness);
+                        additionalLightMaskBoost += additionalNdotLPBR * additionalShadowAttenuation;
+                        combinedAdditionalLightColor += additionalLight.color * additionalShadowAttenuation;
+                    LIGHT_LOOP_END
+                #endif
 
                 half3 halfDirWS = SafeNormalize(lightDirWS + viewDirWS);
                 half ndoth = saturate(dot(normalWS, halfDirWS));
-                half specularPower = exp2(2.0h + smoothness * 10.0h);
                 half specularTerm = pow(ndoth, specularPower) * ndotlPBR * shadowAttenuation;
-                half3 specularColor = lerp(half3(0.04h, 0.04h, 0.04h), pbrAlbedo, metallic);
                 half3 specular = specularColor * mainLight.color * specularTerm * lerp(0.35h, 1.2h, smoothness);
                 specular *= saturate(_SpecularHighlights);
+                additionalSpecular *= saturate(_SpecularHighlights);
 
-                half3 pbrColor = ambient + diffuse + specular + emission;
+                half3 pbrColor = ambient + diffuse + additionalDiffuse + specular + additionalSpecular + emission;
 
                 float2 worldUV = input.positionWS.xz * painterlyScale;
                 float2 screenUV = GetNormalizedScreenSpaceUV(input.positionCS);
@@ -405,6 +430,7 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half rampValue = saturate(Luminance(rampSample));
                 half lightMask = saturate(lerp(toonMask, rampValue, _RampInfluence));
                 lightMask *= lerp(1.0h, shadowAttenuation, 0.78h);
+                lightMask = saturate(lightMask + saturate(additionalLightMaskBoost));
 
                 half albedoLuma = Luminance(painterlySourceAlbedo);
                 half3 flattenedPainterlyBase = lerp(albedoLuma.xxx * painterlyBaseTint, painterlyBaseTint, 0.42h);
@@ -438,7 +464,7 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 painterlyColor = lerp(painterlyColor, coolStrokeColor, strokeMaskShadow * (_AccentColorStrength * 0.95h));
                 painterlyColor = lerp(painterlyColor, paperStrokeColor, strokeMaskBreakup * (_BrushGrainStrength * 0.42h + _WatercolorStrength * 0.15h));
                 painterlyColor *= 1.0h.xxx + brushGrain * (_BrushGrainStrength * 0.16h);
-                painterlyColor *= lerp(1.0h.xxx, mainLight.color, 0.2h);
+                painterlyColor *= lerp(1.0h.xxx, saturate(mainLight.color + combinedAdditionalLightColor), 0.2h);
 
                 half emotionBrushMask = StrokeMask(saturate(watercolor01 * 0.58h + grain01 * 0.22h + edge01 * 0.2h), saturate(_StrokeDensity - 0.16h), _StrokeContrast * 0.75h);
                 painterlyColor = lerp(painterlyColor, painterlyColor * _EmotionTintColor.rgb, saturate(_EmotionTintStrength) * lerp(0.38h, 0.92h, emotionBrushMask));
