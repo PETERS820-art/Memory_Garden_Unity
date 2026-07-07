@@ -702,7 +702,7 @@ public class MemoryGardenPlacementManager : MonoBehaviour
 
     private bool IsItemCompatibleWithSlot(MemoryObject item, MemoryDisplaySlot slot)
     {
-        if (item == null || slot == null || !item.EnablePlacement)
+        if (item == null || slot == null || !item.EnablePlacement || !item.IsPlacementAllowed)
         {
             return false;
         }

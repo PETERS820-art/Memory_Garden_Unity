@@ -33,6 +33,13 @@ Shader "MemoryGarden/Memory Painterly PBR"
         _OcclusionStrength ("Occlusion Strength", Range(0, 1)) = 1
         [HDR] _EmissionColor ("Emission Color", Color) = (0, 0, 0, 1)
         _EmissionMap ("Emission Map", 2D) = "black" {}
+        _HighlightBoost ("Highlight Boost", Range(0, 4)) = 1
+        [HDR] _TranslucencyColor ("Translucency Color", Color) = (1, 0.82, 0.62, 1)
+        _TranslucencyStrength ("Translucency Strength", Range(0, 4)) = 0
+        _TranslucencyPower ("Translucency Power", Range(0.25, 8)) = 2
+        _TranslucencyWrap ("Translucency Wrap", Range(0, 1)) = 0.4
+        _TranslucencyViewDependency ("Translucency View Dependency", Range(0, 4)) = 1.25
+        _TranslucencyHalo ("Translucency Halo", Range(0, 2)) = 0
         _PainterlyScale ("Painterly Scale", Range(0.1, 16)) = 1
 
         _MemoryBlend ("Memory Blend", Range(0, 1)) = 0
@@ -156,6 +163,7 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half4 _EmotionTintColor;
                 half4 _RimColor;
                 half4 _EmissionColor;
+                half4 _TranslucencyColor;
                 half _Cutoff;
                 half _ReceiveShadows;
                 half _SpecularHighlights;
@@ -164,6 +172,12 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half _Metallic;
                 half _Smoothness;
                 half _OcclusionStrength;
+                half _HighlightBoost;
+                half _TranslucencyStrength;
+                half _TranslucencyPower;
+                half _TranslucencyWrap;
+                half _TranslucencyViewDependency;
+                half _TranslucencyHalo;
                 half _PainterlyScale;
                 half _MemoryBlend;
                 half _AccentColorStrength;
@@ -262,6 +276,15 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 return saturate(mask);
             }
 
+            half ComputeTranslucencyTerm(half3 normalWS, half3 viewDirWS, half3 lightDirWS)
+            {
+                half backNdotL = saturate(dot(-normalWS, lightDirWS));
+                half wrappedBack = saturate((backNdotL + _TranslucencyWrap) / (1.0h + _TranslucencyWrap));
+                half viewScatter = pow(saturate(dot(viewDirWS, -lightDirWS)), max(_TranslucencyViewDependency, 0.001h));
+                half halo = pow(saturate(1.0h - abs(dot(normalWS, viewDirWS))), 2.0h) * _TranslucencyHalo;
+                return pow(wrappedBack, max(_TranslucencyPower, 0.001h)) * _TranslucencyStrength * (1.0h + viewScatter + halo);
+            }
+
             Varyings vert(Attributes input)
             {
                 Varyings output = (Varyings)0;
@@ -323,6 +346,7 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half shadowAttenuation = saturate(mainLight.shadowAttenuation * mainLight.distanceAttenuation);
                 shadowAttenuation = lerp(1.0h, shadowAttenuation, saturate(_ReceiveShadows));
                 half specularPower = exp2(2.0h + smoothness * 10.0h);
+                half highlightBoost = max(_HighlightBoost, 0.0h);
                 half3 specularColor = lerp(half3(0.04h, 0.04h, 0.04h), pbrAlbedo, metallic);
 
                 half3 ambient = SampleSH(normalWS) * pbrAlbedo * occlusion;
@@ -330,6 +354,9 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half3 diffuse = pbrAlbedo * mainLight.color * ndotlPBR * shadowAttenuation;
                 half3 additionalDiffuse = 0.0h.xxx;
                 half3 additionalSpecular = 0.0h.xxx;
+                half3 translucency = _TranslucencyColor.rgb * mainLight.color
+                    * ComputeTranslucencyTerm(normalWS, viewDirWS, lightDirWS)
+                    * shadowAttenuation;
                 half additionalLightMaskBoost = 0.0h;
                 half3 combinedAdditionalLightColor = 0.0h.xxx;
 
@@ -346,6 +373,9 @@ Shader "MemoryGarden/Memory Painterly PBR"
 
                         additionalDiffuse += pbrAlbedo * additionalLight.color * additionalNdotLPBR * additionalShadowAttenuation;
                         additionalSpecular += specularColor * additionalLight.color * additionalSpecularTerm * lerp(0.35h, 1.2h, smoothness);
+                        translucency += _TranslucencyColor.rgb * additionalLight.color
+                            * ComputeTranslucencyTerm(normalWS, viewDirWS, additionalLightDirWS)
+                            * additionalShadowAttenuation;
                         additionalLightMaskBoost += additionalNdotLPBR * additionalShadowAttenuation;
                         combinedAdditionalLightColor += additionalLight.color * additionalShadowAttenuation;
                     LIGHT_LOOP_END
@@ -355,8 +385,8 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half ndoth = saturate(dot(normalWS, halfDirWS));
                 half specularTerm = pow(ndoth, specularPower) * ndotlPBR * shadowAttenuation;
                 half3 specular = specularColor * mainLight.color * specularTerm * lerp(0.35h, 1.2h, smoothness);
-                specular *= saturate(_SpecularHighlights);
-                additionalSpecular *= saturate(_SpecularHighlights);
+                specular *= saturate(_SpecularHighlights) * highlightBoost;
+                additionalSpecular *= saturate(_SpecularHighlights) * highlightBoost;
 
                 half3 pbrColor = ambient + diffuse + additionalDiffuse + specular + additionalSpecular + emission;
 
@@ -477,17 +507,19 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half painterlyBlend = saturate(_MemoryBlend) * transitionMask;
 
                 half3 finalColor = lerp(pbrColor, painterlyColor, painterlyBlend);
+                finalColor += translucency;
                 finalColor = ApplySaturation(finalColor, _Saturation);
                 finalColor *= _Brightness;
                 finalColor = MixFog(finalColor, input.fogFactor);
+                half3 hdrSafeFinalColor = max(finalColor, 0.0h.xxx);
 
                 #if defined(_ALPHAMODULATE_ON)
-                    half3 multiplyColor = lerp(1.0h.xxx, saturate(finalColor), alpha);
+                    half3 multiplyColor = lerp(1.0h.xxx, saturate(hdrSafeFinalColor), alpha);
                     return half4(multiplyColor, alpha);
                 #elif defined(_ALPHAPREMULTIPLY_ON)
-                    return half4(saturate(finalColor) * alpha, alpha);
+                    return half4(hdrSafeFinalColor * alpha, alpha);
                 #else
-                    return half4(saturate(finalColor), alpha);
+                    return half4(hdrSafeFinalColor, alpha);
                 #endif
             }
             ENDHLSL

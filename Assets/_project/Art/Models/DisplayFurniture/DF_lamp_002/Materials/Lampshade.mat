@@ -25,7 +25,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _ALPHAMODULATE_ON
+  - _ALPHAPREMULTIPLY_ON
   m_InvalidKeywords:
   - _SURFACE_TYPE_TRANSPARENT
   m_LightmapFlags: 4
@@ -122,19 +122,19 @@ Material:
     - _AccentColorStrength: 0.42
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _Blend: 2
+    - _Blend: 1
     - _BlendModePreserveSpecular: 1
     - _Brightness: 1
     - _BrushGrainStrength: 0.25
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _Cull: 2
+    - _Cull: 0
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DryBrushStrength: 0.35
-    - _DstBlend: 0
+    - _DstBlend: 10
     - _DstBlendAlpha: 0
     - _EdgeBreakStrength: 0.45
     - _EdgeDistortion: 0.18
@@ -174,11 +174,16 @@ Material:
     - _Smoothness: 0.3945205
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
-    - _SrcBlend: 2
+    - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _StrokeContrast: 1.9
     - _StrokeDensity: 0.52
     - _Surface: 1
+    - _TranslucencyHalo: 0.55
+    - _TranslucencyPower: 1.15
+    - _TranslucencyStrength: 1.3
+    - _TranslucencyViewDependency: 1.25
+    - _TranslucencyWrap: 0.7
     - _UVSec: 0
     - _ViewBrushStrength: 0.38
     - _ViewProjectionBlend: 0.35
@@ -187,8 +192,8 @@ Material:
     - _ZWrite: 0
     m_Colors:
     - _AccentColor: {r: 1, g: 0.82, b: 0.6, a: 1}
-    - _BaseColor: {r: 0.9063317, g: 0.8384558, b: 0.8030824, a: 1}
-    - _Color: {r: 0.9063317, g: 0.8384558, b: 0.8030824, a: 1}
+    - _BaseColor: {r: 0.9063317, g: 0.8384558, b: 0.8030824, a: 0.55}
+    - _Color: {r: 0.9063317, g: 0.8384558, b: 0.8030824, a: 0.55}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _EmotionTintColor: {r: 0.94, g: 0.9, b: 0.86, a: 1}
     - _GrowthOrigin: {r: 0, g: 0, b: 0, a: 0}
@@ -197,4 +202,6 @@ Material:
     - _RimColor: {r: 0.85, g: 0.92, b: 1, a: 1}
     - _ShadowColor: {r: 0.54999995, g: 0.63, b: 0.72, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _TranslucencyColor: {r: 1.2, g: 0.88, b: 0.66, a: 1}
   m_BuildTextureStacks: []
+    - _HighlightBoost: 1.8

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 
 [DisallowMultipleComponent]
+[RequireComponent(typeof(MemoryItemInteractionState))]
 public class MemoryItemRespawn : MonoBehaviour
 {
     [SerializeField] private float maxDistanceFromStart = 100f;
@@ -14,6 +15,7 @@ public class MemoryItemRespawn : MonoBehaviour
 
     private XRGrabInteractable grabInteractable;
     private Rigidbody attachedRigidbody;
+    private MemoryItemInteractionState interactionState;
     private Vector3 initialPosition;
     private Quaternion initialRotation;
     private float nextCheckTime;
@@ -24,11 +26,17 @@ public class MemoryItemRespawn : MonoBehaviour
     {
         grabInteractable = GetComponent<XRGrabInteractable>();
         attachedRigidbody = GetComponent<Rigidbody>();
+        interactionState = EnsureInteractionStateComponent();
         SetInitialPoseToCurrent();
     }
 
     private void OnEnable()
     {
+        if (interactionState == null)
+        {
+            interactionState = EnsureInteractionStateComponent();
+        }
+
         nextCheckTime = Time.time + Mathf.Max(0.01f, checkInterval);
     }
 
@@ -78,6 +86,11 @@ public class MemoryItemRespawn : MonoBehaviour
 
     private void EvaluateRespawnConditions()
     {
+        if (!IsRespawnAllowed())
+        {
+            return;
+        }
+
         bool isSelected = grabInteractable != null && grabInteractable.isSelected;
         Vector3 currentPosition = transform.position;
 
@@ -106,6 +119,11 @@ public class MemoryItemRespawn : MonoBehaviour
 
     private void QueueReset(bool forceDeselectIfSelected)
     {
+        if (!IsRespawnAllowed())
+        {
+            return;
+        }
+
         pendingForceDeselect |= forceDeselectIfSelected;
 
         if (resetRoutine == null && isActiveAndEnabled)
@@ -116,6 +134,7 @@ public class MemoryItemRespawn : MonoBehaviour
 
     private IEnumerator ResetRoutine()
     {
+        SetInteractionState(MemoryItemInteractionStateId.Respawning, "Respawn queued");
         bool shouldForceDeselect = pendingForceDeselect;
         pendingForceDeselect = false;
         XRInteractionManager interactionManager = null;
@@ -156,6 +175,7 @@ public class MemoryItemRespawn : MonoBehaviour
             grabInteractable.enabled = true;
         }
 
+        SetInteractionState(MemoryItemInteractionStateId.Idle, "Respawn complete");
         resetRoutine = null;
 
         if (pendingForceDeselect)
@@ -213,5 +233,34 @@ public class MemoryItemRespawn : MonoBehaviour
         }
 
         return FindFirstObjectByType<XRInteractionManager>(FindObjectsInactive.Include);
+    }
+
+    private bool IsRespawnAllowed()
+    {
+        return interactionState == null || interactionState.IsRespawnAllowed;
+    }
+
+    private MemoryItemInteractionState EnsureInteractionStateComponent()
+    {
+        MemoryItemInteractionState state = GetComponent<MemoryItemInteractionState>();
+        if (state != null)
+        {
+            return state;
+        }
+
+        return gameObject.AddComponent<MemoryItemInteractionState>();
+    }
+
+    private void SetInteractionState(MemoryItemInteractionStateId newState, string reason)
+    {
+        if (interactionState == null)
+        {
+            interactionState = EnsureInteractionStateComponent();
+        }
+
+        if (interactionState != null)
+        {
+            interactionState.SetState(newState, reason);
+        }
     }
 }

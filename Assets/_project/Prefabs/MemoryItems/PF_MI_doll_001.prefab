@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 8956834264597216004}
   - component: {fileID: 312344624695842183}
   - component: {fileID: 3028706299681244018}
+  - component: {fileID: 8407415201833296441}
   m_Layer: 0
   m_Name: PF_MI_doll_001
   m_TagString: Untagged
@@ -335,6 +336,21 @@ MonoBehaviour:
   respawnHeightOffset: 0.3
   resetWhenSelected: 0
   resetOnLowYEvenWhenSelected: 1
+--- !u!114 &8407415201833296441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6854714187444777512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54dd67b0be0f428a8f8d3d54d61545ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  logStateChanges: 0
+  currentState: 0
+  previousState: 0
 --- !u!1001 &3061361107043699617
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 
 [RequireComponent(typeof(XRGrabInteractable))]
+[RequireComponent(typeof(MemoryItemInteractionState))]
 public class MemoryObject : MonoBehaviour
 {
     private const float ObservationGizmoSphereRadius = 0.03f;
@@ -46,9 +47,13 @@ public class MemoryObject : MonoBehaviour
     public float PreferredHeightOffset => preferredHeightOffset;
     public bool AlignToSlotRotation => alignToSlotRotation;
     public MemoryDisplaySlot CurrentSlot => currentSlot;
+    public MemoryItemInteractionState InteractionState => interactionState;
+    public bool IsPlacementAllowed => interactionState == null || interactionState.IsPlacementAllowed;
+    public bool IsGazeInspectAllowed => interactionState == null || interactionState.IsGazeInspectAllowed;
 
     private XRGrabInteractable grabInteractable;
     private Rigidbody attachedRigidbody;
+    private MemoryItemInteractionState interactionState;
     private bool hasTriggeredWhileHeld;
     private float nextObserveLogTime;
     private Coroutine snapRoutine;
@@ -59,6 +64,7 @@ public class MemoryObject : MonoBehaviour
         EnsurePlacementDefaults();
         grabInteractable = GetComponent<XRGrabInteractable>();
         attachedRigidbody = GetComponent<Rigidbody>();
+        interactionState = EnsureInteractionStateComponent();
 
         if (grabInteractable == null)
         {
@@ -71,6 +77,11 @@ public class MemoryObject : MonoBehaviour
         if (grabInteractable == null)
         {
             grabInteractable = GetComponent<XRGrabInteractable>();
+        }
+
+        if (interactionState == null)
+        {
+            interactionState = EnsureInteractionStateComponent();
         }
 
         if (grabInteractable == null)
@@ -98,6 +109,16 @@ public class MemoryObject : MonoBehaviour
     {
         if (!IsHeld)
         {
+            return;
+        }
+
+        if (!IsGazeInspectAllowed)
+        {
+            if (IsBeingObserved || ObserveProgress > 0f)
+            {
+                ResetObservationState(allowRetrigger: false);
+            }
+
             return;
         }
 
@@ -205,6 +226,7 @@ public class MemoryObject : MonoBehaviour
 
         IsHeld = true;
         ResetObservationState(true);
+        SetInteractionState(MemoryItemInteractionStateId.Held, "Grabbed");
 
         Debug.Log($"[MemoryObject] Grabbed {ItemName}.", this);
     }
@@ -218,6 +240,9 @@ public class MemoryObject : MonoBehaviour
 
         IsHeld = false;
         ResetObservationState(true);
+        SetInteractionState(
+            enablePlacement ? MemoryItemInteractionStateId.Dropped : MemoryItemInteractionStateId.Idle,
+            "Released");
         StartSnapAfterRelease();
 
         Debug.Log($"[MemoryObject] Released {ItemName}. Observation reset.", this);
@@ -333,7 +358,7 @@ public class MemoryObject : MonoBehaviour
 
     public bool CanUseSlot(MemoryDisplaySlot slot)
     {
-        if (slot == null || !enablePlacement)
+        if (slot == null || !enablePlacement || !IsPlacementAllowed)
         {
             return false;
         }
@@ -355,7 +380,7 @@ public class MemoryObject : MonoBehaviour
 
     public bool TryPlaceOnSlot(MemoryDisplaySlot targetSlot)
     {
-        if (targetSlot == null || !enablePlacement)
+        if (targetSlot == null || !enablePlacement || !IsPlacementAllowed)
         {
             return false;
         }
@@ -374,6 +399,7 @@ public class MemoryObject : MonoBehaviour
             targetRotation,
             targetSlot.transform.up);
 
+        SetInteractionState(MemoryItemInteractionStateId.SnappingToSlot, "Placing on slot");
         PrepareRigidbodyForSnap();
         transform.SetPositionAndRotation(targetPosition, targetRotation);
         Physics.SyncTransforms();
@@ -381,6 +407,7 @@ public class MemoryObject : MonoBehaviour
 
         targetSlot.MarkOccupied(gameObject);
         currentSlot = targetSlot;
+        SetInteractionState(MemoryItemInteractionStateId.Idle, "Placement complete");
         return true;
     }
 
@@ -388,6 +415,17 @@ public class MemoryObject : MonoBehaviour
     {
         if (!enablePlacement)
         {
+            SetInteractionState(MemoryItemInteractionStateId.Idle, "Placement disabled after release");
+            return;
+        }
+
+        if (!IsPlacementAllowed)
+        {
+            if (interactionState != null && interactionState.CurrentState == MemoryItemInteractionStateId.Dropped)
+            {
+                SetInteractionState(MemoryItemInteractionStateId.Idle, "Placement not allowed after release");
+            }
+
             return;
         }
 
@@ -506,6 +544,18 @@ public class MemoryObject : MonoBehaviour
 
         if (!enablePlacement)
         {
+            SetInteractionState(MemoryItemInteractionStateId.Idle, "Placement disabled after release wait");
+            snapRoutine = null;
+            yield break;
+        }
+
+        if (!IsPlacementAllowed)
+        {
+            if (interactionState != null && interactionState.CurrentState == MemoryItemInteractionStateId.Dropped)
+            {
+                SetInteractionState(MemoryItemInteractionStateId.Idle, "Placement blocked by interaction state");
+            }
+
             snapRoutine = null;
             yield break;
         }
@@ -513,6 +563,11 @@ public class MemoryObject : MonoBehaviour
         MemoryDisplaySlot targetSlot = FindNearestValidSlot();
         if (targetSlot == null)
         {
+            if (interactionState != null && interactionState.CurrentState == MemoryItemInteractionStateId.Dropped)
+            {
+                SetInteractionState(MemoryItemInteractionStateId.Idle, "No valid slot found");
+            }
+
             snapRoutine = null;
             yield break;
         }
@@ -524,6 +579,7 @@ public class MemoryObject : MonoBehaviour
             targetRotation,
             targetSlot.transform.up);
 
+        SetInteractionState(MemoryItemInteractionStateId.SnappingToSlot, "Auto snap started");
         PrepareRigidbodyForSnap();
 
         if (targetSlot.UseSmoothSnap && targetSlot.SnapDuration > 0.001f)
@@ -549,6 +605,7 @@ public class MemoryObject : MonoBehaviour
 
         targetSlot.MarkOccupied(gameObject);
         currentSlot = targetSlot;
+        SetInteractionState(MemoryItemInteractionStateId.Idle, "Auto snap complete");
         snapRoutine = null;
     }
 
@@ -711,6 +768,30 @@ public class MemoryObject : MonoBehaviour
         if (allowedSlotTypes == null)
         {
             allowedSlotTypes = new List<SlotType>();
+        }
+    }
+
+    private MemoryItemInteractionState EnsureInteractionStateComponent()
+    {
+        MemoryItemInteractionState state = GetComponent<MemoryItemInteractionState>();
+        if (state != null)
+        {
+            return state;
+        }
+
+        return gameObject.AddComponent<MemoryItemInteractionState>();
+    }
+
+    private void SetInteractionState(MemoryItemInteractionStateId newState, string reason)
+    {
+        if (interactionState == null)
+        {
+            interactionState = EnsureInteractionStateComponent();
+        }
+
+        if (interactionState != null)
+        {
+            interactionState.SetState(newState, reason);
         }
     }
 }

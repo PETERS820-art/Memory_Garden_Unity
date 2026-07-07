@@ -7,6 +7,7 @@ public class MemoryPainterlyPBRShaderGUI : ShaderGUI
     private static bool surfaceOptionsFoldout = true;
     private static bool surfaceInputsFoldout = true;
     private static bool advancedOptionsFoldout = false;
+    private static bool translucencyFoldout = true;
     private static bool painterlyPaletteFoldout = true;
     private static bool flatteningFoldout = true;
     private static bool strokesFoldout = true;
@@ -41,6 +42,7 @@ public class MemoryPainterlyPBRShaderGUI : ShaderGUI
 
         DrawSurfaceOptions();
         DrawSurfaceInputs();
+        DrawTranslucency();
         DrawAdvancedOptions();
         DrawPainterlyPalette();
         DrawFlattening();
@@ -137,6 +139,33 @@ public class MemoryPainterlyPBRShaderGUI : ShaderGUI
             materialEditor.ShaderProperty(FindProperty("_QueueOffset"), "Queue Offset");
             materialEditor.EnableInstancingField();
         }
+        EditorGUILayout.EndFoldoutHeaderGroup();
+        EditorGUILayout.Space(2f);
+    }
+
+    private void DrawTranslucency()
+    {
+        translucencyFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(translucencyFoldout, "Translucency");
+        if (translucencyFoldout)
+        {
+            materialEditor.ShaderProperty(FindProperty("_HighlightBoost"), "Highlight Boost");
+            materialEditor.ShaderProperty(FindProperty("_TranslucencyColor"), "Translucency Color");
+            materialEditor.ShaderProperty(FindProperty("_TranslucencyStrength"), "Translucency Strength");
+            materialEditor.ShaderProperty(FindProperty("_TranslucencyPower"), "Translucency Power");
+            materialEditor.ShaderProperty(FindProperty("_TranslucencyWrap"), "Translucency Wrap");
+            materialEditor.ShaderProperty(FindProperty("_TranslucencyViewDependency"), "Translucency View Dependency");
+            materialEditor.ShaderProperty(FindProperty("_TranslucencyHalo"), "Translucency Halo");
+
+            bool transparent = FindProperty("_Surface").floatValue >= 0.5f;
+            bool multiply = FindProperty("_Blend").floatValue >= 1.5f;
+            if (transparent && multiply)
+            {
+                EditorGUILayout.HelpBox(
+                    "Multiply darkens the background and is usually not suitable for glowing lampshades. Premultiply is the better starting point for translucent shades.",
+                    MessageType.Warning);
+            }
+        }
+
         EditorGUILayout.EndFoldoutHeaderGroup();
         EditorGUILayout.Space(2f);
     }

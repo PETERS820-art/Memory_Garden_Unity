@@ -21,8 +21,6 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
     private const string PrefabPrefix = "PF_";
     private const string DefinitionPrefix = "SD_";
     private const string ModelContainerObjectName = "Model";
-    private const string DataFolderName = "Data";
-    private const string OverrideProfileSuffix = "_PrefabOverride.asset";
     private const float BoundsMinSize = 0.01f;
 
     private static readonly Regex SizePattern = new Regex(
@@ -34,7 +32,6 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
     [SerializeField] private string definitionOutputFolder = DefaultDefinitionOutputFolder;
     [SerializeField] private bool autoMigrateExtractedMaterialsToPainterly = true;
     [SerializeField] private Material painterlyTemplateMaterial;
-    [SerializeField] private GameObject sceneSegmentTarget;
 
     [MenuItem(MenuItemPath)]
     public static void OpenWindow()
@@ -122,40 +119,6 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         if (GUILayout.Button("Validate Segment Naming"))
         {
             ValidateSegmentNaming();
-        }
-
-        EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Scene Override Utility", EditorStyles.boldLabel);
-        sceneSegmentTarget = (GameObject)EditorGUILayout.ObjectField(
-            "Scene Target",
-            sceneSegmentTarget,
-            typeof(GameObject),
-            true);
-
-        using (new EditorGUILayout.HorizontalScope())
-        {
-            if (GUILayout.Button("Use Selected GameObject"))
-            {
-                sceneSegmentTarget = Selection.activeGameObject;
-                Repaint();
-            }
-
-            using (new EditorGUI.DisabledScope(Selection.activeGameObject == null))
-            {
-                if (GUILayout.Button("Use Active Selection"))
-                {
-                    sceneSegmentTarget = Selection.activeGameObject;
-                    Repaint();
-                }
-            }
-        }
-
-        using (new EditorGUI.DisabledScope(sceneSegmentTarget == null))
-        {
-            if (GUILayout.Button("Capture Scene Adjustments + Overwrite System Prefab"))
-            {
-                CaptureSceneAdjustmentsAndOverwriteSegmentPrefab();
-            }
         }
     }
 
@@ -339,47 +302,6 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         }
     }
 
-    private void CaptureSceneAdjustmentsAndOverwriteSegmentPrefab()
-    {
-        try
-        {
-            GameObject authoringTarget = ResolveSegmentAuthoringTarget(sceneSegmentTarget);
-            if (authoringTarget == null)
-            {
-                ShowSummary("Select a Segment prefab instance in the scene first.");
-                return;
-            }
-
-            SegmentScanResult scan = ScanSegmentSources();
-            if (!TryResolveSegmentSourceFromTarget(authoringTarget, scan, out SegmentSourceInfo source))
-            {
-                ShowSummary($"Could not resolve a SegmentKit source/profile for {authoringTarget.name}.");
-                return;
-            }
-
-            if (!ConfirmSceneOverwrite("Segment Prefab", source.prefabAssetPath))
-            {
-                return;
-            }
-
-            SpaceSegmentBuildProfile profile = EnsureSegmentBuildProfile(source, createIfMissing: true);
-            CaptureSegmentOverrides(authoringTarget, profile);
-            SpaceSegmentDefinition definition = GetOrCreateDefinition(source.definitionAssetPath);
-            ApplyProfileOverridesToDefinition(profile, definition);
-            EditorUtility.SetDirty(definition);
-            SaveSceneTargetToPrefabAsset(authoringTarget, source.prefabAssetPath);
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-
-            ShowSummary($"Captured scene adjustments and overwrote prefab:\n{source.prefabAssetPath}");
-        }
-        catch (Exception exception)
-        {
-            ReportException("Capture Scene Adjustments + Overwrite System Prefab", exception);
-        }
-    }
-
     private List<SpaceSegmentDefinition> GenerateOrUpdateDefinitions(SegmentScanResult scan)
     {
         List<SegmentSourceInfo> targets = GetUniqueSources(scan);
@@ -404,9 +326,6 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
             definition.canBeWallSegment = source.canBeWallSegment;
             definition.canBeOpeningOverlay = source.canBeOpeningOverlay;
             definition.prefab = AssetDatabase.LoadAssetAtPath<GameObject>(source.prefabAssetPath);
-            ApplyProfileOverridesToDefinition(
-                EnsureSegmentBuildProfile(source, createIfMissing: false),
-                definition);
 
             if (definition.prefab == null)
             {
@@ -639,10 +558,6 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
             hasValidWallSize = validWallSize,
             prefabAssetPath = CombineAssetPath(normalizedPrefabFolder, relativeDirectoryPath, $"{PrefabPrefix}{fileName}.prefab"),
             primaryFolderName = primaryFolderName,
-            profileAssetPath = CombineAssetPath(
-                NormalizeAssetPath(Path.GetDirectoryName(assetPath)),
-                DataFolderName,
-                $"{fileName}{OverrideProfileSuffix}"),
             segmentId = fileName,
             sizeXZ = sizeXZ,
             styleId = styleId,
@@ -679,7 +594,6 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         }
 
         EnsureParentFolderForAssetPath(source.prefabAssetPath);
-        SpaceSegmentBuildProfile profile = EnsureSegmentBuildProfile(source, createIfMissing: false);
 
         GameObject root = new GameObject($"{PrefabPrefix}{source.segmentId}");
         MaterialMigrationResult materialMigrationResult = default;
@@ -698,11 +612,6 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
             modelInstance.transform.SetParent(modelContainer.transform, false);
             modelInstance.transform.localPosition = Vector3.zero;
             modelInstance.transform.localRotation = Quaternion.identity;
-            modelInstance.transform.localScale = Vector3.one;
-
-            ApplyPrefabRootOverride(root.transform, profile != null ? profile.prefabRootTransform : null);
-            ApplyTransformOverride(modelContainer.transform, profile != null ? profile.modelContainerTransform : null);
-            ApplyTransformOverride(modelInstance.transform, profile != null ? profile.modelAssetTransform : null);
 
             if (autoMigrateExtractedMaterialsToPainterly)
             {
@@ -1141,247 +1050,6 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         return definition;
     }
 
-    private static GameObject ResolveSegmentAuthoringTarget(GameObject target)
-    {
-        if (target == null)
-        {
-            return null;
-        }
-
-        GameObject prefabRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(target);
-        return prefabRoot != null ? prefabRoot : target;
-    }
-
-    private static bool TryResolveSegmentSourceFromTarget(
-        GameObject target,
-        SegmentScanResult scan,
-        out SegmentSourceInfo resolvedSource)
-    {
-        resolvedSource = null;
-        if (target == null || scan == null)
-        {
-            return false;
-        }
-
-        GameObject prefabAsset = EditorUtility.IsPersistent(target)
-            ? target
-            : PrefabUtility.GetCorrespondingObjectFromSource(target);
-        string prefabAssetPath = NormalizeAssetPath(AssetDatabase.GetAssetPath(prefabAsset));
-
-        List<SegmentSourceInfo> sources = GetUniqueSources(scan);
-        for (int i = 0; i < sources.Count; i++)
-        {
-            SegmentSourceInfo source = sources[i];
-            if (!string.IsNullOrWhiteSpace(prefabAssetPath)
-                && string.Equals(source.prefabAssetPath, prefabAssetPath, StringComparison.OrdinalIgnoreCase))
-            {
-                resolvedSource = source;
-                return true;
-            }
-
-            if (string.Equals($"{PrefabPrefix}{source.segmentId}", target.name, StringComparison.OrdinalIgnoreCase))
-            {
-                resolvedSource = source;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static SpaceSegmentBuildProfile EnsureSegmentBuildProfile(
-        SegmentSourceInfo source,
-        bool createIfMissing)
-    {
-        if (source == null || string.IsNullOrWhiteSpace(source.profileAssetPath))
-        {
-            return null;
-        }
-
-        SpaceSegmentBuildProfile profile = AssetDatabase.LoadAssetAtPath<SpaceSegmentBuildProfile>(source.profileAssetPath);
-        if (profile != null || !createIfMissing)
-        {
-            return profile;
-        }
-
-        EnsureParentFolderForAssetPath(source.profileAssetPath);
-
-        profile = ScriptableObject.CreateInstance<SpaceSegmentBuildProfile>();
-        profile.segmentId = source.segmentId;
-        AssetDatabase.CreateAsset(profile, source.profileAssetPath);
-        EditorUtility.SetDirty(profile);
-        return profile;
-    }
-
-    private static void CaptureSegmentOverrides(GameObject target, SpaceSegmentBuildProfile profile)
-    {
-        if (target == null || profile == null)
-        {
-            return;
-        }
-
-        CaptureRootRotationScaleOverride(target.transform, profile.prefabRootTransform);
-
-        Transform modelContainer = target.transform.Find(ModelContainerObjectName);
-        CaptureTransformOverride(modelContainer, profile.modelContainerTransform, includePosition: true);
-
-        Transform modelAsset = GetPrimaryModelAssetTransform(target.transform);
-        CaptureTransformOverride(modelAsset, profile.modelAssetTransform, includePosition: true);
-
-        EditorUtility.SetDirty(profile);
-    }
-
-    private static void ApplyProfileOverridesToDefinition(
-        SpaceSegmentBuildProfile profile,
-        SpaceSegmentDefinition definition)
-    {
-        if (definition == null)
-        {
-            return;
-        }
-
-        if (profile == null || profile.prefabRootTransform == null || !profile.prefabRootTransform.enabled)
-        {
-            definition.hasPlacementAuthoringOverride = false;
-            definition.placementAuthoringEulerAngles = Vector3.zero;
-            definition.placementAuthoringScale = Vector3.one;
-            return;
-        }
-
-        definition.hasPlacementAuthoringOverride = true;
-        definition.placementAuthoringEulerAngles = profile.prefabRootTransform.localEulerAngles;
-        definition.placementAuthoringScale = EnsureNonZeroScale(profile.prefabRootTransform.localScale);
-    }
-
-    private static void CaptureRootRotationScaleOverride(Transform source, PrefabTransformOverrideData target)
-    {
-        if (target == null)
-        {
-            return;
-        }
-
-        if (source == null)
-        {
-            target.enabled = false;
-            target.localPosition = Vector3.zero;
-            target.localEulerAngles = Vector3.zero;
-            target.localScale = Vector3.one;
-            return;
-        }
-
-        target.enabled = true;
-        target.localPosition = Vector3.zero;
-        target.localEulerAngles = source.localEulerAngles;
-        target.localScale = EnsureNonZeroScale(source.localScale);
-    }
-
-    private static void CaptureTransformOverride(Transform source, PrefabTransformOverrideData target, bool includePosition)
-    {
-        if (target == null)
-        {
-            return;
-        }
-
-        if (source == null)
-        {
-            target.enabled = false;
-            target.localPosition = Vector3.zero;
-            target.localEulerAngles = Vector3.zero;
-            target.localScale = Vector3.one;
-            return;
-        }
-
-        target.enabled = true;
-        target.localPosition = includePosition ? source.localPosition : Vector3.zero;
-        target.localEulerAngles = source.localEulerAngles;
-        target.localScale = EnsureNonZeroScale(source.localScale);
-    }
-
-    private static void ApplyPrefabRootOverride(Transform target, PrefabTransformOverrideData data)
-    {
-        if (target == null || data == null || !data.enabled)
-        {
-            return;
-        }
-
-        target.localPosition = Vector3.zero;
-        target.localRotation = Quaternion.Euler(data.localEulerAngles);
-        target.localScale = EnsureNonZeroScale(data.localScale);
-    }
-
-    private static void ApplyTransformOverride(Transform target, PrefabTransformOverrideData data)
-    {
-        if (target == null || data == null || !data.enabled)
-        {
-            return;
-        }
-
-        target.localPosition = data.localPosition;
-        target.localRotation = Quaternion.Euler(data.localEulerAngles);
-        target.localScale = EnsureNonZeroScale(data.localScale);
-    }
-
-    private static Transform GetPrimaryModelAssetTransform(Transform root)
-    {
-        Transform modelContainer = root != null ? root.Find(ModelContainerObjectName) : null;
-        if (modelContainer == null)
-        {
-            return null;
-        }
-
-        return modelContainer.childCount > 0 ? modelContainer.GetChild(0) : null;
-    }
-
-    private static void SaveSceneTargetToPrefabAsset(GameObject target, string prefabAssetPath)
-    {
-        if (target == null || string.IsNullOrWhiteSpace(prefabAssetPath))
-        {
-            return;
-        }
-
-        EnsureParentFolderForAssetPath(prefabAssetPath);
-
-        GameObject clone = UnityEngine.Object.Instantiate(target);
-        clone.name = Path.GetFileNameWithoutExtension(prefabAssetPath);
-        clone.transform.SetParent(null, true);
-        clone.transform.position = Vector3.zero;
-
-        try
-        {
-            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(clone, prefabAssetPath);
-            if (savedPrefab == null)
-            {
-                throw new InvalidOperationException($"Failed to overwrite prefab at {prefabAssetPath}.");
-            }
-        }
-        finally
-        {
-            UnityEngine.Object.DestroyImmediate(clone);
-        }
-    }
-
-    private static bool ConfirmSceneOverwrite(string subjectLabel, string prefabAssetPath)
-    {
-        if (Application.isBatchMode)
-        {
-            return true;
-        }
-
-        return EditorUtility.DisplayDialog(
-            $"Overwrite {subjectLabel}",
-            $"This will capture the current scene adjustments and overwrite the system prefab:\n{prefabAssetPath}\n\nDo you want to continue?",
-            "Overwrite",
-            "Cancel");
-    }
-
-    private static Vector3 EnsureNonZeroScale(Vector3 value)
-    {
-        return new Vector3(
-            Mathf.Approximately(value.x, 0f) ? 1f : value.x,
-            Mathf.Approximately(value.y, 0f) ? 1f : value.y,
-            Mathf.Approximately(value.z, 0f) ? 1f : value.z);
-    }
-
     private void CheckTopLevelCategoryFolders(SegmentScanResult result, string sourceAbsolutePath)
     {
         string[] topLevelFolders = Directory.GetDirectories(sourceAbsolutePath, "*", SearchOption.TopDirectoryOnly);
@@ -1766,7 +1434,6 @@ public class SpaceSegmentKitBuilderWindow : EditorWindow
         public float height;
         public bool hasValidWallSize;
         public string prefabAssetPath;
-        public string profileAssetPath;
         public string primaryFolderName;
         public string segmentId;
         public Vector2 sizeXZ;

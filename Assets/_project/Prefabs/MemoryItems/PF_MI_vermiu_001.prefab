@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 6386152311026838413}
   - component: {fileID: 4637370956221263395}
   - component: {fileID: 4678223070206128011}
+  - component: {fileID: 6674027344250158390}
   m_Layer: 0
   m_Name: PF_MI_vermiu_001
   m_TagString: Untagged
@@ -335,6 +336,21 @@ MonoBehaviour:
   respawnHeightOffset: 0.3
   resetWhenSelected: 0
   resetOnLowYEvenWhenSelected: 1
+--- !u!114 &6674027344250158390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3705995244501400653}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54dd67b0be0f428a8f8d3d54d61545ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  logStateChanges: 0
+  currentState: 0
+  previousState: 0
 --- !u!1001 &2515964459916912273
 PrefabInstance:
   m_ObjectHideFlags: 0

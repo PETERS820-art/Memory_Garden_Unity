@@ -220,6 +220,11 @@ public class SpaceBlockBuilderWindow : EditorWindow
         sceneView.wantsMouseMove = scenePlacementEnabled || sceneDeleteMode;
         Event current = Event.current;
         RequestLiveScenePreviewRefresh(current);
+        if (current != null && (current.type == EventType.MouseMove || current.type == EventType.MouseDrag))
+        {
+            return;
+        }
+
         bool isRepaintEvent = current != null && current.type == EventType.Repaint;
         if (isRepaintEvent)
         {
@@ -228,6 +233,10 @@ public class SpaceBlockBuilderWindow : EditorWindow
         }
 
         HandleSceneHotkeys(current);
+        if (current != null && current.type != EventType.Repaint && current.type != EventType.MouseDown)
+        {
+            return;
+        }
 
         ScenePlacementPreview preview;
         if (TryBuildDeletePreview(block, current, out preview))
@@ -273,7 +282,8 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
         if (current.type == EventType.MouseMove || current.type == EventType.MouseDrag)
         {
-            QueueDeferredSceneRepaint();
+            HandleUtility.Repaint();
+            Repaint();
         }
     }
 
@@ -3067,26 +3077,140 @@ public class SpaceBlockBuilderWindow : EditorWindow
 
     private static Quaternion GetSegmentAuthoringPlacementRotation(SpaceSegmentDefinition definition)
     {
-        if (definition == null || !definition.hasPlacementAuthoringOverride)
-        {
-            return Quaternion.identity;
-        }
-
-        return Quaternion.Euler(definition.placementAuthoringEulerAngles);
+        return definition != null && definition.hasPlacementAuthoringOverride
+            ? Quaternion.Euler(definition.placementAuthoringEulerAngles)
+            : Quaternion.identity;
     }
 
     private static Vector3 GetSegmentAuthoringPlacementScale(SpaceSegmentDefinition definition)
     {
-        if (definition == null || !definition.hasPlacementAuthoringOverride)
-        {
-            return Vector3.one;
-        }
+        return definition != null && definition.hasPlacementAuthoringOverride
+            ? SanitizeScale(definition.placementAuthoringScale)
+            : Vector3.one;
+    }
 
-        Vector3 scale = definition.placementAuthoringScale;
+    private static Vector3 SanitizeScale(Vector3 scale)
+    {
         return new Vector3(
             Mathf.Approximately(scale.x, 0f) ? 1f : scale.x,
             Mathf.Approximately(scale.y, 0f) ? 1f : scale.y,
             Mathf.Approximately(scale.z, 0f) ? 1f : scale.z);
+    }
+
+    private static bool IsIdentityRotation(Quaternion rotation)
+    {
+        return Quaternion.Angle(rotation, Quaternion.identity) <= 0.001f;
+    }
+
+    private static bool IsUnitScale(Vector3 scale)
+    {
+        return Mathf.Approximately(scale.x, 1f)
+            && Mathf.Approximately(scale.y, 1f)
+            && Mathf.Approximately(scale.z, 1f);
+    }
+
+    private void ApplyLegacyScaleCorrection(Transform instanceTransform, SegmentCategory category, SpaceSegmentDefinition definition)
+    {
+        if (instanceTransform == null || definition == null)
+        {
+            return;
+        }
+
+        if (!TryGetLocalBounds(instanceTransform, out _, out Vector3 localSize))
+        {
+            return;
+        }
+
+        float correction = ComputeLegacyScaleCorrection(category, definition, localSize);
+        if (Mathf.Approximately(correction, 1f))
+        {
+            return;
+        }
+
+        instanceTransform.localScale *= correction;
+    }
+
+    private float ComputeLegacyScaleCorrection(SegmentCategory category, SpaceSegmentDefinition definition, Vector3 localSize)
+    {
+        if (definition == null)
+        {
+            return 1f;
+        }
+
+        switch (category)
+        {
+            case SegmentCategory.Wall:
+            case SegmentCategory.OpeningOverlay:
+                return GetConsistentUniformScale(
+                    Mathf.Max(definition.sizeXZ.x, definition.sizeXZ.y) * gridSize,
+                    Mathf.Max(Mathf.Abs(localSize.x), Mathf.Abs(localSize.z)),
+                    definition.height,
+                    Mathf.Abs(localSize.y));
+            case SegmentCategory.Floor:
+            case SegmentCategory.Ceiling:
+            case SegmentCategory.Threshold:
+            case SegmentCategory.Beam:
+            {
+                Vector2 expectedPlanar = SortDescending(new Vector2(
+                    Mathf.Abs(definition.sizeXZ.x) * gridSize,
+                    Mathf.Abs(definition.sizeXZ.y) * gridSize));
+                Vector2 measuredPlanar = SortDescending(new Vector2(
+                    Mathf.Abs(localSize.x),
+                    Mathf.Abs(localSize.z)));
+                return GetConsistentUniformScale(
+                    expectedPlanar.x,
+                    measuredPlanar.x,
+                    expectedPlanar.y,
+                    measuredPlanar.y);
+            }
+            default:
+                return 1f;
+        }
+    }
+
+    private static float GetConsistentUniformScale(
+        float expectedPrimary,
+        float measuredPrimary,
+        float expectedSecondary,
+        float measuredSecondary)
+    {
+        const float MinimumMeasuredSize = 0.0001f;
+        const float RatioTolerance = 0.15f;
+        const float IdentityTolerance = 0.02f;
+
+        bool hasPrimary = expectedPrimary > MinimumMeasuredSize && measuredPrimary > MinimumMeasuredSize;
+        bool hasSecondary = expectedSecondary > MinimumMeasuredSize && measuredSecondary > MinimumMeasuredSize;
+        if (!hasPrimary && !hasSecondary)
+        {
+            return 1f;
+        }
+
+        float primaryRatio = hasPrimary ? expectedPrimary / measuredPrimary : 1f;
+        float secondaryRatio = hasSecondary ? expectedSecondary / measuredSecondary : 1f;
+
+        if (hasPrimary && hasSecondary)
+        {
+            float average = (primaryRatio + secondaryRatio) * 0.5f;
+            if (average <= MinimumMeasuredSize)
+            {
+                return 1f;
+            }
+
+            if (Mathf.Abs(primaryRatio - secondaryRatio) / average > RatioTolerance)
+            {
+                return 1f;
+            }
+
+            return Mathf.Abs(average - 1f) <= IdentityTolerance ? 1f : average;
+        }
+
+        float singleRatio = hasPrimary ? primaryRatio : secondaryRatio;
+        return Mathf.Abs(singleRatio - 1f) <= IdentityTolerance ? 1f : singleRatio;
+    }
+
+    private static Vector2 SortDescending(Vector2 value)
+    {
+        return value.x >= value.y ? value : new Vector2(value.y, value.x);
     }
 
     private Vector3 GetScenePreviewSize(SpaceSegmentPlacementRecord record)
@@ -3280,30 +3404,198 @@ public class SpaceBlockBuilderWindow : EditorWindow
             return false;
         }
 
-        Renderer[] renderers = placementObject.GetComponentsInChildren<Renderer>(true);
-        if (renderers == null || renderers.Length == 0)
-        {
-            return false;
-        }
-
-        Bounds bounds = renderers[0].bounds;
-        for (int i = 1; i < renderers.Length; i++)
-        {
-            bounds.Encapsulate(renderers[i].bounds);
-        }
-
         MemorySpaceBlock block = placementObject.GetComponentInParent<MemorySpaceBlock>();
         if (block == null)
         {
             return false;
         }
 
+        Collider[] colliders = placementObject.GetComponentsInChildren<Collider>(true);
+        if (TryGetCombinedWorldBounds(colliders, out Bounds bounds))
+        {
+            localCenter = block.transform.InverseTransformPoint(bounds.center);
+            Vector3 colliderSizeVector = block.transform.InverseTransformVector(bounds.size);
+            localSize = new Vector3(
+                Mathf.Max(0.08f, Mathf.Abs(colliderSizeVector.x)),
+                Mathf.Max(0.08f, Mathf.Abs(colliderSizeVector.y)),
+                Mathf.Max(0.08f, Mathf.Abs(colliderSizeVector.z)));
+            return true;
+        }
+
+        Renderer[] renderers = placementObject.GetComponentsInChildren<Renderer>(true);
+        if (renderers == null || renderers.Length == 0)
+        {
+            return false;
+        }
+
+        bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            bounds.Encapsulate(renderers[i].bounds);
+        }
+
         localCenter = block.transform.InverseTransformPoint(bounds.center);
-        Vector3 localSizeVector = block.transform.InverseTransformVector(bounds.size);
+        Vector3 rendererSizeVector = block.transform.InverseTransformVector(bounds.size);
         localSize = new Vector3(
-            Mathf.Max(0.08f, Mathf.Abs(localSizeVector.x)),
-            Mathf.Max(0.08f, Mathf.Abs(localSizeVector.y)),
-            Mathf.Max(0.08f, Mathf.Abs(localSizeVector.z)));
+            Mathf.Max(0.08f, Mathf.Abs(rendererSizeVector.x)),
+            Mathf.Max(0.08f, Mathf.Abs(rendererSizeVector.y)),
+            Mathf.Max(0.08f, Mathf.Abs(rendererSizeVector.z)));
+        return true;
+    }
+
+    private static bool TryGetCombinedWorldBounds(Collider[] colliders, out Bounds bounds)
+    {
+        bounds = default;
+        if (colliders == null || colliders.Length == 0)
+        {
+            return false;
+        }
+
+        bool hasBounds = false;
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider collider = colliders[i];
+            if (collider == null || !collider.enabled)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = collider.bounds;
+                hasBounds = true;
+                continue;
+            }
+
+            bounds.Encapsulate(collider.bounds.min);
+            bounds.Encapsulate(collider.bounds.max);
+        }
+
+        return hasBounds;
+    }
+
+    private static void RefitPlacementColliderToRenderBounds(Transform instanceTransform)
+    {
+        if (instanceTransform == null)
+        {
+            return;
+        }
+
+        BoxCollider collider = instanceTransform.GetComponent<BoxCollider>();
+        if (collider == null)
+        {
+            return;
+        }
+
+        if (!TryGetSelfSpaceBounds(instanceTransform, out Vector3 localCenter, out Vector3 localSize))
+        {
+            return;
+        }
+
+        collider.center = localCenter;
+        collider.size = new Vector3(
+            Mathf.Max(0.01f, Mathf.Abs(localSize.x)),
+            Mathf.Max(0.01f, Mathf.Abs(localSize.y)),
+            Mathf.Max(0.01f, Mathf.Abs(localSize.z)));
+    }
+
+    private static bool TryGetSelfSpaceBounds(Transform rootTransform, out Vector3 localCenter, out Vector3 localSize)
+    {
+        localCenter = Vector3.zero;
+        localSize = Vector3.zero;
+        if (rootTransform == null)
+        {
+            return false;
+        }
+
+        Renderer[] renderers = rootTransform.GetComponentsInChildren<Renderer>(true);
+        if (renderers == null || renderers.Length == 0)
+        {
+            return false;
+        }
+
+        Matrix4x4 rootWorldToLocal = rootTransform.worldToLocalMatrix;
+        Bounds combinedBounds = default;
+        bool hasBounds = false;
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (!TryGetRendererBoundsInPlacementSpace(renderers[i], rootWorldToLocal, out Bounds rendererBounds))
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                combinedBounds = rendererBounds;
+                hasBounds = true;
+                continue;
+            }
+
+            combinedBounds.Encapsulate(rendererBounds.min);
+            combinedBounds.Encapsulate(rendererBounds.max);
+        }
+
+        if (!hasBounds)
+        {
+            return false;
+        }
+
+        localCenter = combinedBounds.center;
+        localSize = combinedBounds.size;
+        return true;
+    }
+
+    private static bool TryGetRendererBoundsInPlacementSpace(Renderer renderer, Matrix4x4 rootWorldToLocal, out Bounds bounds)
+    {
+        bounds = default;
+        if (renderer == null)
+        {
+            return false;
+        }
+
+        Bounds sourceBounds;
+        Matrix4x4 sourceLocalToWorld;
+
+        if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
+        {
+            sourceBounds = skinnedMeshRenderer.localBounds;
+            sourceLocalToWorld = skinnedMeshRenderer.transform.localToWorldMatrix;
+        }
+        else
+        {
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            if (meshFilter == null || meshFilter.sharedMesh == null)
+            {
+                return false;
+            }
+
+            sourceBounds = meshFilter.sharedMesh.bounds;
+            sourceLocalToWorld = meshFilter.transform.localToWorldMatrix;
+        }
+
+        Vector3 min = sourceBounds.min;
+        Vector3 max = sourceBounds.max;
+        Vector3[] corners =
+        {
+            new Vector3(min.x, min.y, min.z),
+            new Vector3(max.x, min.y, min.z),
+            new Vector3(min.x, max.y, min.z),
+            new Vector3(max.x, max.y, min.z),
+            new Vector3(min.x, min.y, max.z),
+            new Vector3(max.x, min.y, max.z),
+            new Vector3(min.x, max.y, max.z),
+            new Vector3(max.x, max.y, max.z)
+        };
+
+        Vector3 firstPoint = rootWorldToLocal.MultiplyPoint3x4(sourceLocalToWorld.MultiplyPoint3x4(corners[0]));
+        bounds = new Bounds(firstPoint, Vector3.zero);
+        for (int i = 1; i < corners.Length; i++)
+        {
+            Vector3 point = rootWorldToLocal.MultiplyPoint3x4(sourceLocalToWorld.MultiplyPoint3x4(corners[i]));
+            bounds.Encapsulate(point);
+        }
+
         return true;
     }
 
@@ -4127,16 +4419,127 @@ public class SpaceBlockBuilderWindow : EditorWindow
             return false;
         }
 
-        Bounds combinedBounds = renderers[0].bounds;
-        for (int i = 1; i < renderers.Length; i++)
+        Transform parent = instanceTransform.parent;
+        if (parent == null)
         {
-            combinedBounds.Encapsulate(renderers[i].bounds);
+            return false;
         }
 
-        Transform parent = instanceTransform.parent;
-        localCenter = parent.InverseTransformPoint(combinedBounds.center);
-        Vector3 localSizeVector = parent.InverseTransformVector(combinedBounds.size);
-        localSize = new Vector3(Mathf.Abs(localSizeVector.x), Mathf.Abs(localSizeVector.y), Mathf.Abs(localSizeVector.z));
+        Matrix4x4 parentWorldToLocal = parent.worldToLocalMatrix;
+        Bounds combinedBounds = default;
+        bool hasBounds = false;
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (!TryGetRendererBoundsInParentSpace(renderers[i], parentWorldToLocal, out Bounds rendererBounds))
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                combinedBounds = rendererBounds;
+                hasBounds = true;
+                continue;
+            }
+
+            combinedBounds.Encapsulate(rendererBounds.min);
+            combinedBounds.Encapsulate(rendererBounds.max);
+        }
+
+        if (!hasBounds)
+        {
+            return false;
+        }
+
+        localCenter = combinedBounds.center;
+        localSize = combinedBounds.size;
+        return true;
+    }
+
+    private static bool TryGetRendererBoundsInParentSpace(Renderer renderer, Matrix4x4 parentWorldToLocal, out Bounds bounds)
+    {
+        bounds = default;
+        if (renderer == null)
+        {
+            return false;
+        }
+
+        Bounds sourceBounds;
+        Matrix4x4 sourceLocalToWorld;
+
+        if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
+        {
+            sourceBounds = skinnedMeshRenderer.localBounds;
+            sourceLocalToWorld = skinnedMeshRenderer.transform.localToWorldMatrix;
+        }
+        else
+        {
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            if (meshFilter == null || meshFilter.sharedMesh == null)
+            {
+                return TryGetFallbackRendererBoundsInParentSpace(renderer, parentWorldToLocal, out bounds);
+            }
+
+            sourceBounds = meshFilter.sharedMesh.bounds;
+            sourceLocalToWorld = meshFilter.transform.localToWorldMatrix;
+        }
+
+        Vector3 min = sourceBounds.min;
+        Vector3 max = sourceBounds.max;
+        Vector3[] corners =
+        {
+            new Vector3(min.x, min.y, min.z),
+            new Vector3(max.x, min.y, min.z),
+            new Vector3(min.x, max.y, min.z),
+            new Vector3(max.x, max.y, min.z),
+            new Vector3(min.x, min.y, max.z),
+            new Vector3(max.x, min.y, max.z),
+            new Vector3(min.x, max.y, max.z),
+            new Vector3(max.x, max.y, max.z)
+        };
+
+        Vector3 firstPoint = parentWorldToLocal.MultiplyPoint3x4(sourceLocalToWorld.MultiplyPoint3x4(corners[0]));
+        bounds = new Bounds(firstPoint, Vector3.zero);
+        for (int i = 1; i < corners.Length; i++)
+        {
+            Vector3 point = parentWorldToLocal.MultiplyPoint3x4(sourceLocalToWorld.MultiplyPoint3x4(corners[i]));
+            bounds.Encapsulate(point);
+        }
+
+        return true;
+    }
+
+    private static bool TryGetFallbackRendererBoundsInParentSpace(Renderer renderer, Matrix4x4 parentWorldToLocal, out Bounds bounds)
+    {
+        bounds = default;
+        if (renderer == null)
+        {
+            return false;
+        }
+
+        Bounds worldBounds = renderer.bounds;
+        Vector3 min = worldBounds.min;
+        Vector3 max = worldBounds.max;
+        Vector3[] corners =
+        {
+            new Vector3(min.x, min.y, min.z),
+            new Vector3(max.x, min.y, min.z),
+            new Vector3(min.x, max.y, min.z),
+            new Vector3(max.x, max.y, min.z),
+            new Vector3(min.x, min.y, max.z),
+            new Vector3(max.x, min.y, max.z),
+            new Vector3(min.x, max.y, max.z),
+            new Vector3(max.x, max.y, max.z)
+        };
+
+        Vector3 firstPoint = parentWorldToLocal.MultiplyPoint3x4(corners[0]);
+        bounds = new Bounds(firstPoint, Vector3.zero);
+        for (int i = 1; i < corners.Length; i++)
+        {
+            bounds.Encapsulate(parentWorldToLocal.MultiplyPoint3x4(corners[i]));
+        }
+
         return true;
     }
 

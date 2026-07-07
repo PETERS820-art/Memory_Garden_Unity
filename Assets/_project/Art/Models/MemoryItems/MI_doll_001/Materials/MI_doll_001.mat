@@ -145,8 +145,9 @@ Material:
     - _GrowthNoiseStrength: 0.5
     - _GrowthRadius: 0
     - _GrowthSoftness: 1.2
+    - _HighlightBoost: 1
     - _LightRangeCompression: 0.66
-    - _MemoryBlend: 1
+    - _MemoryBlend: 0
     - _Metallic: 0
     - _NormalFlatten: 0.55
     - _OcclusionStrength: 1
@@ -174,6 +175,11 @@ Material:
     - _StrokeContrast: 1.9
     - _StrokeDensity: 0.52
     - _Surface: 0
+    - _TranslucencyHalo: 0
+    - _TranslucencyPower: 2
+    - _TranslucencyStrength: 0
+    - _TranslucencyViewDependency: 1.25
+    - _TranslucencyWrap: 0.4
     - _ViewBrushStrength: 0.38
     - _ViewProjectionBlend: 0.35
     - _WatercolorStrength: 0.35
@@ -191,4 +197,5 @@ Material:
     - _RimColor: {r: 0.85, g: 0.92, b: 1, a: 1}
     - _ShadowColor: {r: 0.37068352, g: 0.63501865, b: 0.9245283, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _TranslucencyColor: {r: 1, g: 0.82, b: 0.62, a: 1}
   m_BuildTextureStacks: []

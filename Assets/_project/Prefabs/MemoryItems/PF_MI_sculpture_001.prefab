@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 90220843621671279}
   - component: {fileID: 6730254309224882565}
   - component: {fileID: 1590076345825043822}
+  - component: {fileID: 2972341651133845648}
   m_Layer: 0
   m_Name: PF_MI_sculpture_001
   m_TagString: Untagged
@@ -303,6 +304,21 @@ MonoBehaviour:
   respawnHeightOffset: 0.3
   resetWhenSelected: 0
   resetOnLowYEvenWhenSelected: 1
+--- !u!114 &2972341651133845648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104039415999946033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54dd67b0be0f428a8f8d3d54d61545ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  logStateChanges: 0
+  currentState: 0
+  previousState: 0
 --- !u!1 &4619230626302533682
 GameObject:
   m_ObjectHideFlags: 0

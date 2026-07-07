@@ -41,7 +41,7 @@ public class MemoryDisplaySlot : MonoBehaviour
             return false;
         }
 
-        if (memoryObject == null || !memoryObject.EnablePlacement)
+        if (memoryObject == null || !memoryObject.EnablePlacement || !memoryObject.IsPlacementAllowed)
         {
             return false;
         }

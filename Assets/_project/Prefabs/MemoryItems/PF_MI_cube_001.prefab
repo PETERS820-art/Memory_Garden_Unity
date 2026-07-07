@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 7622732168621236951}
   - component: {fileID: 3534996370861668704}
   - component: {fileID: 914011634679224735}
+  - component: {fileID: 3771945325835972111}
   m_Layer: 0
   m_Name: PF_MI_cube_001
   m_TagString: Untagged
@@ -303,6 +304,21 @@ MonoBehaviour:
   respawnHeightOffset: 0.3
   resetWhenSelected: 0
   resetOnLowYEvenWhenSelected: 1
+--- !u!114 &3771945325835972111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5062628079338974456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54dd67b0be0f428a8f8d3d54d61545ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  logStateChanges: 0
+  currentState: 0
+  previousState: 0
 --- !u!1 &8502413875133098541
 GameObject:
   m_ObjectHideFlags: 0
