@@ -13,13 +13,20 @@ MonoBehaviour:
   m_Name: DF_shelf_003_BuildProfile
   m_EditorClassIdentifier: 
   furnitureId: DF_shelf_003
+  authoringMode: 0
+  enableDisplayFeature: 1
+  enableLightFeature: 0
+  enableFrameFeature: 0
   furnitureType: 0
   slotPreset: 1
+  lightFeaturePreset: 0
+  frameSurfacePreset: 0
   slotHeightOffset: 0.02
   boundsPadding: {x: 0, y: 0, z: 0}
   createPlacementBounds: 1
   createBlockingCollider: 1
   generateSlotsFromPlacementBounds: 1
+  placementLocalOffset: {x: 0, y: 0.5, z: 0.1}
   prefabRootTransform:
     enabled: 1
     localPosition: {x: 0, y: 0, z: 0}
@@ -55,3 +62,5 @@ MonoBehaviour:
     localPosition: {x: 0.008021324, y: -0.0006000053, z: 0.00080000015}
     localEulerAngles: {x: 0, y: 270, z: 0}
     localScale: {x: 0.01, y: 0.01, z: 0.01}
+  lightOverrides: []
+  frameSurfaceOverrides: []

@@ -13,13 +13,20 @@ MonoBehaviour:
   m_Name: DF_carpet_001_BuildProfile
   m_EditorClassIdentifier: 
   furnitureId: DF_carpet_001
-  furnitureType: 4
+  authoringMode: 0
+  enableDisplayFeature: 1
+  enableLightFeature: 0
+  enableFrameFeature: 0
+  furnitureType: 2
   slotPreset: 4
+  lightFeaturePreset: 0
+  frameSurfacePreset: 0
   slotHeightOffset: 0.02
   boundsPadding: {x: 0, y: 0, z: 0}
   createPlacementBounds: 1
   createBlockingCollider: 1
   generateSlotsFromPlacementBounds: 1
+  placementLocalOffset: {x: 0, y: 0, z: 0}
   prefabRootTransform:
     enabled: 1
     localPosition: {x: 0, y: 0, z: 0}
@@ -44,6 +51,8 @@ MonoBehaviour:
     size: {x: 0.026909709, y: 0.02029035, z: 0.01}
   slotOverrides:
   - id: Slot_Center
-    localPosition: {x: 0.26396883, y: 0.0125, z: 0.0046}
+    localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: -0, y: 0, z: 0}
     localScale: {x: 0.01, y: 0.01, z: 0.01}
+  lightOverrides: []
+  frameSurfaceOverrides: []

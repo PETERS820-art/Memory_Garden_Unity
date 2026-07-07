@@ -11,35 +11,41 @@ using UnityEditor;
 public class MemoryUIBeveledPanel3D : MonoBehaviour
 {
     private const string FrostedShaderName = "MemoryGarden/UI/Frosted Glass";
+    private const string FrostedShaderAssetPath = "Assets/_project/Art/Memory Materials/MemoryUIFrostedGlass.shader";
+    private const string FrostedMaterialAssetPath = "Assets/_project/Art/Memory Materials/MemoryUIFrostedGlass.mat";
 
     [SerializeField] private RectTransform targetRect;
     [SerializeField] private Mesh overrideMesh;
     [SerializeField] private Material sharedMaterial;
     [SerializeField] private bool syncWithTarget = true;
     [SerializeField] private Vector2 sizePadding = Vector2.zero;
-    [SerializeField] private float zOffset = -6f;
-    [SerializeField] private float thickness = 12f;
-    [SerializeField] private float cornerRadius = 34f;
+    [SerializeField] private float zOffset = -8f;
+    [SerializeField] private float thickness = 14f;
+    [SerializeField] private float cornerRadius = 36f;
     [SerializeField] private float bevelSize = 5f;
     [SerializeField] [Range(2, 12)] private int cornerSegments = 6;
     [SerializeField] private Color tintColor = new Color(0.22f, 0.22f, 0.25f, 0.24f);
     [SerializeField] private Color emissionColor = new Color(0.82f, 0.76f, 0.92f, 1f);
-    [SerializeField] [Range(0f, 4f)] private float emissionIntensity = 0.18f;
-    [SerializeField] [Range(0f, 24f)] private float blurPixels = 8f;
-    [SerializeField] [Range(0f, 1f)] private float tintStrength = 0.42f;
-    [SerializeField] [Range(0f, 2f)] private float backgroundInfluence = 1f;
-    [SerializeField] [Range(0.5f, 8f)] private float fresnelPower = 1.5f;
-    [SerializeField] [Range(0f, 2f)] private float edgeStrength = 0.22f;
-    [SerializeField] [Range(0f, 8f)] private float alphaSoftness = 1f;
-    [SerializeField] [Range(0f, 0.05f)] private float refractionStrength = 0.006f;
-    [SerializeField] [Range(0f, 0.05f)] private float distortionStrength = 0.004f;
-    [SerializeField] [Range(4f, 48f)] private float distortionScale = 12f;
+    [SerializeField] [Range(0f, 4f)] private float emissionIntensity = 1.01f;
+    [SerializeField] [Range(0f, 24f)] private float blurPixels = 10.5f;
+    [SerializeField] [Range(0f, 1f)] private float tintStrength = 0.242f;
+    [SerializeField] [Range(0f, 2f)] private float backgroundInfluence = 1.711f;
+    [SerializeField] [Range(0f, 2f)] private float backgroundLumaThreshold = 0.50f;
+    [SerializeField] [Range(0.01f, 2f)] private float backgroundLumaKnee = 0.25f;
+    [SerializeField] [Range(0f, 1.5f)] private float brightSceneAbsorption = 0.78f;
+    [SerializeField] [Range(0.5f, 8f)] private float fresnelPower = 1.76f;
+    [SerializeField] [Range(0f, 2f)] private float edgeStrength = 0.46f;
+    [SerializeField] [Range(0f, 8f)] private float alphaSoftness = 2.78f;
+    [SerializeField] [Range(0f, 0.05f)] private float refractionStrength = 0.012f;
+    [SerializeField] [Range(0f, 0.05f)] private float distortionStrength = 0.0022f;
+    [SerializeField] [Range(4f, 48f)] private float distortionScale = 18.5f;
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
     private Mesh generatedMesh;
     private Material runtimeMaterial;
     private MaterialPropertyBlock propertyBlock;
+    private bool warnedFallbackMaterial;
 #if UNITY_EDITOR
     private bool pendingEditorSync;
 #endif
@@ -76,6 +82,35 @@ public class MemoryUIBeveledPanel3D : MonoBehaviour
         tintColor = panelTint;
         emissionColor = panelEmission;
         emissionIntensity = panelEmissionIntensity;
+        RequestSync();
+    }
+
+    public void ApplyRecommendedGlassTuning()
+    {
+        zOffset = -8f;
+        thickness = 14f;
+        cornerRadius = 36f;
+        bevelSize = 5f;
+        cornerSegments = 6;
+        emissionIntensity = 1.01f;
+        blurPixels = 10.5f;
+        tintStrength = 0.242f;
+        backgroundInfluence = 1.711f;
+        backgroundLumaThreshold = 0.50f;
+        backgroundLumaKnee = 0.25f;
+        brightSceneAbsorption = 0.78f;
+        fresnelPower = 1.76f;
+        edgeStrength = 0.46f;
+        alphaSoftness = 2.78f;
+        refractionStrength = 0.012f;
+        distortionStrength = 0.0022f;
+        distortionScale = 18.5f;
+
+        if (tintColor.a > 0.08f)
+        {
+            tintColor = new Color(tintColor.r, tintColor.g, tintColor.b, 0.08f);
+        }
+
         RequestSync();
     }
 
@@ -316,6 +351,17 @@ public class MemoryUIBeveledPanel3D : MonoBehaviour
     private void ApplyMaterial()
     {
         Material materialToUse = sharedMaterial;
+#if UNITY_EDITOR
+        if (materialToUse == null && !Application.isPlaying)
+        {
+            materialToUse = EnsureEditorSharedMaterial();
+            if (materialToUse != null)
+            {
+                sharedMaterial = materialToUse;
+            }
+        }
+#endif
+
         if (materialToUse == null)
         {
             if (runtimeMaterial == null)
@@ -335,6 +381,12 @@ public class MemoryUIBeveledPanel3D : MonoBehaviour
                 runtimeMaterial.name = "MemoryUIBeveledPanel3D_Runtime";
                 runtimeMaterial.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
                 ConfigureFallbackMaterial(runtimeMaterial);
+
+                if (shader.name != FrostedShaderName && !warnedFallbackMaterial)
+                {
+                    warnedFallbackMaterial = true;
+                    Debug.LogWarning($"[MemoryUIBeveledPanel3D] Could not resolve '{FrostedShaderName}' for '{name}'. Falling back to '{shader.name}'.");
+                }
             }
 
             materialToUse = runtimeMaterial;
@@ -353,6 +405,9 @@ public class MemoryUIBeveledPanel3D : MonoBehaviour
         propertyBlock.SetFloat("_BlurPixels", blurPixels);
         propertyBlock.SetFloat("_TintStrength", tintStrength);
         propertyBlock.SetFloat("_BackgroundInfluence", backgroundInfluence);
+        propertyBlock.SetFloat("_BackgroundLumaThreshold", backgroundLumaThreshold);
+        propertyBlock.SetFloat("_BackgroundLumaKnee", backgroundLumaKnee);
+        propertyBlock.SetFloat("_BrightSceneAbsorption", brightSceneAbsorption);
         propertyBlock.SetFloat("_FresnelPower", fresnelPower);
         propertyBlock.SetFloat("_EdgeStrength", edgeStrength);
         propertyBlock.SetFloat("_AlphaSoftness", alphaSoftness);
@@ -408,6 +463,94 @@ public class MemoryUIBeveledPanel3D : MonoBehaviour
 
         material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
         material.EnableKeyword("_EMISSION");
+    }
+
+#if UNITY_EDITOR
+    private static Material EnsureEditorSharedMaterial()
+    {
+        Material material = AssetDatabase.LoadAssetAtPath<Material>(FrostedMaterialAssetPath);
+        if (material != null)
+        {
+            return material;
+        }
+
+        Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(FrostedShaderAssetPath);
+        if (shader == null)
+        {
+            shader = Shader.Find(FrostedShaderName);
+        }
+
+        if (shader == null)
+        {
+            return null;
+        }
+
+        material = new Material(shader)
+        {
+            name = "MemoryUIFrostedGlass"
+        };
+
+        ConfigureFrostedMaterialDefaults(material);
+        AssetDatabase.CreateAsset(material, FrostedMaterialAssetPath);
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        return AssetDatabase.LoadAssetAtPath<Material>(FrostedMaterialAssetPath);
+    }
+#endif
+
+    private static void ConfigureFrostedMaterialDefaults(Material material)
+    {
+        if (material == null)
+        {
+            return;
+        }
+
+        material.renderQueue = (int)RenderQueue.Transparent;
+
+        if (material.HasProperty("_BaseColor"))
+        {
+            material.SetColor("_BaseColor", new Color(0.22f, 0.22f, 0.26f, 0.08f));
+        }
+
+        if (material.HasProperty("_EdgeColor"))
+        {
+            material.SetColor("_EdgeColor", new Color(0.82f, 0.76f, 0.92f, 1f));
+        }
+
+        if (material.HasProperty("_SpecularColor"))
+        {
+            material.SetColor("_SpecularColor", new Color(1f, 0.97f, 0.94f, 1f));
+        }
+
+        if (material.HasProperty("_ReflectionColor"))
+        {
+            material.SetColor("_ReflectionColor", new Color(0.92f, 0.94f, 1f, 1f));
+        }
+
+        SetFloatIfPresent(material, "_BlurPixels", 10.5f);
+        SetFloatIfPresent(material, "_TintStrength", 0.242f);
+        SetFloatIfPresent(material, "_BackgroundInfluence", 1.711f);
+        SetFloatIfPresent(material, "_BackgroundLumaThreshold", 0.50f);
+        SetFloatIfPresent(material, "_BackgroundLumaKnee", 0.25f);
+        SetFloatIfPresent(material, "_BrightSceneAbsorption", 0.78f);
+        SetFloatIfPresent(material, "_FresnelPower", 1.76f);
+        SetFloatIfPresent(material, "_EdgeStrength", 0.46f);
+        SetFloatIfPresent(material, "_AlphaSoftness", 2.78f);
+        SetFloatIfPresent(material, "_SpecularStrength", 0.45f);
+        SetFloatIfPresent(material, "_SpecularPower", 48f);
+        SetFloatIfPresent(material, "_ReflectionStrength", 0.28f);
+        SetFloatIfPresent(material, "_RefractionStrength", 0.012f);
+        SetFloatIfPresent(material, "_NoiseStrength", 0.0022f);
+        SetFloatIfPresent(material, "_NoiseScale", 18.5f);
+        SetFloatIfPresent(material, "_DebugView", 0f);
+    }
+
+    private static void SetFloatIfPresent(Material material, string propertyName, float value)
+    {
+        if (material.HasProperty(propertyName))
+        {
+            material.SetFloat(propertyName, value);
+        }
     }
 
     private static Mesh BuildBeveledRoundedPanelMesh(

@@ -1,0 +1,599 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fecc135ad89c77498cff4e1f54dec71, type: 3}
+  m_Name: SBD_Block_01 2
+  m_EditorClassIdentifier: 
+  blockId: Block_01
+  gridWidth: 10
+  gridDepth: 10
+  gridSize: 1
+  placements:
+  - placementId: PL_0151f80b
+    segmentId: SM_ceiling_white_001_1x1
+    category: 2
+    gridX: 7
+    gridZ: 3
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_0675ec24
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 3
+    gridZ: 7
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_07545a85
+    segmentId: SM_ceiling_white_001_2x2
+    category: 2
+    gridX: 5
+    gridZ: 4
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_10950fef
+    segmentId: SM_ceiling_white_001_2x2
+    category: 2
+    gridX: 3
+    gridZ: 4
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_13565aa3
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 7
+    gridZ: 4
+    side: 1
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_13c26f86
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 2
+    gridZ: 5
+    side: 0
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_14044bd1
+    segmentId: SM_ceiling_white_001_1x1
+    category: 2
+    gridX: 3
+    gridZ: 3
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_1425cf5a
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 3
+    gridZ: 8
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_16af58bd
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 5
+    gridZ: 8
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_1921da09
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 3
+    gridZ: 2
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_3457e238
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 4
+    gridZ: 1
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_361f4fc3
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 4
+    gridZ: 0
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_3bb83e62
+    segmentId: SM_wall_EC_001_2x2.5_window
+    category: 1
+    gridX: 6
+    gridZ: 7
+    side: 2
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_3c649ab0
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 4
+    gridZ: 9
+    side: 0
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_437c2969
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 3
+    gridZ: 9
+    side: 0
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_43c3f8d3
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 6
+    gridZ: 9
+    side: 0
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_4c830c92
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 3
+    gridZ: 2
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_4cf7676f
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 3
+    gridZ: 2
+    side: 1
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_53e7c07b
+    segmentId: SM_ceiling_white_001_1x1
+    category: 2
+    gridX: 4
+    gridZ: 3
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_55a56412
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 3
+    gridZ: 9
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_564942c3
+    segmentId: SM_ceiling_white_001_1x1
+    category: 2
+    gridX: 6
+    gridZ: 3
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_5aba18a5
+    segmentId: SM_ceiling_white_001_2x2
+    category: 2
+    gridX: 5
+    gridZ: 6
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_5cb83360
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 5
+    gridZ: 0
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_6312aa51
+    segmentId: SM_wall_EC_001_2x2.5_window
+    category: 1
+    gridX: 1
+    gridZ: 4
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_6f7871b8
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 5
+    gridZ: 1
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_6f864b43
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 6
+    gridZ: 2
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_71b62e61
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 3
+    gridZ: 6
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_7424c6b3
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 3
+    gridZ: 8
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_7842752f
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 4
+    gridZ: 0
+    side: 1
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_78e3074f
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 2
+    gridZ: 4
+    side: 1
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_7d987348
+    segmentId: SM_ceiling_white_001_2x2
+    category: 2
+    gridX: 5
+    gridZ: 8
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_8693ddc9
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 7
+    gridZ: 4
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_87ee7b0c
+    segmentId: SM_ceiling_white_001_2x2
+    category: 2
+    gridX: 1
+    gridZ: 4
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_910f654c
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 6
+    gridZ: 6
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_97d815fe
+    segmentId: SM_wall_white_001_1x2.5_doorleft
+    category: 1
+    gridX: 5
+    gridZ: 0
+    side: 1
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_998c3ea7
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 3
+    gridZ: 6
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_9d2dcac7
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 5
+    gridZ: 2
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_9dc85d0f
+    segmentId: SM_ceiling_white_001_2x2
+    category: 2
+    gridX: 3
+    gridZ: 6
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_9ea6787d
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 3
+    gridZ: 3
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_a645d8dc
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 5
+    gridZ: 4
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_adccf592
+    segmentId: SM_ceiling_white_001_2x2
+    category: 2
+    gridX: 3
+    gridZ: 8
+    side: 3
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_b8eaee45
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 3
+    gridZ: 4
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_be5f5f75
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 5
+    gridZ: 6
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_bf162834
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 6
+    gridZ: 2
+    side: 1
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_c348f1df
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 7
+    gridZ: 5
+    side: 0
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_cedf0b2f
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 8
+    gridZ: 5
+    side: 0
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_d293acee
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 1
+    gridZ: 5
+    side: 0
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_da773f9e
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 5
+    gridZ: 9
+    side: 0
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_dbff8e27
+    segmentId: SM_wall_white_001_1x2.5_doorright
+    category: 1
+    gridX: 4
+    gridZ: 0
+    side: 1
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: SM_doorway_2X2.5_001
+    isConnectorCandidate: 1
+  - placementId: PL_e11ab772
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 6
+    gridZ: 3
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_e223d9aa
+    segmentId: SM_floor_white_001_2X2
+    category: 0
+    gridX: 1
+    gridZ: 4
+    side: 0
+    rotationY: 0
+    footprint: {x: 2, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_e9df9836
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 1
+    gridZ: 4
+    side: 1
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_ea540e2c
+    segmentId: SM_ceiling_white_001_1x1
+    category: 2
+    gridX: 5
+    gridZ: 3
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_eef050de
+    segmentId: SM_wall_white_001_1x2.5_doorright
+    category: 1
+    gridX: 8
+    gridZ: 4
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: SM_doorway_2X2.5_001
+    isConnectorCandidate: 1
+  - placementId: PL_ef585eb5
+    segmentId: SM_wall_EC_001_1x2.5
+    category: 1
+    gridX: 6
+    gridZ: 9
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_f7254366
+    segmentId: SM_wall_white_001_1x2.5_doorleft
+    category: 1
+    gridX: 8
+    gridZ: 5
+    side: 2
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_fac03a89
+    segmentId: SM_ceiling_white_001_1x2
+    category: 2
+    gridX: 7
+    gridZ: 4
+    side: 3
+    rotationY: 0
+    footprint: {x: 1, y: 2}
+    overlaySegmentId: 
+    isConnectorCandidate: 0
+  - placementId: PL_fd8ee11b
+    segmentId: SM_wall_EC_001_1x1.25
+    category: 1
+    gridX: 8
+    gridZ: 4
+    side: 1
+    rotationY: 0
+    footprint: {x: 1, y: 1}
+    overlaySegmentId: 
+    isConnectorCandidate: 0

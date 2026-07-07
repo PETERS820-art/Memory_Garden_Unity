@@ -488,6 +488,8 @@ public class WallSegmentSlot : MonoBehaviour
                 instanceTransform.localRotation = Quaternion.identity;
                 break;
         }
+
+        ApplyAuthoringPlacementOffset(instanceTransform, definition);
     }
 
     private void ApplyOverlayTransform(Transform instanceTransform, SpaceSegmentDefinition definition)
@@ -511,11 +513,13 @@ public class WallSegmentSlot : MonoBehaviour
                     overlayFaceOffset.x + overlaySpanOffset.x,
                     0f,
                     overlayFaceOffset.y + overlaySpanOffset.y);
+                ApplyAuthoringPlacementOffset(instanceTransform, definition);
                 ApplyPreservedOverlayTransform(instanceTransform, definition);
             }
             else
             {
                 AlignToLocalBounds(instanceTransform, overlayFaceOffset.x, 0f, overlayFaceOffset.y);
+                ApplyAuthoringPlacementOffset(instanceTransform, definition);
             }
             return;
         }
@@ -536,6 +540,29 @@ public class WallSegmentSlot : MonoBehaviour
         return definition != null && definition.hasPlacementAuthoringOverride
             ? SanitizeScale(definition.placementAuthoringScale)
             : Vector3.one;
+    }
+
+    private static Vector3 GetAuthoringPlacementOffset(SpaceSegmentDefinition definition)
+    {
+        return definition != null && definition.hasPlacementAuthoringOverride
+            ? definition.placementAuthoringLocalOffset
+            : Vector3.zero;
+    }
+
+    private static void ApplyAuthoringPlacementOffset(Transform instanceTransform, SpaceSegmentDefinition definition)
+    {
+        if (instanceTransform == null)
+        {
+            return;
+        }
+
+        Vector3 localOffset = GetAuthoringPlacementOffset(definition);
+        if (localOffset.sqrMagnitude <= 0.0000001f)
+        {
+            return;
+        }
+
+        instanceTransform.localPosition += instanceTransform.localRotation * localOffset;
     }
 
     private static Vector3 SanitizeScale(Vector3 scale)

@@ -12,7 +12,9 @@ public class MemoryModeManager : MonoBehaviour
     [SerializeField] private MemoryModeLightingController lightingController;
 
     [Header("Memory Mode UI")]
+    [SerializeField] private bool preferHiFiMemoryUI = true;
     [SerializeField] private MemoryModeUIController memoryModeUIController;
+    [SerializeField] private MemoryUIRootController memoryUIRootHiFiController;
 
     public bool IsInMemoryMode { get; private set; }
     public MemoryObject CurrentMemoryObject => currentMemoryObject;
@@ -31,6 +33,7 @@ public class MemoryModeManager : MonoBehaviour
         Instance = this;
         TryAutoAssignLightingController();
         TryAutoAssignUIController();
+        TryAutoAssignHiFiUIController();
     }
 
     private void OnDestroy()
@@ -132,9 +135,28 @@ public class MemoryModeManager : MonoBehaviour
         memoryModeUIController = UnityEngine.Object.FindObjectOfType<MemoryModeUIController>(true);
     }
 
+    private void TryAutoAssignHiFiUIController()
+    {
+        if (memoryUIRootHiFiController != null)
+        {
+            return;
+        }
+
+        memoryUIRootHiFiController = UnityEngine.Object.FindObjectOfType<MemoryUIRootController>(true);
+    }
+
     private void ShowMemoryModeUI(MemoryItemData data)
     {
         TryAutoAssignUIController();
+        TryAutoAssignHiFiUIController();
+
+        if (preferHiFiMemoryUI && memoryUIRootHiFiController != null)
+        {
+            memoryModeUIController?.Hide();
+            memoryUIRootHiFiController.Bind(data);
+            memoryUIRootHiFiController.Show();
+            return;
+        }
 
         if (memoryModeUIController == null)
         {
@@ -148,10 +170,15 @@ public class MemoryModeManager : MonoBehaviour
     private void HideMemoryModeUI()
     {
         TryAutoAssignUIController();
+        TryAutoAssignHiFiUIController();
+
+        if (memoryUIRootHiFiController != null)
+        {
+            memoryUIRootHiFiController.Hide();
+        }
 
         if (memoryModeUIController == null)
         {
-            Debug.LogWarning("[MemoryModeManager] MemoryModeUIController is not assigned.", this);
             return;
         }
 

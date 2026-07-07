@@ -389,8 +389,8 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 27781729280739949, guid: da2a9f0d784f2f24bb55676cb648812f, type: 3}
-  - {fileID: 979224008608841407, guid: da2a9f0d784f2f24bb55676cb648812f, type: 3}
+  - {fileID: 2100000, guid: ae2e2eace5c292f4f82139b6ab45cafc, type: 2}
+  - {fileID: 2100000, guid: af13bcaa7c0db2443bca643ecc18e81f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -471,3 +471,5 @@ MonoBehaviour:
   - {fileID: 4580460414174174822}
   - {fileID: 4916364863750745307}
   - {fileID: 8176274147182765454}
+  lights: []
+  frameSurfaces: []

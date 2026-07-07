@@ -12,9 +12,21 @@ public static class MemoryUIHiFiBuilder
     private const float WorldCanvasScale = 0.001f;
     private const string HazeTexturePath = "Assets/_project/Art/Memory Materials/Textures/Watercolor_Cloud_01.png";
     private const string GrainTexturePath = "Assets/_project/Art/Memory Materials/Textures/Brush_Grain_01.png";
+    private const string FrostedMaterialAssetPath = "Assets/_project/Art/Memory Materials/MemoryUIFrostedGlass.mat";
     private const string GeneratedUiSpriteFolder = "Assets/_project/Art/Generated/MemoryUI";
     private const string RoundedSpriteAssetPath = GeneratedUiSpriteFolder + "/MemoryUIRoundedRect.png";
     private const string CircleSpriteAssetPath = GeneratedUiSpriteFolder + "/MemoryUICircle.png";
+    private static readonly Vector2 StoryBoardModuleAnchoredPosition = new Vector2(-78f, -44f);
+    private static readonly Vector3 StoryBoardModuleScale = new Vector3(0.82f, 0.82f, 1f);
+    private static readonly Vector3 StoryBoardModuleRotation = new Vector3(0f, -16f, 0f);
+    private const float StoryBoardModuleDepth = 280f;
+    private static readonly Vector2 InfoGridModuleAnchoredPosition = new Vector2(1188f, -74f);
+    private static readonly Vector3 InfoGridModuleScale = new Vector3(0.80f, 0.80f, 1f);
+    private static readonly Vector3 InfoGridModuleRotation = new Vector3(0f, 18f, 0f);
+    private const float InfoGridModuleDepth = 320f;
+    private static readonly Vector3 TimelineModuleScale = new Vector3(0.94f, 0.94f, 1f);
+    private static readonly Vector3 TimelineModuleRotation = new Vector3(8f, 0f, 0f);
+    private const float TimelineModuleDepth = 220f;
 
     private sealed class CardScaffold
     {
@@ -55,6 +67,7 @@ public static class MemoryUIHiFiBuilder
     private static Sprite circleSprite;
     private static Texture2D hazeTexture;
     private static Texture2D grainTexture;
+    private static Material frostedMaterial;
 
     [MenuItem("Memory Garden/UI/Build VR Memory UI")]
     public static void BuildVRMemoryUI()
@@ -97,6 +110,7 @@ public static class MemoryUIHiFiBuilder
         CopyLayer(root, oldRoot != null ? oldRoot : uiContainer);
         root.AddComponent<CanvasGroup>();
         root.AddComponent<MemoryUIBillboard>();
+        root.AddComponent<MemoryModeUIFollower>();
         MemoryUIRootController controller = root.AddComponent<MemoryUIRootController>();
 
         if (oldRoot != null)
@@ -127,6 +141,7 @@ public static class MemoryUIHiFiBuilder
         circleSprite = ResolveCircleSprite();
         hazeTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(HazeTexturePath);
         grainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(GrainTexturePath);
+        frostedMaterial = AssetDatabase.LoadAssetAtPath<Material>(FrostedMaterialAssetPath);
 
         if (defaultFontAsset == null)
         {
@@ -163,7 +178,8 @@ public static class MemoryUIHiFiBuilder
     {
         RectTransform module = CreateMotionContainer("StoryBoardModule", canvas, out RectTransform motionRoot);
         module.gameObject.AddComponent<StoryBoardModuleView>();
-        SetRect(module, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(42f, -40f), new Vector2(860f, 720f));
+        SetRect(module, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), StoryBoardModuleAnchoredPosition, new Vector2(860f, 720f));
+        ApplyModuleSpatialPose(motionRoot, StoryBoardModuleScale, StoryBoardModuleRotation, StoryBoardModuleDepth);
 
         CreateText(
             motionRoot,
@@ -253,7 +269,7 @@ public static class MemoryUIHiFiBuilder
                 new Color(0.03f, 0.03f, 0.07f, 0.30f),
                 new Vector2(0f, -16f)));
         SetRect(panel, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, -118f), new Vector2(820f, 640f));
-        AttachBeveledBacker(panel, "BeveledBacker3D", -8f, 14f, 36f, 5f, 0.04f, 0.18f);
+        AttachBeveledBacker(panel, "BeveledBacker3D", -8f, 14f, 36f, 5f, 0.04f, 1.01f);
 
         RectTransform content = CreateUIObject("Content", motionRoot);
         SetRect(content, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(54f, -186f), new Vector2(708f, 512f));
@@ -318,7 +334,8 @@ public static class MemoryUIHiFiBuilder
     {
         RectTransform module = CreateMotionContainer("InfoGridModule", canvas, out RectTransform motionRoot);
         module.gameObject.AddComponent<InfoGridModuleView>();
-        SetRect(module, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(940f, -70f), new Vector2(746f, 720f));
+        SetRect(module, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), InfoGridModuleAnchoredPosition, new Vector2(746f, 720f));
+        ApplyModuleSpatialPose(motionRoot, InfoGridModuleScale, InfoGridModuleRotation, InfoGridModuleDepth);
 
         CreateText(
             motionRoot,
@@ -349,15 +366,18 @@ public static class MemoryUIHiFiBuilder
         CardScaffold card = CreateInfoCardScaffoldHiFi(parent, "PhotoCard", position, "PHOTO", "12", CardIconType.Photo);
 
         RectTransform back = CreateDecorativePanel(card.shell, "PhotoBack", new Color(1f, 1f, 1f, 0.05f), new Color(1f, 1f, 1f, 0.08f));
-        SetRect(back, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(54f, -92f), new Vector2(186f, 110f));
+        SetRect(back, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(48f, -92f), new Vector2(186f, 186f));
         back.localRotation = Quaternion.Euler(0f, 0f, -5f);
+        CreatePhotoViewport(back, "PhotoViewport_03", "PhotoImage_03", 6f);
 
         RectTransform mid = CreateDecorativePanel(card.shell, "PhotoMid", new Color(1f, 1f, 1f, 0.08f), new Color(1f, 1f, 1f, 0.08f));
-        SetRect(mid, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(86f, -112f), new Vector2(186f, 96f));
+        SetRect(mid, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(84f, -108f), new Vector2(186f, 186f));
         mid.localRotation = Quaternion.Euler(0f, 0f, 2f);
+        CreatePhotoViewport(mid, "PhotoViewport_02", "PhotoImage_02", 6f);
 
-        SetRect(card.accentPanel, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(116f, -122f), new Vector2(196f, 120f));
+        SetRect(card.accentPanel, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(110f, -120f), new Vector2(196f, 196f));
         card.accentPanel.localRotation = Quaternion.Euler(0f, 0f, 1.5f);
+        CreatePhotoViewport(card.accentPanel, "PhotoViewport_01", "PhotoImage_01", 6f);
 
         SetRect(card.titleText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 0f), new Vector2(20f, 46f), new Vector2(-40f, 24f));
         SetRect(card.bodyText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 0f), new Vector2(20f, 18f), new Vector2(-40f, 22f));
@@ -477,7 +497,7 @@ public static class MemoryUIHiFiBuilder
                 new Color(0.03f, 0.03f, 0.07f, 0.28f),
                 new Vector2(0f, -12f)));
         StretchToParent(shell, 0f, 0f, 0f, 0f);
-        AttachBeveledBacker(shell, "BeveledBacker3D", -7f, 12f, 28f, 4f, 0.05f, 0.15f);
+        AttachBeveledBacker(shell, "BeveledBacker3D", -8f, 14f, 36f, 5f, 0.05f, 1.01f);
 
         RectTransform iconShell = CreateGlassPanel(
             shell,
@@ -846,6 +866,7 @@ public static class MemoryUIHiFiBuilder
         RectTransform module = CreateMotionContainer("TimelineModule", canvas, out RectTransform motionRoot);
         module.gameObject.AddComponent<TimelineModuleView>();
         SetRect(module, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(-84f, 172f));
+        ApplyModuleSpatialPose(motionRoot, TimelineModuleScale, TimelineModuleRotation, TimelineModuleDepth);
 
         CreateText(
             motionRoot,
@@ -878,7 +899,7 @@ public static class MemoryUIHiFiBuilder
                 new Color(0.03f, 0.03f, 0.07f, 0.28f),
                 new Vector2(0f, -14f)));
         StretchToParent(shell, 0f, 0f, 0f, 0f);
-        AttachBeveledBacker(shell, "BeveledBacker3D", -7f, 12f, 28f, 4f, 0.04f, 0.14f);
+        AttachBeveledBacker(shell, "BeveledBacker3D", -8f, 14f, 36f, 5f, 0.04f, 1.01f);
 
         CreateText(
             shell,
@@ -1086,6 +1107,16 @@ public static class MemoryUIHiFiBuilder
         return root;
     }
 
+    private static void ApplyModuleSpatialPose(RectTransform module, Vector3 scale, Vector3 eulerRotation, float zOffset)
+    {
+        module.localScale = scale;
+        module.localRotation = Quaternion.Euler(eulerRotation);
+
+        Vector3 position = module.localPosition;
+        position.z = zOffset;
+        module.localPosition = position;
+    }
+
     private static RectTransform CreateGlassPanel(Transform parent, string name, GlassStyle style)
     {
         RectTransform rect = CreateUIObject(name, parent);
@@ -1184,7 +1215,7 @@ public static class MemoryUIHiFiBuilder
             Vector2.zero,
             cornerRadius,
             bevelSize,
-            null,
+            frostedMaterial,
             new Color(
                 overlayColor.r,
                 overlayColor.g,
@@ -1362,6 +1393,29 @@ public static class MemoryUIHiFiBuilder
         return rect;
     }
 
+    private static void CreatePhotoViewport(Transform parent, string viewportName, string imageName, float inset)
+    {
+        RectTransform viewport = CreateUIObject(viewportName, parent);
+        StretchToParent(viewport, inset, inset, inset, inset);
+        viewport.gameObject.AddComponent<RectMask2D>();
+
+        RectTransform imageRect = CreateUIObject(imageName, viewport);
+        imageRect.anchorMin = new Vector2(0.5f, 0.5f);
+        imageRect.anchorMax = new Vector2(0.5f, 0.5f);
+        imageRect.pivot = new Vector2(0.5f, 0.5f);
+        imageRect.anchoredPosition = Vector2.zero;
+        imageRect.sizeDelta = new Vector2(120f, 120f);
+
+        Image image = imageRect.gameObject.AddComponent<Image>();
+        image.color = Color.white;
+        image.raycastTarget = false;
+        image.enabled = false;
+
+        AspectRatioFitter fitter = imageRect.gameObject.AddComponent<AspectRatioFitter>();
+        fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        fitter.aspectRatio = 1f;
+    }
+
     private static Image CreateLayerImage(Transform parent, string name, Color color, bool raycastTarget)
     {
         RectTransform rect = CreateUIObject(name, parent);
@@ -1422,6 +1476,10 @@ public static class MemoryUIHiFiBuilder
         tmp.overflowMode = wordWrap ? TextOverflowModes.Overflow : TextOverflowModes.Truncate;
         tmp.richText = true;
         tmp.raycastTarget = false;
+        Shadow textShadow = rect.gameObject.AddComponent<Shadow>();
+        textShadow.effectColor = new Color(0.02f, 0.02f, 0.05f, 0.42f);
+        textShadow.effectDistance = new Vector2(1.4f, -1.4f);
+        textShadow.useGraphicAlpha = true;
 
         if (fontAsset != null)
         {

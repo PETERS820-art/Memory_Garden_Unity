@@ -20,6 +20,7 @@ public class DisplayFurnitureBuildProfile : ScriptableObject
     public bool createPlacementBounds = true;
     public bool createBlockingCollider = true;
     public bool generateSlotsFromPlacementBounds = true;
+    public Vector3 placementLocalOffset = Vector3.zero;
     public PrefabTransformOverrideData prefabRootTransform = new PrefabTransformOverrideData();
     public PrefabTransformOverrideData modelContainerTransform = new PrefabTransformOverrideData();
     public PrefabTransformOverrideData modelAssetTransform = new PrefabTransformOverrideData();

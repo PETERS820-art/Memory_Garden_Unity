@@ -47,6 +47,7 @@ public class SpaceSegmentDefinition : ScriptableObject
 
     [Header("Placement Authoring Override")]
     public bool hasPlacementAuthoringOverride;
+    public Vector3 placementAuthoringLocalOffset = Vector3.zero;
     public Vector3 placementAuthoringEulerAngles = Vector3.zero;
     public Vector3 placementAuthoringScale = Vector3.one;
 

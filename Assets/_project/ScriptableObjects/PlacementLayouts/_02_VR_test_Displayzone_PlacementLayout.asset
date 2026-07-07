@@ -15,14 +15,14 @@ MonoBehaviour:
   layoutId: _02_VR_test_Displayzone_default_layout
   records:
   - itemId: MI_cube_001
-    furnitureId: DF_shelf_002
-    slotId: Slot_Top
+    furnitureId: DF_shelf_0011
+    slotId: Slot_Left
   - itemId: MI_doll_001
-    furnitureId: DF_plith_002_01
+    furnitureId: PF_DF_plith_002_02
     slotId: Slot_Large
   - itemId: MI_sculpture_001
     furnitureId: DisplayFloorPad_01
     slotId: Slot_Large
   - itemId: MI_vermiu_001
-    furnitureId: DF_shelf_001_01
-    slotId: Slot_Left
+    furnitureId: DF_shelf_0011
+    slotId: Slot_Right

@@ -3056,6 +3056,8 @@ public class SpaceBlockBuilderWindow : EditorWindow
                 instanceTransform.localRotation = authoringRotation;
                 break;
         }
+
+        ApplySegmentAuthoringPlacementOffset(instanceTransform, definition);
     }
 
     private Vector3 GetPlacementLocalPosition(SpaceSegmentPlacementRecord record, SpaceSegmentDefinition definition)
@@ -3087,6 +3089,29 @@ public class SpaceBlockBuilderWindow : EditorWindow
         return definition != null && definition.hasPlacementAuthoringOverride
             ? SanitizeScale(definition.placementAuthoringScale)
             : Vector3.one;
+    }
+
+    private static Vector3 GetSegmentAuthoringPlacementOffset(SpaceSegmentDefinition definition)
+    {
+        return definition != null && definition.hasPlacementAuthoringOverride
+            ? definition.placementAuthoringLocalOffset
+            : Vector3.zero;
+    }
+
+    private static void ApplySegmentAuthoringPlacementOffset(Transform instanceTransform, SpaceSegmentDefinition definition)
+    {
+        if (instanceTransform == null)
+        {
+            return;
+        }
+
+        Vector3 localOffset = GetSegmentAuthoringPlacementOffset(definition);
+        if (localOffset.sqrMagnitude <= 0.0000001f)
+        {
+            return;
+        }
+
+        instanceTransform.localPosition += instanceTransform.localRotation * localOffset;
     }
 
     private static Vector3 SanitizeScale(Vector3 scale)

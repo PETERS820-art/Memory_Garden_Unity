@@ -9,6 +9,9 @@ Shader "MemoryGarden/UI/Frosted Glass"
         _BlurPixels ("Blur Pixels", Range(0, 24)) = 9
         _TintStrength ("Tint Strength", Range(0, 1)) = 0.55
         _BackgroundInfluence ("Background Influence", Range(0, 2)) = 1.0
+        _BackgroundLumaThreshold ("Background Luma Threshold", Range(0, 2)) = 0.62
+        _BackgroundLumaKnee ("Background Luma Knee", Range(0.01, 2)) = 0.38
+        _BrightSceneAbsorption ("Bright Scene Absorption", Range(0, 1.5)) = 0.75
         _FresnelPower ("Fresnel Power", Range(0.5, 8)) = 2.8
         _EdgeStrength ("Edge Strength", Range(0, 2)) = 0.35
         _AlphaSoftness ("Alpha Softness", Range(0, 8)) = 1.0
@@ -18,6 +21,7 @@ Shader "MemoryGarden/UI/Frosted Glass"
         _RefractionStrength ("Refraction Strength", Range(0, 0.05)) = 0.006
         _NoiseStrength ("Distortion Strength", Range(0, 0.05)) = 0.004
         _NoiseScale ("Distortion Scale", Range(4, 48)) = 12
+        _DebugView ("Debug View", Range(0, 4)) = 0
     }
 
     SubShader
@@ -51,6 +55,8 @@ Shader "MemoryGarden/UI/Frosted Glass"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
 
+            TEXTURE2D_X(_MemoryUIBlurTexture);
+
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 half4 _EdgeColor;
@@ -59,6 +65,9 @@ Shader "MemoryGarden/UI/Frosted Glass"
                 half _BlurPixels;
                 half _TintStrength;
                 half _BackgroundInfluence;
+                half _BackgroundLumaThreshold;
+                half _BackgroundLumaKnee;
+                half _BrightSceneAbsorption;
                 half _FresnelPower;
                 half _EdgeStrength;
                 half _AlphaSoftness;
@@ -68,7 +77,10 @@ Shader "MemoryGarden/UI/Frosted Glass"
                 half _RefractionStrength;
                 half _NoiseStrength;
                 half _NoiseScale;
+                half _DebugView;
             CBUFFER_END
+
+            float _MemoryUIBlurAvailable;
 
             struct Attributes
             {
@@ -107,31 +119,75 @@ Shader "MemoryGarden/UI/Frosted Glass"
                 return output;
             }
 
+            half3 SampleSceneFallbackBlur(float2 uv, float2 texelSize, half blurPixels)
+            {
+                half blur = max(blurPixels, 6.0h);
+                float2 offsetA = texelSize * blur * 1.25;
+                float2 offsetB = texelSize * blur * 2.5;
+                float2 offsetC = texelSize * blur * 4.0;
+
+                half3 scene = SampleSceneColor(uv) * 0.10h;
+                scene += SampleSceneColor(uv + float2(offsetA.x, 0.0)) * 0.09h;
+                scene += SampleSceneColor(uv - float2(offsetA.x, 0.0)) * 0.09h;
+                scene += SampleSceneColor(uv + float2(0.0, offsetA.y)) * 0.09h;
+                scene += SampleSceneColor(uv - float2(0.0, offsetA.y)) * 0.09h;
+                scene += SampleSceneColor(uv + float2(offsetA.x, offsetA.y)) * 0.06h;
+                scene += SampleSceneColor(uv + float2(-offsetA.x, offsetA.y)) * 0.06h;
+                scene += SampleSceneColor(uv + float2(offsetA.x, -offsetA.y)) * 0.06h;
+                scene += SampleSceneColor(uv + float2(-offsetA.x, -offsetA.y)) * 0.06h;
+                scene += SampleSceneColor(uv + float2(offsetB.x, 0.0)) * 0.035h;
+                scene += SampleSceneColor(uv - float2(offsetB.x, 0.0)) * 0.035h;
+                scene += SampleSceneColor(uv + float2(0.0, offsetB.y)) * 0.035h;
+                scene += SampleSceneColor(uv - float2(0.0, offsetB.y)) * 0.035h;
+                scene += SampleSceneColor(uv + float2(offsetB.x, offsetB.y)) * 0.025h;
+                scene += SampleSceneColor(uv + float2(-offsetB.x, offsetB.y)) * 0.025h;
+                scene += SampleSceneColor(uv + float2(offsetB.x, -offsetB.y)) * 0.025h;
+                scene += SampleSceneColor(uv + float2(-offsetB.x, -offsetB.y)) * 0.025h;
+                scene += SampleSceneColor(uv + float2(offsetC.x, 0.0)) * 0.015h;
+                scene += SampleSceneColor(uv - float2(offsetC.x, 0.0)) * 0.015h;
+                scene += SampleSceneColor(uv + float2(0.0, offsetC.y)) * 0.015h;
+                scene += SampleSceneColor(uv - float2(0.0, offsetC.y)) * 0.015h;
+
+                return scene;
+            }
+
+            half3 SampleRendererFeatureBlur(float2 uv)
+            {
+                if (_MemoryUIBlurAvailable > 0.5)
+                {
+                    return SAMPLE_TEXTURE2D_X(_MemoryUIBlurTexture, sampler_LinearClamp, uv).rgb;
+                }
+
+                return 0.0h;
+            }
+
             half3 SampleBlurredScene(float2 uv, float2 texelSize, half blurPixels)
             {
-                float2 offsetA = texelSize * blurPixels * 1.15;
-                float2 offsetB = texelSize * blurPixels * 2.35;
-                float2 offsetC = texelSize * blurPixels * 3.6;
+                half3 fallbackScene = SampleSceneFallbackBlur(uv, texelSize, blurPixels);
+                half3 featureScene = SampleRendererFeatureBlur(uv);
+                half featureLuma = dot(featureScene, half3(0.2126h, 0.7152h, 0.0722h));
 
-                half3 scene = SampleSceneColor(uv) * 0.16h;
-                scene += SampleSceneColor(uv + float2(offsetA.x, 0.0)) * 0.11h;
-                scene += SampleSceneColor(uv - float2(offsetA.x, 0.0)) * 0.11h;
-                scene += SampleSceneColor(uv + float2(0.0, offsetA.y)) * 0.11h;
-                scene += SampleSceneColor(uv - float2(0.0, offsetA.y)) * 0.11h;
-                scene += SampleSceneColor(uv + float2(offsetA.x, offsetA.y)) * 0.07h;
-                scene += SampleSceneColor(uv + float2(-offsetA.x, offsetA.y)) * 0.07h;
-                scene += SampleSceneColor(uv + float2(offsetA.x, -offsetA.y)) * 0.07h;
-                scene += SampleSceneColor(uv + float2(-offsetA.x, -offsetA.y)) * 0.07h;
-                scene += SampleSceneColor(uv + float2(offsetB.x, 0.0)) * 0.04h;
-                scene += SampleSceneColor(uv - float2(offsetB.x, 0.0)) * 0.04h;
-                scene += SampleSceneColor(uv + float2(0.0, offsetB.y)) * 0.04h;
-                scene += SampleSceneColor(uv - float2(0.0, offsetB.y)) * 0.04h;
-                scene += SampleSceneColor(uv + float2(offsetC.x, offsetC.y)) * 0.015h;
-                scene += SampleSceneColor(uv + float2(-offsetC.x, offsetC.y)) * 0.015h;
-                scene += SampleSceneColor(uv + float2(offsetC.x, -offsetC.y)) * 0.015h;
-                scene += SampleSceneColor(uv + float2(-offsetC.x, -offsetC.y)) * 0.015h;
+                if (_MemoryUIBlurAvailable > 0.5 && featureLuma > 0.001h)
+                {
+                    return lerp(featureScene, fallbackScene, 0.12h);
+                }
 
-                return scene * 0.99h;
+                return fallbackScene;
+            }
+
+            half3 CompressBackgroundHighlights(half3 color, half threshold, half knee)
+            {
+                half luma = dot(color, half3(0.2126h, 0.7152h, 0.0722h));
+                if (luma <= threshold)
+                {
+                    return color;
+                }
+
+                half safeThreshold = max(0.001h, threshold);
+                half safeKnee = max(0.01h, knee);
+                half excess = luma - safeThreshold;
+                half compressedLuma = safeThreshold + (excess / (1.0h + (excess / safeKnee)));
+                return color * (compressedLuma / max(luma, 0.001h));
             }
 
             half Hash21(float2 p)
@@ -177,26 +233,63 @@ Shader "MemoryGarden/UI/Frosted Glass"
                 float2 refractedUv = saturate(uv + lensOffset + normalOffset + microDistortion);
 
                 half blurStrength = max(_BlurPixels, 0.001h) * (0.9h + (fresnel * 0.15h));
+                half3 fallbackBlurredScene = SampleSceneFallbackBlur(refractedUv, texelSize, blurStrength);
+                half3 featureBlurredScene = SampleRendererFeatureBlur(refractedUv);
                 half3 blurredScene = SampleBlurredScene(refractedUv, texelSize, blurStrength);
+
+                if (_DebugView > 2.5h)
+                {
+                    return half4(saturate(featureBlurredScene), 0.96h);
+                }
+
+                if (_DebugView > 1.5h)
+                {
+                    return half4(saturate(fallbackBlurredScene), 0.96h);
+                }
+
+                if (_DebugView > 0.5h)
+                {
+                    half3 debugColor = half3(frac(input.uv.x * 6.0), frac(input.uv.y * 6.0), 1.0h - frac((input.uv.x + input.uv.y) * 3.0));
+                    debugColor = lerp(debugColor, half3(1.0h, 1.0h, 1.0h), fresnel * 0.35h);
+                    return half4(debugColor, 0.85h);
+                }
 
                 Light mainLight = GetMainLight();
                 half3 lightDir = normalize(mainLight.direction);
                 half3 halfVector = normalize(lightDir + viewDirWS);
-                half specular = pow(saturate(dot(normalWS, halfVector)), _SpecularPower) * _SpecularStrength;
-                half rimSpecular = pow(saturate(dot(reflect(-lightDir, normalWS), viewDirWS)), max(8.0h, _SpecularPower * 0.5h)) * (_SpecularStrength * 0.45h);
-                half reflection = smoothstep(-0.2h, 0.75h, reflectDir.y) * _ReflectionStrength * saturate(fresnel * 1.15h);
-                half grazing = pow(saturate(1.0h - abs(dot(normalWS, lightDir))), 3.0h) * 0.14h;
+                half specular = pow(saturate(dot(normalWS, halfVector)), _SpecularPower) * (_SpecularStrength * 1.15h);
+                half rimSpecular = pow(saturate(dot(reflect(-lightDir, normalWS), viewDirWS)), max(8.0h, _SpecularPower * 0.5h)) * (_SpecularStrength * 0.62h);
+                half reflection = smoothstep(-0.2h, 0.75h, reflectDir.y) * (_ReflectionStrength * 1.12h) * saturate(fresnel * 1.15h);
+                half grazing = pow(saturate(1.0h - abs(dot(normalWS, lightDir))), 3.0h) * 0.18h;
+                half featureBlurActive = (_MemoryUIBlurAvailable > 0.5 && dot(featureBlurredScene, half3(0.2126h, 0.7152h, 0.0722h)) > 0.001h) ? 1.0h : 0.0h;
 
-                half blurMix = saturate(_BackgroundInfluence);
-                half blurGain = max(1.0h, _BackgroundInfluence);
-                half3 boostedBlur = blurredScene * blurGain;
-                half3 tintedBlur = lerp(boostedBlur, _BaseColor.rgb, saturate(_TintStrength));
-                half3 combined = lerp(_BaseColor.rgb, tintedBlur, blurMix);
+                half blurMix = saturate(lerp(0.92h, 1.18h, featureBlurActive) * _BackgroundInfluence);
+                half blurGain = lerp(1.15h, 1.34h, featureBlurActive) * max(1.0h, _BackgroundInfluence * 0.96h);
+                half3 boostedBlur = CompressBackgroundHighlights(
+                    blurredScene * blurGain,
+                    _BackgroundLumaThreshold,
+                    _BackgroundLumaKnee);
+                half boostedLuma = dot(boostedBlur, half3(0.2126h, 0.7152h, 0.0722h));
+                half brightMask = smoothstep(
+                    _BackgroundLumaThreshold,
+                    _BackgroundLumaThreshold + max(0.01h, _BackgroundLumaKnee),
+                    boostedLuma);
+                half absorption = saturate(brightMask * _BrightSceneAbsorption);
+                half3 absorptionTint = lerp(_BaseColor.rgb * 0.95h, _BaseColor.rgb * 0.55h, fresnel);
+                half3 absorbedBlur = lerp(boostedBlur, absorptionTint, absorption);
+                blurMix *= lerp(1.0h, 0.58h, absorption);
+                half tintStrength = saturate(
+                    lerp(_TintStrength * 0.42h, _TintStrength * 0.24h, featureBlurActive) +
+                    (brightMask * _BrightSceneAbsorption * 0.22h));
+                half3 tintedBlur = lerp(absorbedBlur, _BaseColor.rgb, tintStrength);
+                half3 combined = lerp(_BaseColor.rgb * 0.06h, tintedBlur, blurMix);
                 combined += _ReflectionColor.rgb * (reflection + grazing);
                 combined += _SpecularColor.rgb * (specular + rimSpecular);
                 combined += _EdgeColor.rgb * fresnel * _EdgeStrength;
 
-                half alpha = saturate((_BaseColor.a + (fresnel * 0.16h) + (reflection * 0.04h)) * max(0.0h, _AlphaSoftness));
+                half transmissionAlpha = lerp(0.76h, 0.92h, featureBlurActive);
+                transmissionAlpha = max(transmissionAlpha, _BaseColor.a * 6.0h);
+                half alpha = saturate((transmissionAlpha + (fresnel * 0.04h) + (reflection * 0.02h)) * min(1.0h, max(0.0h, _AlphaSoftness)));
                 return half4(combined, alpha);
             }
             ENDHLSL

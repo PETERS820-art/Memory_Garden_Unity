@@ -24,6 +24,8 @@ public class RoomSlotPlacementToolWindow : EditorWindow
     private const int FullWallLayerCount = 3;
     private const int HalfWallLayerCount = 1;
     private const bool EnableWallPlacementDebugLogs = true;
+    private static readonly Dictionary<string, DisplayFurnitureBuildProfile> SlotPrefabPlacementProfileCache =
+        new Dictionary<string, DisplayFurnitureBuildProfile>(StringComparer.OrdinalIgnoreCase);
 
     private enum PreviewMode
     {
@@ -218,6 +220,12 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         SceneView.duringSceneGui -= OnSceneGUI;
     }
 
+    private void OnProjectChange()
+    {
+        SlotPrefabPlacementProfileCache.Clear();
+        RepaintPreviewIfNeeded();
+    }
+
     private void OnSelectionChange()
     {
         if (scenePlacementEnabled && previewMode != PreviewMode.None)
@@ -307,6 +315,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         slotPrefab = (GameObject)EditorGUILayout.ObjectField("Prefab", slotPrefab, typeof(GameObject), false);
         if (EditorGUI.EndChangeCheck())
         {
+            SlotPrefabPlacementProfileCache.Clear();
             RepaintPreviewIfNeeded();
         }
 
@@ -335,6 +344,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         {
             if (GUILayout.Button("Refresh Furniture Palette"))
             {
+                SlotPrefabPlacementProfileCache.Clear();
                 RebuildSlotPrefabPalette();
             }
 
@@ -782,15 +792,16 @@ public class RoomSlotPlacementToolWindow : EditorWindow
             preview.CanPlace = false;
             preview.Candidate = candidate;
             preview.Message = errorMessage;
-            preview.LocalCenter = GetPreviewDisplayCenter(candidate, localPosition);
+            ResolveAuthoredPreviewTransform(slotPrefab, localPosition, localRotation, out Vector3 previewPosition, out Quaternion previewRotation);
+            preview.LocalCenter = GetPreviewDisplayCenter(candidate, previewPosition);
             preview.LocalSize = candidate.SurfaceType == RoomSlotSurfaceType.Floor
                 ? new Vector3(
                     candidate.FloorWidthHalf * (RoomSlotGridUtility.GetGridSize(targetBlock) / RoomSlotGridUtility.GetFloorGridSubdivision()),
                     PreviewFloorHeight,
                     candidate.FloorDepthHalf * (RoomSlotGridUtility.GetGridSize(targetBlock) / RoomSlotGridUtility.GetFloorGridSubdivision()))
                 : GetWallPreviewSize(targetBlock, candidate);
-            preview.LocalRotation = ComposePreviewRotation(localRotation, slotPrefab);
-            PopulateWallGuidePreview(ref preview, candidate, localPosition, targetBlock);
+            preview.LocalRotation = previewRotation;
+            PopulateWallGuidePreview(ref preview, candidate, previewPosition, targetBlock);
             return true;
         }
 
@@ -811,8 +822,9 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         preview.HasPreview = true;
         preview.Candidate = candidate;
         preview.Overlaps = overlaps;
-        preview.LocalCenter = GetPreviewDisplayCenter(candidate, localPosition);
-        preview.LocalRotation = ComposePreviewRotation(localRotation, slotPrefab);
+        ResolveAuthoredPreviewTransform(slotPrefab, localPosition, localRotation, out Vector3 resolvedPreviewPosition, out Quaternion resolvedPreviewRotation);
+        preview.LocalCenter = GetPreviewDisplayCenter(candidate, resolvedPreviewPosition);
+        preview.LocalRotation = resolvedPreviewRotation;
         preview.LocalSize = candidate.SurfaceType == RoomSlotSurfaceType.Floor
             ? new Vector3(
                 candidate.FloorWidthHalf * (RoomSlotGridUtility.GetGridSize(targetBlock) / RoomSlotGridUtility.GetFloorGridSubdivision()),
@@ -820,7 +832,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
                 candidate.FloorDepthHalf * (RoomSlotGridUtility.GetGridSize(targetBlock) / RoomSlotGridUtility.GetFloorGridSubdivision()))
             : GetWallPreviewSize(targetBlock, candidate);
         preview.CanPlace = overlaps.Count == 0 || replaceOverlappingSlots;
-        PopulateWallGuidePreview(ref preview, candidate, localPosition, targetBlock);
+        PopulateWallGuidePreview(ref preview, candidate, resolvedPreviewPosition, targetBlock);
 
         if (candidate.SurfaceType == RoomSlotSurfaceType.Wall)
         {
@@ -1193,7 +1205,7 @@ public class RoomSlotPlacementToolWindow : EditorWindow
 
                 string slotPlacementId = GenerateSlotPlacementId();
                 instance.name = slotPlacementId;
-                ApplyAuthoredPlacementTransform(instance.transform, localPosition, localRotation);
+                ApplyAuthoredPlacementTransform(instance.transform, slotPrefab, localPosition, localRotation);
 
                 ValidationResult setupValidation = EnsureFurnitureAndSlots(instance, context, slotPlacementId, candidate);
                 if (setupValidation.HasErrors)
@@ -3900,7 +3912,11 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         return instance;
     }
 
-    private static void ApplyAuthoredPlacementTransform(Transform instanceTransform, Vector3 placementLocalPosition, Quaternion placementLocalRotation)
+    private static void ApplyAuthoredPlacementTransform(
+        Transform instanceTransform,
+        GameObject prefab,
+        Vector3 placementLocalPosition,
+        Quaternion placementLocalRotation)
     {
         if (instanceTransform == null)
         {
@@ -3910,20 +3926,92 @@ public class RoomSlotPlacementToolWindow : EditorWindow
         Vector3 authoredLocalPosition = instanceTransform.localPosition;
         Quaternion authoredLocalRotation = instanceTransform.localRotation;
         Vector3 authoredLocalScale = EnsureNonZeroScale(instanceTransform.localScale);
+        Vector3 authoredPlacementOffset = GetSlotPrefabPlacementOffset(prefab);
 
-        instanceTransform.localPosition = placementLocalPosition + (placementLocalRotation * authoredLocalPosition);
+        instanceTransform.localPosition = placementLocalPosition + (placementLocalRotation * (authoredLocalPosition + authoredPlacementOffset));
         instanceTransform.localRotation = placementLocalRotation * authoredLocalRotation;
         instanceTransform.localScale = authoredLocalScale;
     }
 
-    private static Quaternion ComposePreviewRotation(Quaternion placementLocalRotation, GameObject prefab)
+    private static void ResolveAuthoredPreviewTransform(
+        GameObject prefab,
+        Vector3 placementLocalPosition,
+        Quaternion placementLocalRotation,
+        out Vector3 resolvedLocalPosition,
+        out Quaternion resolvedLocalRotation)
     {
         if (prefab == null)
         {
-            return placementLocalRotation;
+            resolvedLocalPosition = placementLocalPosition;
+            resolvedLocalRotation = placementLocalRotation;
+            return;
         }
 
-        return placementLocalRotation * prefab.transform.localRotation;
+        Vector3 authoredPlacementOffset = GetSlotPrefabPlacementOffset(prefab);
+        resolvedLocalPosition = placementLocalPosition + (placementLocalRotation * (prefab.transform.localPosition + authoredPlacementOffset));
+        resolvedLocalRotation = placementLocalRotation * prefab.transform.localRotation;
+    }
+
+    private static Vector3 GetSlotPrefabPlacementOffset(GameObject prefab)
+    {
+        DisplayFurnitureBuildProfile profile = GetSlotPrefabPlacementProfile(prefab);
+        return profile != null ? profile.placementLocalOffset : Vector3.zero;
+    }
+
+    private static DisplayFurnitureBuildProfile GetSlotPrefabPlacementProfile(GameObject prefab)
+    {
+        if (prefab == null)
+        {
+            return null;
+        }
+
+        string prefabAssetPath = AssetDatabase.GetAssetPath(prefab);
+        if (string.IsNullOrWhiteSpace(prefabAssetPath))
+        {
+            return null;
+        }
+
+        if (SlotPrefabPlacementProfileCache.TryGetValue(prefabAssetPath, out DisplayFurnitureBuildProfile cachedProfile))
+        {
+            return cachedProfile;
+        }
+
+        DisplayFurnitureBuildProfile resolvedProfile = ResolveSlotPrefabPlacementProfile(prefab, prefabAssetPath);
+        SlotPrefabPlacementProfileCache[prefabAssetPath] = resolvedProfile;
+        return resolvedProfile;
+    }
+
+    private static DisplayFurnitureBuildProfile ResolveSlotPrefabPlacementProfile(GameObject prefab, string prefabAssetPath)
+    {
+        string prefabName = prefab != null ? prefab.name : System.IO.Path.GetFileNameWithoutExtension(prefabAssetPath);
+        string modelId = prefabName.StartsWith("PF_", StringComparison.OrdinalIgnoreCase)
+            ? prefabName.Substring(3)
+            : prefabName;
+        string[] profileGuids = AssetDatabase.FindAssets($"{modelId}_BuildProfile t:DisplayFurnitureBuildProfile");
+        for (int i = 0; i < profileGuids.Length; i++)
+        {
+            string profileAssetPath = AssetDatabase.GUIDToAssetPath(profileGuids[i]);
+            if (string.IsNullOrWhiteSpace(profileAssetPath))
+            {
+                continue;
+            }
+
+            if (!string.Equals(
+                    System.IO.Path.GetFileNameWithoutExtension(profileAssetPath),
+                    $"{modelId}_BuildProfile",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            DisplayFurnitureBuildProfile profile = AssetDatabase.LoadAssetAtPath<DisplayFurnitureBuildProfile>(profileAssetPath);
+            if (profile != null)
+            {
+                return profile;
+            }
+        }
+
+        return null;
     }
 
     private static Vector3 EnsureNonZeroScale(Vector3 scale)
