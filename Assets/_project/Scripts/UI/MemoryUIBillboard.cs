@@ -7,7 +7,7 @@ public class MemoryUIBillboard : MonoBehaviour
     [SerializeField] private bool enableBillboard = true;
     [SerializeField] private bool followCameraYawOnly = true;
     [SerializeField] private float smoothSpeed = 8f;
-    [SerializeField] private float distanceFromCamera = 1.8f;
+    [SerializeField] private float distanceFromCamera = 1.3f;
 
     private void LateUpdate()
     {

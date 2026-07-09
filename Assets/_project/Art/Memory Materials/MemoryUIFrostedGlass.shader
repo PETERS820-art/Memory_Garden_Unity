@@ -270,14 +270,15 @@ Shader "MemoryGarden/UI/Frosted Glass"
                     _BackgroundLumaThreshold,
                     _BackgroundLumaKnee);
                 half boostedLuma = dot(boostedBlur, half3(0.2126h, 0.7152h, 0.0722h));
-                half brightMask = smoothstep(
-                    _BackgroundLumaThreshold,
-                    _BackgroundLumaThreshold + max(0.01h, _BackgroundLumaKnee),
-                    boostedLuma);
+                half safeThreshold = _BackgroundLumaThreshold;
+                half safeKnee = max(_BackgroundLumaKnee, 0.01h);
+                half brightMask = saturate((boostedLuma - safeThreshold) / safeKnee);
+                brightMask = brightMask * brightMask * (3.0h - (2.0h * brightMask));
                 half absorption = saturate(brightMask * _BrightSceneAbsorption);
-                half3 absorptionTint = lerp(_BaseColor.rgb * 0.95h, _BaseColor.rgb * 0.55h, fresnel);
+                half absorptionTintScale = 0.95h - (0.40h * fresnel);
+                half3 absorptionTint = _BaseColor.rgb * absorptionTintScale;
                 half3 absorbedBlur = lerp(boostedBlur, absorptionTint, absorption);
-                blurMix *= lerp(1.0h, 0.58h, absorption);
+                blurMix *= (1.0h - (0.42h * absorption));
                 half tintStrength = saturate(
                     lerp(_TintStrength * 0.42h, _TintStrength * 0.24h, featureBlurActive) +
                     (brightMask * _BrightSceneAbsorption * 0.22h));

@@ -172,14 +172,14 @@ Shader "MemoryGarden/Memory Painterly"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            half Luminance(half3 color)
+            half PainterlyLuminance(half3 color)
             {
                 return dot(color, half3(0.299h, 0.587h, 0.114h));
             }
 
             half3 ApplySaturation(half3 color, half saturation)
             {
-                half luminance = Luminance(color);
+                half luminance = PainterlyLuminance(color);
                 return lerp(luminance.xxx, color, saturation);
             }
 
@@ -321,7 +321,7 @@ Shader "MemoryGarden/Memory Painterly"
                 half rampCoord = saturate(lerp(distortedLight, toonMask, _RampInfluence));
                 half rampV = saturate(0.5h + shadowEdgeNoise * 0.24h + watercolor * 0.08h);
                 half3 rampSample = SAMPLE_TEXTURE2D(_BrushRampTex, sampler_BrushRampTex, float2(rampCoord, rampV)).rgb;
-                half rampValue = saturate(Luminance(rampSample));
+                half rampValue = saturate(PainterlyLuminance(rampSample));
                 half lightMask = saturate(lerp(toonMask, rampValue, _RampInfluence));
                 half realtimeShadow = saturate(mainLight.shadowAttenuation * mainLight.distanceAttenuation);
                 lightMask *= lerp(1.0h, realtimeShadow, 0.78h);

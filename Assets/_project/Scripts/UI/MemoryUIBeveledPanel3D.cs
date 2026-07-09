@@ -48,6 +48,7 @@ public class MemoryUIBeveledPanel3D : MonoBehaviour
     private bool warnedFallbackMaterial;
 #if UNITY_EDITOR
     private bool pendingEditorSync;
+    private int pendingEditorSyncFrames;
 #endif
 
     private Vector2 lastSize;
@@ -143,7 +144,7 @@ public class MemoryUIBeveledPanel3D : MonoBehaviour
     private void OnDestroy()
     {
 #if UNITY_EDITOR
-        EditorApplication.delayCall -= DelayedEditorSync;
+        EditorApplication.update -= DelayedEditorSync;
 #endif
 
         if (generatedMesh != null)
@@ -176,14 +177,7 @@ public class MemoryUIBeveledPanel3D : MonoBehaviour
 #if UNITY_EDITOR
         if (!Application.isPlaying)
         {
-            if (pendingEditorSync)
-            {
-                return;
-            }
-
-            pendingEditorSync = true;
-            EditorApplication.delayCall -= DelayedEditorSync;
-            EditorApplication.delayCall += DelayedEditorSync;
+            QueueEditorSync();
             return;
         }
 #endif
@@ -192,10 +186,43 @@ public class MemoryUIBeveledPanel3D : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    public void QueueSync()
+    {
+        if (Application.isPlaying)
+        {
+            SyncNow();
+            return;
+        }
+
+        QueueEditorSync();
+    }
+
+    private void QueueEditorSync()
+    {
+        pendingEditorSync = true;
+        pendingEditorSyncFrames = Mathf.Max(pendingEditorSyncFrames, 2);
+        EditorApplication.update -= DelayedEditorSync;
+        EditorApplication.update += DelayedEditorSync;
+    }
+#endif
+
+#if UNITY_EDITOR
     private void DelayedEditorSync()
     {
+        if (this == null)
+        {
+            EditorApplication.update -= DelayedEditorSync;
+            return;
+        }
+
+        if (pendingEditorSyncFrames > 0)
+        {
+            pendingEditorSyncFrames--;
+            return;
+        }
+
         pendingEditorSync = false;
-        EditorApplication.delayCall -= DelayedEditorSync;
+        EditorApplication.update -= DelayedEditorSync;
 
         if (this == null || !isActiveAndEnabled)
         {

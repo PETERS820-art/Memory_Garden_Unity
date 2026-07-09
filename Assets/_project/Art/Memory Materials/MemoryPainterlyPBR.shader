@@ -238,14 +238,14 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            half Luminance(half3 color)
+            half PainterlyLuminance(half3 color)
             {
                 return dot(color, half3(0.299h, 0.587h, 0.114h));
             }
 
             half3 ApplySaturation(half3 color, half saturation)
             {
-                half luminance = Luminance(color);
+                half luminance = PainterlyLuminance(color);
                 return lerp(luminance.xxx, color, saturation);
             }
 
@@ -457,12 +457,12 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half rampCoord = saturate(lerp(distortedLight, toonMask, _RampInfluence));
                 half rampV = saturate(0.5h + shadowEdgeNoise * 0.24h + watercolor * 0.08h);
                 half3 rampSample = SAMPLE_TEXTURE2D(_BrushRampTex, sampler_BrushRampTex, float2(rampCoord, rampV)).rgb;
-                half rampValue = saturate(Luminance(rampSample));
+                half rampValue = saturate(PainterlyLuminance(rampSample));
                 half lightMask = saturate(lerp(toonMask, rampValue, _RampInfluence));
                 lightMask *= lerp(1.0h, shadowAttenuation, 0.78h);
                 lightMask = saturate(lightMask + saturate(additionalLightMaskBoost));
 
-                half albedoLuma = Luminance(painterlySourceAlbedo);
+                half albedoLuma = PainterlyLuminance(painterlySourceAlbedo);
                 half3 flattenedPainterlyBase = lerp(albedoLuma.xxx * painterlyBaseTint, painterlyBaseTint, 0.42h);
                 half painterlyTextureFlatten = saturate(flatten * 0.6h + _MemoryBlend * 0.35h);
                 half3 painterlyBase = lerp(painterlySourceAlbedo, flattenedPainterlyBase, painterlyTextureFlatten);

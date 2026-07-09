@@ -11,9 +11,9 @@ Material:
   m_Shader: {fileID: 4800000, guid: 6c0218ab0cca9ce4aadd6ff674318c37, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
+  m_ValidKeywords: []
+  m_InvalidKeywords:
   - _EMISSION
-  m_InvalidKeywords: []
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -97,10 +97,10 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EmissionStrength: 1.85
+    - _EmissionStrength: 7.15
     - _EnvironmentReflections: 1
-    - _FadeEndRadius: 0.125
-    - _FadeStartRadius: 0.02
+    - _FadeEndRadius: 0.456
+    - _FadeStartRadius: 0.137
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0

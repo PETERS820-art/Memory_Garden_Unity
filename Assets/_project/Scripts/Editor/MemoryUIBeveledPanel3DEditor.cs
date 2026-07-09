@@ -170,7 +170,7 @@ public class MemoryUIBeveledPanel3DEditor : Editor
                 continue;
             }
 
-            panel.SyncNow();
+            panel.QueueSync();
             EditorUtility.SetDirty(panel);
         }
     }

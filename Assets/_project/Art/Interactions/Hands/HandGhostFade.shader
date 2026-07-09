@@ -39,6 +39,7 @@ Shader "MemoryGarden/Hand Ghost Fade"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -47,6 +48,7 @@ Shader "MemoryGarden/Hand Ghost Fade"
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
                 float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -57,6 +59,8 @@ Shader "MemoryGarden/Hand Ghost Fade"
                 float3 normalWS : TEXCOORD2;
                 float3 viewDirWS : TEXCOORD3;
                 float fogCoord : TEXCOORD4;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             TEXTURE2D(_BaseMap);
@@ -79,7 +83,10 @@ Shader "MemoryGarden/Hand Ghost Fade"
 
             Varyings vert(Attributes input)
             {
-                Varyings output;
+                Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
@@ -96,6 +103,9 @@ Shader "MemoryGarden/Hand Ghost Fade"
 
             half4 frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
                 float3 viewDirWS = normalize(input.viewDirWS);
                 float3 normalWS = normalize(input.normalWS);
 

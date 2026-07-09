@@ -989,7 +989,11 @@ public class SpaceConnectionManager : MonoBehaviour
         }
         else
         {
+#if UNITY_EDITOR
             Undo.DestroyObjectImmediate(target);
+#else
+            DestroyImmediate(target);
+#endif
         }
     }
 
