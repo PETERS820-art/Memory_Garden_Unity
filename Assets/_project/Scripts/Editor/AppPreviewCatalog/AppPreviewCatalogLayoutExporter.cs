@@ -2,19 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public static partial class AppPreviewCatalogExporter
 {
+    private const string GardenLayoutScenePath = "Assets/_project/Scenes/00_Prototype/_02_VR_test_Displayzone.unity";
+
     private static void ScanGardenLayout(AppPreviewCatalogScanResult result)
     {
+        Scene layoutScene = ResolveGardenLayoutScene(result);
         GardenLayoutPreviewDocument layout = new GardenLayoutPreviewDocument();
         layout.exportedAt = result.generatedAtUtc;
-        layout.sourceScene = DescribeLoadedScenes();
+        layout.sourceScene = layoutScene.IsValid() ? FirstNonEmpty(layoutScene.path, layoutScene.name) : GardenLayoutScenePath;
         result.gardenLayout = layout;
 
-        List<GameObject> roots = CollectLayoutRoots(result);
+        List<GameObject> roots = CollectLayoutRoots(result, layoutScene);
         List<MemorySpaceBlock> blocks = CollectLayoutBlocks(roots);
         if (blocks.Count == 0)
         {
@@ -22,48 +26,79 @@ public static partial class AppPreviewCatalogExporter
                 result,
                 "missing_layout_blocks",
                 FirstNonEmpty(layout.sourceScene, "(no loaded scene)"),
-                "No MemorySpaceBlock instances were found in currently loaded scenes or the selected root GameObject.");
+                "No MemorySpaceBlock instances were found in the configured 02 garden layout scene.");
         }
 
         Dictionary<MemorySpaceBlock, string> blockInstanceIds = new Dictionary<MemorySpaceBlock, string>();
+        HashSet<string> usedBlockInstanceIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < blocks.Count; i++)
         {
             MemorySpaceBlock block = blocks[i];
             GardenLayoutBlockInstanceRecord record = CreateLayoutBlockInstance(result, block);
+            record.blockInstanceId = ResolveUniqueLayoutId(
+                result,
+                record.blockInstanceId,
+                usedBlockInstanceIds,
+                "duplicate_blockInstanceId",
+                record.scenePath,
+                GetSceneObjectPath(block.transform),
+                "blockInstanceId");
             layout.blockInstances.Add(record);
             blockInstanceIds[block] = record.blockInstanceId;
         }
 
+        Dictionary<MemoryDisplayFurniture, string> furnitureIds = new Dictionary<MemoryDisplayFurniture, string>();
+        Dictionary<MemoryDisplaySlot, string> slotIds = new Dictionary<MemoryDisplaySlot, string>();
+        HashSet<string> usedFurnitureIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> usedSlotIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         ScanLayoutConnections(result, roots, blockInstanceIds);
-        ScanLayoutFurniture(result, blocks, blockInstanceIds);
-        ScanLayoutSlots(result, blocks, blockInstanceIds);
-        ScanLayoutItems(result, roots, blockInstanceIds);
+        ScanLayoutFurniture(result, blocks, blockInstanceIds, furnitureIds, slotIds, usedFurnitureIds, usedSlotIds);
+        ScanLayoutSlots(result, blocks, blockInstanceIds, furnitureIds, slotIds, usedSlotIds);
+        ScanLayoutItems(result, roots, blockInstanceIds, furnitureIds, slotIds);
     }
 
-    private static List<GameObject> CollectLayoutRoots(AppPreviewCatalogScanResult result)
+    private static Scene ResolveGardenLayoutScene(AppPreviewCatalogScanResult result)
+    {
+        for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+        {
+            Scene scene = SceneManager.GetSceneAt(sceneIndex);
+            if (scene.IsValid()
+                && scene.isLoaded
+                && string.Equals(scene.path, GardenLayoutScenePath, StringComparison.OrdinalIgnoreCase))
+            {
+                result.scanRoots.Add("Garden layout scene: " + GardenLayoutScenePath);
+                return scene;
+            }
+        }
+
+        if (Application.isBatchMode && AssetDatabase.LoadAssetAtPath<SceneAsset>(GardenLayoutScenePath) != null)
+        {
+            Scene openedScene = EditorSceneManager.OpenScene(GardenLayoutScenePath, OpenSceneMode.Single);
+            result.scanRoots.Add("Garden layout scene: " + GardenLayoutScenePath);
+            return openedScene;
+        }
+
+        AddLayoutWarning(
+            result,
+            "missing_layout_scene",
+            GardenLayoutScenePath,
+            "The configured 02 garden layout scene is not loaded. Open it before exporting from the Editor, or run batchmode export.");
+        return default;
+    }
+
+    private static List<GameObject> CollectLayoutRoots(AppPreviewCatalogScanResult result, Scene layoutScene)
     {
         List<GameObject> roots = new List<GameObject>();
         HashSet<int> rootIds = new HashSet<int>();
 
-        for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+        if (layoutScene.IsValid() && layoutScene.isLoaded)
         {
-            Scene scene = SceneManager.GetSceneAt(sceneIndex);
-            if (!scene.IsValid() || !scene.isLoaded)
-            {
-                continue;
-            }
-
-            GameObject[] sceneRoots = scene.GetRootGameObjects();
+            GameObject[] sceneRoots = layoutScene.GetRootGameObjects();
             for (int i = 0; i < sceneRoots.Length; i++)
             {
                 AddLayoutRoot(sceneRoots[i], roots, rootIds);
             }
-        }
-
-        if (Selection.activeGameObject != null)
-        {
-            AddLayoutRoot(Selection.activeGameObject, roots, rootIds);
-            result.scanRoots.Add("Selected root: " + GetSceneObjectPath(Selection.activeGameObject.transform));
         }
 
         return roots;
@@ -237,9 +272,14 @@ public static partial class AppPreviewCatalogExporter
     private static void ScanLayoutFurniture(
         AppPreviewCatalogScanResult result,
         List<MemorySpaceBlock> blocks,
-        Dictionary<MemorySpaceBlock, string> blockInstanceIds)
+        Dictionary<MemorySpaceBlock, string> blockInstanceIds,
+        Dictionary<MemoryDisplayFurniture, string> furnitureIds,
+        Dictionary<MemoryDisplaySlot, string> slotIds,
+        HashSet<string> usedFurnitureIds,
+        HashSet<string> usedSlotIds)
     {
         HashSet<int> exportedFurniture = new HashSet<int>();
+        HashSet<int> exportedMetadata = new HashSet<int>();
         for (int i = 0; i < blocks.Count; i++)
         {
             MemorySpaceBlock block = blocks[i];
@@ -247,12 +287,20 @@ public static partial class AppPreviewCatalogExporter
             for (int metadataIndex = 0; metadataIndex < metadataRecords.Length; metadataIndex++)
             {
                 RoomSlotPlacementMetadata metadata = metadataRecords[metadataIndex];
-                if (metadata == null)
+                if (metadata == null || !exportedMetadata.Add(metadata.GetInstanceID()))
                 {
                     continue;
                 }
 
-                result.gardenLayout.furniturePlacements.Add(CreateLayoutFurniturePlacement(result, block, metadata, blockInstanceIds));
+                result.gardenLayout.furniturePlacements.Add(CreateLayoutFurniturePlacement(
+                    result,
+                    block,
+                    metadata,
+                    blockInstanceIds,
+                    furnitureIds,
+                    slotIds,
+                    usedFurnitureIds,
+                    usedSlotIds));
                 MemoryDisplayFurniture furniture = ResolveFurnitureForMetadata(metadata);
                 if (furniture != null)
                 {
@@ -269,7 +317,15 @@ public static partial class AppPreviewCatalogExporter
                     continue;
                 }
 
-                result.gardenLayout.furniturePlacements.Add(CreateUnanchoredLayoutFurniture(result, block, furniture, blockInstanceIds));
+                result.gardenLayout.furniturePlacements.Add(CreateUnanchoredLayoutFurniture(
+                    result,
+                    block,
+                    furniture,
+                    blockInstanceIds,
+                    furnitureIds,
+                    slotIds,
+                    usedFurnitureIds,
+                    usedSlotIds));
                 exportedFurniture.Add(furniture.GetInstanceID());
             }
         }
@@ -279,12 +335,16 @@ public static partial class AppPreviewCatalogExporter
         AppPreviewCatalogScanResult result,
         MemorySpaceBlock block,
         RoomSlotPlacementMetadata metadata,
-        Dictionary<MemorySpaceBlock, string> blockInstanceIds)
+        Dictionary<MemorySpaceBlock, string> blockInstanceIds,
+        Dictionary<MemoryDisplayFurniture, string> furnitureIds,
+        Dictionary<MemoryDisplaySlot, string> slotIds,
+        HashSet<string> usedFurnitureIds,
+        HashSet<string> usedSlotIds)
     {
         MemoryDisplayFurniture furniture = ResolveFurnitureForMetadata(metadata);
         string sourcePath = GetSourcePath(furniture != null ? furniture.gameObject : metadata.gameObject);
         string warningSource = FirstNonEmpty(sourcePath, GetSceneObjectPath(metadata.transform));
-        string furnitureId = ResolveLayoutFurnitureId(result, furniture, metadata, warningSource);
+        string furnitureId = ResolveMappedFurnitureId(result, furniture, metadata, warningSource, furnitureIds, usedFurnitureIds);
 
         GardenLayoutFurniturePlacementRecord record = new GardenLayoutFurniturePlacementRecord();
         record.furnitureId = furnitureId;
@@ -295,7 +355,6 @@ public static partial class AppPreviewCatalogExporter
         record.position = metadata.transform.position;
         record.rotationEuler = metadata.transform.eulerAngles;
         record.scale = metadata.transform.lossyScale;
-        AppendSlotIds(record.slotIds, metadata.slotIds);
 
         if (metadata.surfaceType == RoomSlotSurfaceType.Floor)
         {
@@ -310,17 +369,21 @@ public static partial class AppPreviewCatalogExporter
             AddLayoutWarning(result, "missing_layout_anchor", warningSource, $"Furniture placement '{metadata.name}' has no recognized floor or wall anchor.");
         }
 
-        if (record.slotIds.Count == 0 && furniture != null)
+        if (furniture != null)
         {
             MemoryDisplaySlot[] slots = furniture.GetComponentsInChildren<MemoryDisplaySlot>(true);
             for (int i = 0; i < slots.Length; i++)
             {
-                string slotId = ResolveLayoutSlotId(result, slots[i], warningSource);
+                string slotId = ResolveMappedSlotId(result, slots[i], warningSource, slotIds, usedSlotIds);
                 if (!string.IsNullOrWhiteSpace(slotId))
                 {
                     record.slotIds.Add(slotId);
                 }
             }
+        }
+        else
+        {
+            AppendSlotIds(record.slotIds, metadata.slotIds);
         }
 
         return record;
@@ -330,14 +393,18 @@ public static partial class AppPreviewCatalogExporter
         AppPreviewCatalogScanResult result,
         MemorySpaceBlock block,
         MemoryDisplayFurniture furniture,
-        Dictionary<MemorySpaceBlock, string> blockInstanceIds)
+        Dictionary<MemorySpaceBlock, string> blockInstanceIds,
+        Dictionary<MemoryDisplayFurniture, string> furnitureIds,
+        Dictionary<MemoryDisplaySlot, string> slotIds,
+        HashSet<string> usedFurnitureIds,
+        HashSet<string> usedSlotIds)
     {
         string sourcePath = GetSourcePath(furniture != null ? furniture.gameObject : null);
         string warningSource = FirstNonEmpty(sourcePath, GetSceneObjectPath(furniture != null ? furniture.transform : null));
         AddLayoutWarning(result, "unanchored_furniture", warningSource, $"Furniture '{(furniture != null ? furniture.name : "unknown")}' has no RoomSlotPlacementMetadata anchor.");
 
         GardenLayoutFurniturePlacementRecord record = new GardenLayoutFurniturePlacementRecord();
-        record.furnitureId = ResolveLayoutFurnitureId(result, furniture, null, warningSource);
+        record.furnitureId = ResolveMappedFurnitureId(result, furniture, null, warningSource, furnitureIds, usedFurnitureIds);
         record.sourcePrefabPath = sourcePath;
         record.blockInstanceId = ResolveKnownBlockInstanceId(result, block, blockInstanceIds, warningSource);
         record.blockTypeId = ResolveLayoutBlockTypeId(result, block, warningSource);
@@ -349,7 +416,7 @@ public static partial class AppPreviewCatalogExporter
         MemoryDisplaySlot[] slots = furniture.GetComponentsInChildren<MemoryDisplaySlot>(true);
         for (int i = 0; i < slots.Length; i++)
         {
-            string slotId = ResolveLayoutSlotId(result, slots[i], warningSource);
+            string slotId = ResolveMappedSlotId(result, slots[i], warningSource, slotIds, usedSlotIds);
             if (!string.IsNullOrWhiteSpace(slotId))
             {
                 record.slotIds.Add(slotId);
@@ -362,7 +429,10 @@ public static partial class AppPreviewCatalogExporter
     private static void ScanLayoutSlots(
         AppPreviewCatalogScanResult result,
         List<MemorySpaceBlock> blocks,
-        Dictionary<MemorySpaceBlock, string> blockInstanceIds)
+        Dictionary<MemorySpaceBlock, string> blockInstanceIds,
+        Dictionary<MemoryDisplayFurniture, string> furnitureIds,
+        Dictionary<MemoryDisplaySlot, string> slotIds,
+        HashSet<string> usedSlotIds)
     {
         HashSet<int> exportedSlots = new HashSet<int>();
         for (int i = 0; i < blocks.Count; i++)
@@ -373,7 +443,14 @@ public static partial class AppPreviewCatalogExporter
                 MemoryDisplaySlot slot = slots[slotIndex];
                 if (slot != null && exportedSlots.Add(slot.GetInstanceID()))
                 {
-                    result.gardenLayout.slotPlacements.Add(CreateLayoutSlotPlacement(result, blocks[i], slot, blockInstanceIds));
+                    result.gardenLayout.slotPlacements.Add(CreateLayoutSlotPlacement(
+                        result,
+                        blocks[i],
+                        slot,
+                        blockInstanceIds,
+                        furnitureIds,
+                        slotIds,
+                        usedSlotIds));
                 }
             }
         }
@@ -383,13 +460,18 @@ public static partial class AppPreviewCatalogExporter
         AppPreviewCatalogScanResult result,
         MemorySpaceBlock block,
         MemoryDisplaySlot slot,
-        Dictionary<MemorySpaceBlock, string> blockInstanceIds)
+        Dictionary<MemorySpaceBlock, string> blockInstanceIds,
+        Dictionary<MemoryDisplayFurniture, string> furnitureIds,
+        Dictionary<MemoryDisplaySlot, string> slotIds,
+        HashSet<string> usedSlotIds)
     {
         MemoryDisplayFurniture furniture = slot.GetComponentInParent<MemoryDisplayFurniture>();
         string warningSource = GetSceneObjectPath(slot.transform);
         GardenLayoutSlotPlacementRecord record = new GardenLayoutSlotPlacementRecord();
-        record.slotId = ResolveLayoutSlotId(result, slot, warningSource);
-        record.furnitureId = ResolveLayoutFurnitureId(result, furniture, null, warningSource);
+        record.slotId = ResolveMappedSlotId(result, slot, warningSource, slotIds, usedSlotIds);
+        record.furnitureId = furniture != null && furnitureIds.TryGetValue(furniture, out string mappedFurnitureId)
+            ? mappedFurnitureId
+            : ResolveLayoutFurnitureId(result, furniture, null, warningSource);
         record.blockInstanceId = ResolveKnownBlockInstanceId(result, block, blockInstanceIds, warningSource);
         record.slotType = slot.Type.ToString();
         record.worldPosition = slot.transform.position;
@@ -418,7 +500,9 @@ public static partial class AppPreviewCatalogExporter
     private static void ScanLayoutItems(
         AppPreviewCatalogScanResult result,
         List<GameObject> roots,
-        Dictionary<MemorySpaceBlock, string> blockInstanceIds)
+        Dictionary<MemorySpaceBlock, string> blockInstanceIds,
+        Dictionary<MemoryDisplayFurniture, string> furnitureIds,
+        Dictionary<MemoryDisplaySlot, string> slotIds)
     {
         HashSet<int> exportedItems = new HashSet<int>();
         if (roots == null)
@@ -439,7 +523,7 @@ public static partial class AppPreviewCatalogExporter
                 MemoryObject item = items[itemIndex];
                 if (item != null && exportedItems.Add(item.GetInstanceID()))
                 {
-                    result.gardenLayout.itemPlacements.Add(CreateLayoutItemPlacement(result, item, blockInstanceIds));
+                    result.gardenLayout.itemPlacements.Add(CreateLayoutItemPlacement(result, item, blockInstanceIds, furnitureIds, slotIds));
                 }
             }
         }
@@ -448,7 +532,9 @@ public static partial class AppPreviewCatalogExporter
     private static GardenLayoutItemPlacementRecord CreateLayoutItemPlacement(
         AppPreviewCatalogScanResult result,
         MemoryObject item,
-        Dictionary<MemorySpaceBlock, string> blockInstanceIds)
+        Dictionary<MemorySpaceBlock, string> blockInstanceIds,
+        Dictionary<MemoryDisplayFurniture, string> furnitureIds,
+        Dictionary<MemoryDisplaySlot, string> slotIds)
     {
         string warningSource = FirstNonEmpty(GetSourcePath(item.gameObject), GetSceneObjectPath(item.transform));
         MemoryDisplaySlot slot = item.CurrentSlot != null ? item.CurrentSlot : item.GetComponentInParent<MemoryDisplaySlot>();
@@ -464,8 +550,12 @@ public static partial class AppPreviewCatalogExporter
         record.itemId = ResolveLayoutItemId(result, item, warningSource);
         record.itemName = item.ItemName;
         record.sourcePrefabPath = GetSourcePath(item.gameObject);
-        record.furnitureId = furniture != null ? ResolveLayoutFurnitureId(result, furniture, null, warningSource) : string.Empty;
-        record.slotId = slot != null ? ResolveLayoutSlotId(result, slot, warningSource) : string.Empty;
+        record.furnitureId = furniture != null && furnitureIds.TryGetValue(furniture, out string mappedFurnitureId)
+            ? mappedFurnitureId
+            : furniture != null ? ResolveLayoutFurnitureId(result, furniture, null, warningSource) : string.Empty;
+        record.slotId = slot != null && slotIds.TryGetValue(slot, out string mappedSlotId)
+            ? mappedSlotId
+            : slot != null ? ResolveLayoutSlotId(result, slot, warningSource) : string.Empty;
         record.blockInstanceId = block != null ? ResolveKnownBlockInstanceId(result, block, blockInstanceIds, warningSource) : string.Empty;
         record.worldPosition = item.transform.position;
         record.rotationEuler = item.transform.eulerAngles;
@@ -625,6 +715,99 @@ public static partial class AppPreviewCatalogExporter
         return slot.name;
     }
 
+    private static string ResolveMappedFurnitureId(
+        AppPreviewCatalogScanResult result,
+        MemoryDisplayFurniture furniture,
+        RoomSlotPlacementMetadata metadata,
+        string sourcePath,
+        Dictionary<MemoryDisplayFurniture, string> furnitureIds,
+        HashSet<string> usedFurnitureIds)
+    {
+        if (furniture != null && furnitureIds != null && furnitureIds.TryGetValue(furniture, out string mappedId))
+        {
+            return mappedId;
+        }
+
+        string id = ResolveLayoutFurnitureId(result, furniture, metadata, sourcePath);
+        id = ResolveUniqueLayoutId(
+            result,
+            id,
+            usedFurnitureIds,
+            "duplicate_furnitureId",
+            sourcePath,
+            GetSceneObjectPath(furniture != null ? furniture.transform : metadata != null ? metadata.transform : null),
+            "furnitureId");
+
+        if (furniture != null && furnitureIds != null)
+        {
+            furnitureIds[furniture] = id;
+        }
+
+        return id;
+    }
+
+    private static string ResolveMappedSlotId(
+        AppPreviewCatalogScanResult result,
+        MemoryDisplaySlot slot,
+        string sourcePath,
+        Dictionary<MemoryDisplaySlot, string> slotIds,
+        HashSet<string> usedSlotIds)
+    {
+        if (slot != null && slotIds != null && slotIds.TryGetValue(slot, out string mappedId))
+        {
+            return mappedId;
+        }
+
+        string id = ResolveLayoutSlotId(result, slot, sourcePath);
+        id = ResolveUniqueLayoutId(
+            result,
+            id,
+            usedSlotIds,
+            "duplicate_slotId",
+            sourcePath,
+            GetSceneObjectPath(slot != null ? slot.transform : null),
+            "slotId");
+
+        if (slot != null && slotIds != null)
+        {
+            slotIds[slot] = id;
+        }
+
+        return id;
+    }
+
+    private static string ResolveUniqueLayoutId(
+        AppPreviewCatalogScanResult result,
+        string preferredId,
+        HashSet<string> usedIds,
+        string warningCode,
+        string sourcePath,
+        string fallbackToken,
+        string label)
+    {
+        string baseId = FirstNonEmpty(preferredId, fallbackToken, label);
+        if (usedIds == null || usedIds.Add(baseId))
+        {
+            return baseId;
+        }
+
+        string suffix = SanitizeKey(FirstNonEmpty(fallbackToken, Guid.NewGuid().ToString("N")));
+        string uniqueId = baseId + "-" + suffix;
+        int index = 2;
+        while (!usedIds.Add(uniqueId))
+        {
+            uniqueId = baseId + "-" + suffix + "-" + index.ToString(CultureInfo.InvariantCulture);
+            index++;
+        }
+
+        AddLayoutWarning(
+            result,
+            warningCode,
+            sourcePath,
+            $"Duplicate {label} '{baseId}' found in 02 scene. Exporting '{uniqueId}' to keep layout preview IDs unique.");
+        return uniqueId;
+    }
+
     private static string ResolveLayoutItemId(AppPreviewCatalogScanResult result, MemoryObject item, string sourcePath)
     {
         if (item == null)
@@ -718,22 +901,4 @@ public static partial class AppPreviewCatalogExporter
         return string.Join("/", parts);
     }
 
-    private static string DescribeLoadedScenes()
-    {
-        List<string> scenes = new List<string>();
-        for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
-        {
-            Scene scene = SceneManager.GetSceneAt(sceneIndex);
-            if (scene.IsValid() && scene.isLoaded)
-            {
-                string sceneName = FirstNonEmpty(scene.path, scene.name, "(untitled scene)");
-                if (!string.IsNullOrWhiteSpace(sceneName))
-                {
-                    scenes.Add(sceneName);
-                }
-            }
-        }
-
-        return scenes.Count > 0 ? string.Join("; ", scenes) : "(no loaded scene)";
-    }
 }

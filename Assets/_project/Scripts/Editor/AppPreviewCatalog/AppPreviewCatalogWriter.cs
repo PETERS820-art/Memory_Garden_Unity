@@ -182,6 +182,9 @@ public static class AppPreviewCatalogWriter
         AddWarningFocus(lines, result, "missing_furnitureId");
         AddWarningFocus(lines, result, "missing_slotId");
         AddWarningFocus(lines, result, "missing_itemId");
+        AddWarningFocus(lines, result, "duplicate_blockInstanceId");
+        AddWarningFocus(lines, result, "duplicate_furnitureId");
+        AddWarningFocus(lines, result, "duplicate_slotId");
         AddWarningFocus(lines, result, "missing_layout_anchor");
         AddWarningFocus(lines, result, "unanchored_furniture");
         AddWarningFocus(lines, result, "unplaced_item");

@@ -1,18 +1,1294 @@
 {
     "layoutId": "unity-current-scene-preview",
-    "sourceScene": "(untitled scene)",
-    "exportedAt": "2026-07-10T10:09:36.4460387Z",
+    "sourceScene": "Assets/_project/Scenes/00_Prototype/_02_VR_test_Displayzone.unity",
+    "exportedAt": "2026-07-10T10:31:38.6111099Z",
     "units": "unity-world",
-    "blockInstances": [],
-    "connections": [],
-    "furniturePlacements": [],
-    "slotPlacements": [],
-    "itemPlacements": [],
+    "blockInstances": [
+        {
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "sourcePrefabPath": "Assets/_project/Prefabs/Environment/SpaceBlocks/PF_SB_Palace1.prefab",
+            "scenePath": "Assets/_project/Scenes/00_Prototype/_02_VR_test_Displayzone.unity",
+            "position": {
+                "x": 0.1793513298034668,
+                "y": 0.0,
+                "z": -0.7706341743469238
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "gridWidth": 10,
+            "gridDepth": 10,
+            "gridSize": 1.0,
+            "boundsCenter": {
+                "x": 0.1793513298034668,
+                "y": 1.25,
+                "z": -0.7706341743469238
+            },
+            "boundsSize": {
+                "x": 10.0,
+                "y": 2.5,
+                "z": 10.0
+            }
+        },
+        {
+            "blockInstanceId": "Block_01--01-ENVIRONMENT_MemoryDisplayZoneRoot_PlacementAreas_PF_SB_Palace1_ConnectedBlocks_PF_SB_Palace2",
+            "blockTypeId": "Block_01",
+            "sourcePrefabPath": "Assets/_project/Prefabs/Environment/SpaceBlocks/PF_SB_Palace2.prefab",
+            "scenePath": "Assets/_project/Scenes/00_Prototype/_02_VR_test_Displayzone.unity",
+            "position": {
+                "x": 0.1793513298034668,
+                "y": 0.0,
+                "z": -12.770633697509766
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "gridWidth": 10,
+            "gridDepth": 10,
+            "gridSize": 1.0,
+            "boundsCenter": {
+                "x": 0.1793513298034668,
+                "y": 1.25,
+                "z": -12.770633697509766
+            },
+            "boundsSize": {
+                "x": 10.0,
+                "y": 2.5,
+                "z": 10.0
+            }
+        }
+    ],
+    "connections": [
+        {
+            "connectionId": "connection-Block_01_PL_dbff8e27_SM_doorway_2X2_5_001-Block_01_PL_aebe8b86_SM_doorway_2X2_5_001",
+            "portAId": "Block_01_PL_dbff8e27_SM_doorway_2X2.5_001",
+            "portBId": "Block_01_PL_aebe8b86_SM_doorway_2X2.5_001",
+            "blockAInstanceId": "Block_01",
+            "blockBInstanceId": "Block_01--01-ENVIRONMENT_MemoryDisplayZoneRoot_PlacementAreas_PF_SB_Palace1_ConnectedBlocks_PF_SB_Palace2",
+            "connectionKind": "Passage",
+            "widthUnits": 2,
+            "height": 2.5,
+            "connectorLength": 1.9999995231628419,
+            "isPreview": false
+        }
+    ],
+    "furniturePlacements": [
+        {
+            "furnitureId": "PF_DF_lamp_001",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_lamp_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": 1.6793513298034669,
+                "y": 0.0,
+                "z": -14.270633697509766
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "floorAnchor": {
+                "gridX": 6,
+                "gridZ": 3,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 12,
+                "floorGridZHalf": 6,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 0.0,
+                "localPosition": {
+                    "x": 1.5,
+                    "y": 0.0,
+                    "z": -1.5
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": []
+        },
+        {
+            "furnitureId": "DF_Block_01_RSP_268FEDD3",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_lamp_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": -1.3206486701965333,
+                "y": 0.0,
+                "z": -14.270633697509766
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 180.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "floorAnchor": {
+                "gridX": 3,
+                "gridZ": 3,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 6,
+                "floorGridZHalf": 6,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 180.0,
+                "localPosition": {
+                    "x": -1.5,
+                    "y": 0.0,
+                    "z": -1.5
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 180.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": []
+        },
+        {
+            "furnitureId": "DF_plith_002",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_plith_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": 1.6793513298034669,
+                "y": 0.0,
+                "z": -13.270633697509766
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 270.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.000000238418579,
+                "y": 1.0,
+                "z": 1.000000238418579
+            },
+            "floorAnchor": {
+                "gridX": 6,
+                "gridZ": 4,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 12,
+                "floorGridZHalf": 8,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 270.0,
+                "localPosition": {
+                    "x": 1.5,
+                    "y": 0.0,
+                    "z": -0.5
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 270.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": [
+                "Slot_Center"
+            ]
+        },
+        {
+            "furnitureId": "DF_Block_01_RSP_1C0B34A3",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_plith_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": -1.3206486701965333,
+                "y": 0.0,
+                "z": -13.270633697509766
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 270.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.000000238418579,
+                "y": 1.0,
+                "z": 1.000000238418579
+            },
+            "floorAnchor": {
+                "gridX": 3,
+                "gridZ": 4,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 6,
+                "floorGridZHalf": 8,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 270.0,
+                "localPosition": {
+                    "x": -1.5,
+                    "y": 0.0,
+                    "z": -0.5
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 270.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": [
+                "Slot_RSP_1C0B34A3_01"
+            ]
+        },
+        {
+            "furnitureId": "DF_Block_01_RSP_70234A20",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_lamp_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": 1.1793513298034669,
+                "y": 0.0,
+                "z": -8.270633697509766
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 270.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.000000238418579,
+                "y": 1.0,
+                "z": 1.000000238418579
+            },
+            "floorAnchor": {
+                "gridX": 5,
+                "gridZ": 9,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 11,
+                "floorGridZHalf": 18,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 270.0,
+                "localPosition": {
+                    "x": 1.0,
+                    "y": 0.0,
+                    "z": 4.5
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 270.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": []
+        },
+        {
+            "furnitureId": "DF_Block_01_RSP_088C5BAE",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_lamp_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": -0.8206486701965332,
+                "y": 0.0,
+                "z": -8.270633697509766
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 270.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.000000238418579,
+                "y": 1.0,
+                "z": 1.000000238418579
+            },
+            "floorAnchor": {
+                "gridX": 3,
+                "gridZ": 9,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 7,
+                "floorGridZHalf": 18,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 270.0,
+                "localPosition": {
+                    "x": -1.0,
+                    "y": 0.0,
+                    "z": 4.5
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 270.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": []
+        },
+        {
+            "furnitureId": "DF_plith_001",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_plith_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": 3.179351329803467,
+                "y": 0.0,
+                "z": -0.7706341743469238
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "floorAnchor": {
+                "gridX": 7,
+                "gridZ": 4,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 15,
+                "floorGridZHalf": 9,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 0.0,
+                "localPosition": {
+                    "x": 3.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": [
+                "Slot_Center--01-ENVIRONMENT_MemoryDisplayZoneRoot_PlacementAreas_PF_SB_Palace1_SlotRoot_RSP_19198168_Slots_Slot_Center"
+            ]
+        },
+        {
+            "furnitureId": "PF_DF_lamp_002",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_lamp_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": -1.3206486701965333,
+                "y": 0.0,
+                "z": -1.7706341743469239
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 180.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "floorAnchor": {
+                "gridX": 3,
+                "gridZ": 3,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 6,
+                "floorGridZHalf": 7,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 180.0,
+                "localPosition": {
+                    "x": -1.5,
+                    "y": 0.0,
+                    "z": -1.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 180.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": []
+        },
+        {
+            "furnitureId": "DF_Block_01_RSP_AC43F121",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_lamp_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": 1.6793513298034669,
+                "y": 0.0,
+                "z": -1.7706341743469239
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "floorAnchor": {
+                "gridX": 6,
+                "gridZ": 3,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 12,
+                "floorGridZHalf": 7,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 0.0,
+                "localPosition": {
+                    "x": 1.5,
+                    "y": 0.0,
+                    "z": -1.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": []
+        },
+        {
+            "furnitureId": "PF_DF_plith_002_02",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_plith_002.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": -2.820648670196533,
+                "y": 0.0,
+                "z": -0.7706341743469238
+            },
+            "rotationEuler": {
+                "x": 270.0,
+                "y": 71.55699157714844,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 0.15000002086162568,
+                "y": 0.15000002086162568,
+                "z": 0.15000000596046449
+            },
+            "floorAnchor": {
+                "gridX": 1,
+                "gridZ": 4,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 3,
+                "floorGridZHalf": 9,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 180.0,
+                "localPosition": {
+                    "x": -3.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 270.0,
+                    "y": 71.55699157714844,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": [
+                "Slot_Large"
+            ]
+        },
+        {
+            "furnitureId": "DF_shelf_0011",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_shelf_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": 1.6793513298034669,
+                "y": 0.0,
+                "z": -2.770634174346924
+            },
+            "rotationEuler": {
+                "x": 270.0,
+                "y": 270.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 100.0,
+                "y": 100.0,
+                "z": 100.0
+            },
+            "floorAnchor": {
+                "gridX": 6,
+                "gridZ": 2,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 12,
+                "floorGridZHalf": 5,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 270.0,
+                "localPosition": {
+                    "x": 1.5,
+                    "y": 0.0,
+                    "z": -2.0
+                },
+                "localEulerAngles": {
+                    "x": 270.0,
+                    "y": 270.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": [
+                "Slot_Left",
+                "Slot_Right"
+            ]
+        },
+        {
+            "furnitureId": "DF_shelf_003",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_shelf_003.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": -1.2206486463546754,
+                "y": 0.5,
+                "z": 2.229365825653076
+            },
+            "rotationEuler": {
+                "x": 270.0,
+                "y": 90.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 100.0,
+                "y": 100.0,
+                "z": 100.0
+            },
+            "floorAnchor": {
+                "gridX": 3,
+                "gridZ": 7,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 6,
+                "floorGridZHalf": 15,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 90.0,
+                "localPosition": {
+                    "x": -1.399999976158142,
+                    "y": 0.5,
+                    "z": 3.0
+                },
+                "localEulerAngles": {
+                    "x": 270.0,
+                    "y": 90.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": [
+                "Slot_RSP_7DBEA395_01",
+                "Slot_RSP_7DBEA395_02",
+                "Slot_RSP_7DBEA395_03"
+            ]
+        },
+        {
+            "furnitureId": "DF_Block_01_RSP_6D800534",
+            "sourcePrefabPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_lamp_001.prefab",
+            "blockInstanceId": "Block_01",
+            "blockTypeId": "Block_01",
+            "surfaceType": "floor",
+            "position": {
+                "x": -1.3206486701965333,
+                "y": 0.0,
+                "z": 3.729365825653076
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 90.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.000000238418579,
+                "y": 1.0,
+                "z": 1.000000238418579
+            },
+            "floorAnchor": {
+                "gridX": 3,
+                "gridZ": 9,
+                "widthUnits": 1,
+                "depthUnits": 1,
+                "floorGridXHalf": 6,
+                "floorGridZHalf": 18,
+                "floorWidthHalf": 2,
+                "floorDepthHalf": 2,
+                "rotationY": 90.0,
+                "localPosition": {
+                    "x": -1.5,
+                    "y": 0.0,
+                    "z": 4.5
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 90.0,
+                    "z": 0.0
+                }
+            },
+            "wallAnchor": {
+                "wallSide": "",
+                "wallGridPosition": 0,
+                "widthUnits": 0,
+                "rotationY": 0.0,
+                "heightOffset": 0.0,
+                "wallLayerIndex": 0,
+                "wallLayerCount": 0,
+                "wallSurfaceHeight": 0.0,
+                "localPosition": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "localEulerAngles": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
+            },
+            "slotIds": []
+        }
+    ],
+    "slotPlacements": [
+        {
+            "slotId": "Slot_Center",
+            "furnitureId": "DF_plith_002",
+            "blockInstanceId": "Block_01",
+            "slotType": "MediumTabletop",
+            "acceptedItemSizes": [
+                "Small",
+                "Medium"
+            ],
+            "worldPosition": {
+                "x": 1.677142858505249,
+                "y": 0.7724114656448364,
+                "z": -13.270509719848633
+            },
+            "localPosition": {
+                "x": 0.00012397790851537138,
+                "y": 0.7724114656448364,
+                "z": 0.002208471531048417
+            },
+            "localRotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "occupiedItemId": ""
+        },
+        {
+            "slotId": "Slot_RSP_1C0B34A3_01",
+            "furnitureId": "DF_Block_01_RSP_1C0B34A3",
+            "blockInstanceId": "Block_01",
+            "slotType": "MediumTabletop",
+            "acceptedItemSizes": [
+                "Small",
+                "Medium"
+            ],
+            "worldPosition": {
+                "x": -1.322857141494751,
+                "y": 0.7724114656448364,
+                "z": -13.270509719848633
+            },
+            "localPosition": {
+                "x": 0.00012397790851537138,
+                "y": 0.7724114656448364,
+                "z": 0.002208471531048417
+            },
+            "localRotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "occupiedItemId": ""
+        },
+        {
+            "slotId": "Slot_Center--01-ENVIRONMENT_MemoryDisplayZoneRoot_PlacementAreas_PF_SB_Palace1_SlotRoot_RSP_19198168_Slots_Slot_Center",
+            "furnitureId": "DF_plith_001",
+            "blockInstanceId": "Block_01",
+            "slotType": "MediumTabletop",
+            "acceptedItemSizes": [
+                "Small",
+                "Medium"
+            ],
+            "worldPosition": {
+                "x": 3.1794750690460207,
+                "y": 0.7724114656448364,
+                "z": -0.768425703048706
+            },
+            "localPosition": {
+                "x": 0.00012373924255371094,
+                "y": 0.7724114656448364,
+                "z": 0.0022084712982177736
+            },
+            "localRotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "occupiedItemId": ""
+        },
+        {
+            "slotId": "Slot_Large",
+            "furnitureId": "PF_DF_plith_002_02",
+            "blockInstanceId": "Block_01",
+            "slotType": "FloorLarge",
+            "acceptedItemSizes": [
+                "Medium",
+                "Large",
+                "Tall"
+            ],
+            "worldPosition": {
+                "x": -2.875328302383423,
+                "y": 0.606026291847229,
+                "z": -0.9906800389289856
+            },
+            "localPosition": {
+                "x": 1.2763036489486695,
+                "y": 0.8099014759063721,
+                "z": 4.040174961090088
+            },
+            "localRotationEuler": {
+                "x": 270.0,
+                "y": 180.0,
+                "z": 0.0
+            },
+            "occupiedItemId": ""
+        },
+        {
+            "slotId": "Slot_Left",
+            "furnitureId": "DF_shelf_0011",
+            "blockInstanceId": "Block_01",
+            "slotType": "SmallTabletop",
+            "acceptedItemSizes": [
+                "Small",
+                "Medium"
+            ],
+            "worldPosition": {
+                "x": 1.66335129737854,
+                "y": 1.0130000114440919,
+                "z": -3.190603256225586
+            },
+            "localPosition": {
+                "x": -0.004199690651148558,
+                "y": -0.00016000031610019505,
+                "z": 0.010130000300705433
+            },
+            "localRotationEuler": {
+                "x": 90.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "occupiedItemId": ""
+        },
+        {
+            "slotId": "Slot_Right",
+            "furnitureId": "DF_shelf_0011",
+            "blockInstanceId": "Block_01",
+            "slotType": "SmallTabletop",
+            "acceptedItemSizes": [
+                "Small",
+                "Medium"
+            ],
+            "worldPosition": {
+                "x": 1.6633508205413819,
+                "y": 1.013000249862671,
+                "z": -2.3506648540496828
+            },
+            "localPosition": {
+                "x": 0.004199692979454994,
+                "y": -0.00016000508912838995,
+                "z": 0.010130002163350582
+            },
+            "localRotationEuler": {
+                "x": 90.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "occupiedItemId": ""
+        },
+        {
+            "slotId": "Slot_RSP_7DBEA395_01",
+            "furnitureId": "DF_shelf_003",
+            "blockInstanceId": "Block_01",
+            "slotType": "SmallTabletop",
+            "acceptedItemSizes": [
+                "Small",
+                "Medium"
+            ],
+            "worldPosition": {
+                "x": -1.1606485843658448,
+                "y": 0.5799999833106995,
+                "z": 2.992198944091797
+            },
+            "localPosition": {
+                "x": -0.007628330960869789,
+                "y": -0.0006000006105750799,
+                "z": 0.0007999998051673174
+            },
+            "localRotationEuler": {
+                "x": 0.0,
+                "y": 270.0,
+                "z": 0.0
+            },
+            "occupiedItemId": ""
+        },
+        {
+            "slotId": "Slot_RSP_7DBEA395_02",
+            "furnitureId": "DF_shelf_003",
+            "blockInstanceId": "Block_01",
+            "slotType": "MediumTabletop",
+            "acceptedItemSizes": [
+                "Small",
+                "Medium"
+            ],
+            "worldPosition": {
+                "x": -1.1606481075286866,
+                "y": 0.5800000429153442,
+                "z": 2.209716320037842
+            },
+            "localPosition": {
+                "x": 0.00019649504974950105,
+                "y": -0.0006000053836032748,
+                "z": 0.0008000003872439265
+            },
+            "localRotationEuler": {
+                "x": 0.0,
+                "y": 270.0,
+                "z": 0.0
+            },
+            "occupiedItemId": ""
+        },
+        {
+            "slotId": "Slot_RSP_7DBEA395_03",
+            "furnitureId": "DF_shelf_003",
+            "blockInstanceId": "Block_01",
+            "slotType": "SmallTabletop",
+            "acceptedItemSizes": [
+                "Small",
+                "Medium"
+            ],
+            "worldPosition": {
+                "x": -1.1606481075286866,
+                "y": 0.5800000429153442,
+                "z": 1.4272334575653077
+            },
+            "localPosition": {
+                "x": 0.008021323941648007,
+                "y": -0.0006000053836032748,
+                "z": 0.0008000003872439265
+            },
+            "localRotationEuler": {
+                "x": 0.0,
+                "y": 270.0,
+                "z": 0.0
+            },
+            "occupiedItemId": ""
+        }
+    ],
+    "itemPlacements": [
+        {
+            "itemId": "MI_doll_001",
+            "itemName": "Teddy Bear",
+            "sourcePrefabPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_doll_001.prefab",
+            "furnitureId": "",
+            "slotId": "",
+            "blockInstanceId": "",
+            "worldPosition": {
+                "x": 25.100000381469728,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "itemSize": "Medium",
+            "allowedSlotTypes": [],
+            "enablePlacement": true
+        },
+        {
+            "itemId": "MI_sculpture_001",
+            "itemName": "sculpture",
+            "sourcePrefabPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_sculpture_001.prefab",
+            "furnitureId": "",
+            "slotId": "",
+            "blockInstanceId": "",
+            "worldPosition": {
+                "x": 24.09000015258789,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "itemSize": "Large",
+            "allowedSlotTypes": [],
+            "enablePlacement": true
+        },
+        {
+            "itemId": "MI_cube_001",
+            "itemName": "CUBE",
+            "sourcePrefabPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_cube_001.prefab",
+            "furnitureId": "",
+            "slotId": "",
+            "blockInstanceId": "",
+            "worldPosition": {
+                "x": 23.31999969482422,
+                "y": 0.17000000178813935,
+                "z": 0.0
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "itemSize": "Small",
+            "allowedSlotTypes": [],
+            "enablePlacement": true
+        },
+        {
+            "itemId": "MI_vermiu_001",
+            "itemName": "vermiu",
+            "sourcePrefabPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_vermiu_001.prefab",
+            "furnitureId": "",
+            "slotId": "",
+            "blockInstanceId": "",
+            "worldPosition": {
+                "x": 22.700000762939454,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "rotationEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "itemSize": "Medium",
+            "allowedSlotTypes": [],
+            "enablePlacement": true
+        }
+    ],
     "warnings": [
         {
-            "code": "missing_layout_blocks",
-            "sourcePath": "(untitled scene)",
-            "message": "No MemorySpaceBlock instances were found in currently loaded scenes or the selected root GameObject."
+            "code": "duplicate_blockInstanceId",
+            "sourcePath": "Assets/_project/Scenes/00_Prototype/_02_VR_test_Displayzone.unity",
+            "message": "Duplicate blockInstanceId 'Block_01' found in 02 scene. Exporting 'Block_01--01-ENVIRONMENT_MemoryDisplayZoneRoot_PlacementAreas_PF_SB_Palace1_ConnectedBlocks_PF_SB_Palace2' to keep layout preview IDs unique."
+        },
+        {
+            "code": "duplicate_slotId",
+            "sourcePath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_plith_001.prefab",
+            "message": "Duplicate slotId 'Slot_Center' found in 02 scene. Exporting 'Slot_Center--01-ENVIRONMENT_MemoryDisplayZoneRoot_PlacementAreas_PF_SB_Palace1_SlotRoot_RSP_19198168_Slots_Slot_Center' to keep layout preview IDs unique."
+        },
+        {
+            "code": "unplaced_item",
+            "sourcePath": "Assets/_project/Prefabs/MemoryItems/PF_MI_doll_001.prefab",
+            "message": "MemoryObject 'PF_MI_doll_001' is not assigned to a MemoryDisplaySlot."
+        },
+        {
+            "code": "unplaced_item",
+            "sourcePath": "Assets/_project/Prefabs/MemoryItems/PF_MI_sculpture_001.prefab",
+            "message": "MemoryObject 'PF_MI_sculpture_001' is not assigned to a MemoryDisplaySlot."
+        },
+        {
+            "code": "unplaced_item",
+            "sourcePath": "Assets/_project/Prefabs/MemoryItems/PF_MI_cube_001.prefab",
+            "message": "MemoryObject 'PF_MI_cube_001' is not assigned to a MemoryDisplaySlot."
+        },
+        {
+            "code": "unplaced_item",
+            "sourcePath": "Assets/_project/Prefabs/MemoryItems/PF_MI_vermiu_001.prefab",
+            "message": "MemoryObject 'PF_MI_vermiu_001' is not assigned to a MemoryDisplaySlot."
         }
     ]
 }
