@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using UnityEditor;
+using UnityEngine.SceneManagement;
 using UnityEngine;
 
-public static class AppPreviewCatalogExporter
+public static partial class AppPreviewCatalogExporter
 {
     public const string DefaultExportDirectory = "Assets/_project/Exports/AppPreviewCatalog";
 
@@ -59,6 +60,7 @@ public static class AppPreviewCatalogExporter
         AddStandaloneFurnitureRecords(result, furnitureByPath);
 
         ScanItems(result);
+        ScanGardenLayout(result);
         ResolveDuplicateBlockPreviewKeys(result);
         BuildManifest(result);
         FinalizeSummary(result);
@@ -81,6 +83,7 @@ public static class AppPreviewCatalogExporter
         Debug.Log("[AppPreviewCatalogExporter] Furniture catalog: " + writeResult.furnitureCatalogPath);
         Debug.Log("[AppPreviewCatalogExporter] Item catalog: " + writeResult.itemCatalogPath);
         Debug.Log("[AppPreviewCatalogExporter] Manifest: " + writeResult.manifestPath);
+        Debug.Log("[AppPreviewCatalogExporter] Garden layout: " + writeResult.gardenLayoutPath);
         Debug.Log("[AppPreviewCatalogExporter] Report: " + writeResult.reportPath);
     }
 
@@ -832,6 +835,15 @@ public static class AppPreviewCatalogExporter
 
         result.summary.slotCount = slotCount;
         result.summary.portCount = portCount;
+
+        if (result.gardenLayout != null)
+        {
+            result.summary.layoutBlockInstanceCount = result.gardenLayout.blockInstances.Count;
+            result.summary.layoutConnectionCount = result.gardenLayout.connections.Count;
+            result.summary.layoutFurniturePlacementCount = result.gardenLayout.furniturePlacements.Count;
+            result.summary.layoutSlotPlacementCount = result.gardenLayout.slotPlacements.Count;
+            result.summary.layoutItemPlacementCount = result.gardenLayout.itemPlacements.Count;
+        }
     }
 
     private static void ResolveDuplicateBlockPreviewKeys(AppPreviewCatalogScanResult result)

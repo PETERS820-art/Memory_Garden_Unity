@@ -17,6 +17,11 @@ public class AppPreviewCatalogScanSummary
     public int slotCount;
     public int itemCount;
     public int portCount;
+    public int layoutBlockInstanceCount;
+    public int layoutConnectionCount;
+    public int layoutFurniturePlacementCount;
+    public int layoutSlotPlacementCount;
+    public int layoutItemPlacementCount;
 }
 
 [Serializable]
@@ -221,6 +226,99 @@ public class PreviewAssetManifestDocument
 }
 
 [Serializable]
+public class GardenLayoutPreviewDocument
+{
+    public string layoutId = "unity-current-scene-preview";
+    public string sourceScene;
+    public string exportedAt;
+    public string units = "unity-world";
+    public List<GardenLayoutBlockInstanceRecord> blockInstances = new List<GardenLayoutBlockInstanceRecord>();
+    public List<GardenLayoutConnectionRecord> connections = new List<GardenLayoutConnectionRecord>();
+    public List<GardenLayoutFurniturePlacementRecord> furniturePlacements = new List<GardenLayoutFurniturePlacementRecord>();
+    public List<GardenLayoutSlotPlacementRecord> slotPlacements = new List<GardenLayoutSlotPlacementRecord>();
+    public List<GardenLayoutItemPlacementRecord> itemPlacements = new List<GardenLayoutItemPlacementRecord>();
+    public List<AppPreviewCatalogWarning> warnings = new List<AppPreviewCatalogWarning>();
+}
+
+[Serializable]
+public class GardenLayoutBlockInstanceRecord
+{
+    public string blockInstanceId;
+    public string blockTypeId;
+    public string sourcePrefabPath;
+    public string scenePath;
+    public Vector3 position;
+    public Vector3 rotationEuler;
+    public Vector3 scale;
+    public int gridWidth;
+    public int gridDepth;
+    public float gridSize;
+    public Vector3 boundsCenter;
+    public Vector3 boundsSize;
+}
+
+[Serializable]
+public class GardenLayoutConnectionRecord
+{
+    public string connectionId;
+    public string portAId;
+    public string portBId;
+    public string blockAInstanceId;
+    public string blockBInstanceId;
+    public string connectionKind;
+    public int widthUnits;
+    public float height;
+    public float connectorLength;
+    public bool isPreview;
+}
+
+[Serializable]
+public class GardenLayoutFurniturePlacementRecord
+{
+    public string furnitureId;
+    public string sourcePrefabPath;
+    public string blockInstanceId;
+    public string blockTypeId;
+    public string surfaceType;
+    public Vector3 position;
+    public Vector3 rotationEuler;
+    public Vector3 scale;
+    public FurnitureFloorAnchorRecord floorAnchor;
+    public FurnitureWallAnchorRecord wallAnchor;
+    public List<string> slotIds = new List<string>();
+}
+
+[Serializable]
+public class GardenLayoutSlotPlacementRecord
+{
+    public string slotId;
+    public string furnitureId;
+    public string blockInstanceId;
+    public string slotType;
+    public List<string> acceptedItemSizes = new List<string>();
+    public Vector3 worldPosition;
+    public Vector3 localPosition;
+    public Vector3 localRotationEuler;
+    public string occupiedItemId;
+}
+
+[Serializable]
+public class GardenLayoutItemPlacementRecord
+{
+    public string itemId;
+    public string itemName;
+    public string sourcePrefabPath;
+    public string furnitureId;
+    public string slotId;
+    public string blockInstanceId;
+    public Vector3 worldPosition;
+    public Vector3 rotationEuler;
+    public string itemSize;
+    public List<string> allowedSlotTypes = new List<string>();
+    public bool enablePlacement;
+}
+
+[Serializable]
 public class AppPreviewCatalogScanResult
 {
     public string schemaVersion = "app-preview-catalog-v0";
@@ -232,6 +330,7 @@ public class AppPreviewCatalogScanResult
     public List<FurniturePreviewRecord> furniture = new List<FurniturePreviewRecord>();
     public List<ItemPreviewRecord> items = new List<ItemPreviewRecord>();
     public List<PreviewAssetManifestRecord> manifest = new List<PreviewAssetManifestRecord>();
+    public GardenLayoutPreviewDocument gardenLayout = new GardenLayoutPreviewDocument();
     public List<AppPreviewCatalogWarning> warnings = new List<AppPreviewCatalogWarning>();
 }
 
@@ -243,5 +342,6 @@ public class AppPreviewCatalogWriteResult
     public string furnitureCatalogPath;
     public string itemCatalogPath;
     public string manifestPath;
+    public string gardenLayoutPath;
     public string reportPath;
 }

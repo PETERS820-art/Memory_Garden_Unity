@@ -62,6 +62,10 @@ public static class AppPreviewCatalogWriter
                 generatedAtUtc = result.generatedAtUtc,
                 records = result.manifest
             });
+        writeResult.gardenLayoutPath = WriteJson(
+            absoluteDirectory,
+            "garden-layout-preview.json",
+            result.gardenLayout);
         writeResult.reportPath = WriteText(
             absoluteDirectory,
             "export-report.md",
@@ -93,7 +97,7 @@ public static class AppPreviewCatalogWriter
         lines.Add("- Schema version: `" + result.schemaVersion + "`");
         lines.Add("- Generated at (UTC): `" + result.generatedAtUtc + "`");
         lines.Add("- Export directory: `" + exportDirectory + "`");
-        lines.Add("- Scan mode: asset and prefab scan only; unopened scenes were not auto-opened in v0.");
+        lines.Add("- Scan mode: asset/prefab scan plus currently loaded scene layout snapshot.");
         lines.Add(string.Empty);
 
         lines.Add("## Scan Scope");
@@ -115,6 +119,11 @@ public static class AppPreviewCatalogWriter
         lines.Add("- slots exported: " + result.summary.slotCount);
         lines.Add("- items exported: " + result.summary.itemCount);
         lines.Add("- doorway ports exported: " + result.summary.portCount);
+        lines.Add("- layout block instances exported: " + result.summary.layoutBlockInstanceCount);
+        lines.Add("- layout connections exported: " + result.summary.layoutConnectionCount);
+        lines.Add("- layout furniture placements exported: " + result.summary.layoutFurniturePlacementCount);
+        lines.Add("- layout slot placements exported: " + result.summary.layoutSlotPlacementCount);
+        lines.Add("- layout item placements exported: " + result.summary.layoutItemPlacementCount);
         lines.Add("- warnings: " + result.summary.warningCount);
         lines.Add(string.Empty);
 
@@ -146,6 +155,36 @@ public static class AppPreviewCatalogWriter
                 lines.Add("- `" + warning.code + "` | `" + source + "` | " + warning.message);
             }
         }
+        lines.Add(string.Empty);
+
+        lines.Add("## Layout Preview");
+        if (result.gardenLayout == null)
+        {
+            lines.Add("- garden layout preview was not generated");
+        }
+        else
+        {
+            lines.Add("- file: `" + exportDirectory + "/garden-layout-preview.json`");
+            lines.Add("- sourceScene: `" + result.gardenLayout.sourceScene + "`");
+            lines.Add("- blockInstances: " + result.gardenLayout.blockInstances.Count);
+            lines.Add("- connections: " + result.gardenLayout.connections.Count);
+            lines.Add("- furniturePlacements: " + result.gardenLayout.furniturePlacements.Count);
+            lines.Add("- slotPlacements: " + result.gardenLayout.slotPlacements.Count);
+            lines.Add("- itemPlacements: " + result.gardenLayout.itemPlacements.Count);
+            lines.Add("- layout warnings: " + result.gardenLayout.warnings.Count);
+        }
+        lines.Add(string.Empty);
+
+        lines.Add("## Layout Warning Focus");
+        AddWarningFocus(lines, result, "missing_blockInstanceId");
+        AddWarningFocus(lines, result, "missing_blockTypeId");
+        AddWarningFocus(lines, result, "missing_portId");
+        AddWarningFocus(lines, result, "missing_furnitureId");
+        AddWarningFocus(lines, result, "missing_slotId");
+        AddWarningFocus(lines, result, "missing_itemId");
+        AddWarningFocus(lines, result, "missing_layout_anchor");
+        AddWarningFocus(lines, result, "unanchored_furniture");
+        AddWarningFocus(lines, result, "unplaced_item");
         lines.Add(string.Empty);
 
         lines.Add("## Procedural-Only Content");
@@ -197,6 +236,23 @@ public static class AppPreviewCatalogWriter
         lines.Add("- Keep `preview-asset-manifest.json` as the lookup layer for renderer choice, silhouette fallback, and later GLB upgrades.");
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static void AddWarningFocus(List<string> lines, AppPreviewCatalogScanResult result, string code)
+    {
+        int count = 0;
+        if (result != null && result.warnings != null)
+        {
+            for (int i = 0; i < result.warnings.Count; i++)
+            {
+                if (string.Equals(result.warnings[i].code, code, StringComparison.OrdinalIgnoreCase))
+                {
+                    count++;
+                }
+            }
+        }
+
+        lines.Add("- `" + code + "`: " + count);
     }
 
     private static string GetAbsolutePath(string assetPath)

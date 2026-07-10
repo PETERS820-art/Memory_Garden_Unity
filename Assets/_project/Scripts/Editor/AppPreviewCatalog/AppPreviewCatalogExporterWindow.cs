@@ -130,6 +130,11 @@ public class AppPreviewCatalogExporterWindow : EditorWindow
         EditorGUILayout.LabelField("Slots exported", lastScanResult.summary.slotCount.ToString());
         EditorGUILayout.LabelField("Items exported", lastScanResult.summary.itemCount.ToString());
         EditorGUILayout.LabelField("Doorway ports exported", lastScanResult.summary.portCount.ToString());
+        EditorGUILayout.LabelField("Layout block instances", lastScanResult.summary.layoutBlockInstanceCount.ToString());
+        EditorGUILayout.LabelField("Layout connections", lastScanResult.summary.layoutConnectionCount.ToString());
+        EditorGUILayout.LabelField("Layout furniture placements", lastScanResult.summary.layoutFurniturePlacementCount.ToString());
+        EditorGUILayout.LabelField("Layout slot placements", lastScanResult.summary.layoutSlotPlacementCount.ToString());
+        EditorGUILayout.LabelField("Layout item placements", lastScanResult.summary.layoutItemPlacementCount.ToString());
         EditorGUILayout.LabelField("Warnings", lastScanResult.summary.warningCount.ToString());
     }
 
@@ -146,6 +151,7 @@ public class AppPreviewCatalogExporterWindow : EditorWindow
         EditorGUILayout.SelectableLabel(lastWriteResult.furnitureCatalogPath, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
         EditorGUILayout.SelectableLabel(lastWriteResult.itemCatalogPath, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
         EditorGUILayout.SelectableLabel(lastWriteResult.manifestPath, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+        EditorGUILayout.SelectableLabel(lastWriteResult.gardenLayoutPath, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
         EditorGUILayout.SelectableLabel(lastWriteResult.reportPath, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
     }
 

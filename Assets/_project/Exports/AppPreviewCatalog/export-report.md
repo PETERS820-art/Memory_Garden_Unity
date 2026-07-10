@@ -1,9 +1,9 @@
 # App Preview Catalog Export Report
 
 - Schema version: `app-preview-catalog-v0`
-- Generated at (UTC): `2026-07-10T07:33:32.2703242Z`
+- Generated at (UTC): `2026-07-10T10:09:36.4460387Z`
 - Export directory: `Assets/_project/Exports/AppPreviewCatalog`
-- Scan mode: asset and prefab scan only; unopened scenes were not auto-opened in v0.
+- Scan mode: asset/prefab scan plus currently loaded scene layout snapshot.
 
 ## Scan Scope
 - `Assets/_project/ScriptableObjects`
@@ -24,10 +24,16 @@
 - slots exported: 17
 - items exported: 4
 - doorway ports exported: 11
-- warnings: 5
+- layout block instances exported: 0
+- layout connections exported: 0
+- layout furniture placements exported: 0
+- layout slot placements exported: 0
+- layout item placements exported: 0
+- warnings: 6
 
 ## Warning Summary
 - `duplicate_blockTypeId`: 5
+- `missing_layout_blocks`: 1
 
 ### Warning Details
 - `duplicate_blockTypeId` | `Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01 1.asset` | Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01_1' to keep v0 preview records unique.
@@ -35,6 +41,28 @@
 - `duplicate_blockTypeId` | `Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01 3.asset` | Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01_3' to keep v0 preview records unique.
 - `duplicate_blockTypeId` | `Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01.asset` | Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01' to keep v0 preview records unique.
 - `duplicate_blockTypeId` | `Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_02.asset` | Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_02' to keep v0 preview records unique.
+- `missing_layout_blocks` | `(untitled scene)` | No MemorySpaceBlock instances were found in currently loaded scenes or the selected root GameObject.
+
+## Layout Preview
+- file: `Assets/_project/Exports/AppPreviewCatalog/garden-layout-preview.json`
+- sourceScene: `(untitled scene)`
+- blockInstances: 0
+- connections: 0
+- furniturePlacements: 0
+- slotPlacements: 0
+- itemPlacements: 0
+- layout warnings: 1
+
+## Layout Warning Focus
+- `missing_blockInstanceId`: 0
+- `missing_blockTypeId`: 0
+- `missing_portId`: 0
+- `missing_furnitureId`: 0
+- `missing_slotId`: 0
+- `missing_itemId`: 0
+- `missing_layout_anchor`: 0
+- `unanchored_furniture`: 0
+- `unplaced_item`: 0
 
 ## Procedural-Only Content
 - `preview-block-SBD_Block_01_1` rebuilt from grid and wall-edge data

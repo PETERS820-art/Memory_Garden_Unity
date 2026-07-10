@@ -1,0 +1,18 @@
+{
+    "layoutId": "unity-current-scene-preview",
+    "sourceScene": "(untitled scene)",
+    "exportedAt": "2026-07-10T10:09:36.4460387Z",
+    "units": "unity-world",
+    "blockInstances": [],
+    "connections": [],
+    "furniturePlacements": [],
+    "slotPlacements": [],
+    "itemPlacements": [],
+    "warnings": [
+        {
+            "code": "missing_layout_blocks",
+            "sourcePath": "(untitled scene)",
+            "message": "No MemorySpaceBlock instances were found in currently loaded scenes or the selected root GameObject."
+        }
+    ]
+}
