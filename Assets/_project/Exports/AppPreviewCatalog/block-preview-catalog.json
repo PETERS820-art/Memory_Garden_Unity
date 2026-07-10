@@ -1,0 +1,5394 @@
+{
+    "schemaVersion": "app-preview-catalog-v0",
+    "generatedAtUtc": "2026-07-10T07:33:32.2703242Z",
+    "records": [
+        {
+            "blockTypeId": "Block_01",
+            "sourceAssetPath": "Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01 1.asset",
+            "sourcePrefabPath": "Assets/_project/Prefabs/Environment/SpaceBlocks/PF_SB_SBD_Block_01 3.prefab",
+            "displayName": "Block_01",
+            "gridWidth": 10,
+            "gridDepth": 10,
+            "gridSize": 1.0,
+            "previewMode": "procedural",
+            "previewAssetKey": "preview-block-SBD_Block_01_1",
+            "previewBounds": {
+                "center": {
+                    "x": 0.0,
+                    "y": 1.25,
+                    "z": 0.0
+                },
+                "size": {
+                    "x": 10.0,
+                    "y": 2.5,
+                    "z": 10.0
+                }
+            },
+            "structuralPlacements": [
+                {
+                    "placementId": "PL_1a4d8033",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 4,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_20f8a040",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 2,
+                    "gridZ": 5,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_22de5222",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 0,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3276ad5b",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 9,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_36b4c685",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_387905d9",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 1,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_39cf0382",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3bed04a9",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 2,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4394c6ec",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 0,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4396acfd",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 3,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_4a1026f3",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 0,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4d6009ee",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 3,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4f14940f",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 5,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_5582631a",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_5cc81eac",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6126f8a7",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_61796a4c",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 8,
+                    "gridZ": 3,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6340ef7f",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 2,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6b7969e4",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 3,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_7389eb3e",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 0,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_7760ce71",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_80058a62",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_8270917f",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 7,
+                    "gridZ": 2,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_83001234",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 2,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_831edfcc",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_83ad583a",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 2,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_8600adb8",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 0,
+                    "gridZ": 3,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_8656b590",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 4,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_88f01ced",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 2,
+                    "gridZ": 3,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_89c8c8bb",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_8cf7e30a",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 8,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_90eec09b",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 3,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_95d62216",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 2,
+                    "gridZ": 2,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_98dccd1f",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_a0f6456c",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_a6b0ba80",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_abd8e90f",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_ac0ec25f",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 7,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_acd3612b",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 3,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_b5590c99",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 0,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_b55ec650",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 3,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_b5733ae0",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 6,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_b8d3614b",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 5,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_bdbf3a8a",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 1,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_c42ef24a",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_c5593fb3",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 2,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_ccc7e4a7",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 8,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_cdd0ff3d",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_cef639a3",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 2,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_cfbc789b",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 1,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_d21f50a1",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 2,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_d571ce32",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_d7189759",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 3,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_db25cde1",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_db3388b9",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 5,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_df057414",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_f4f88c5e",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 7,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_f9cbd2a2",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 5,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_f9f34e5b",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_fe4b85b1",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 5,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_ff0795bb",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 7,
+                    "gridZ": 5,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                }
+            ],
+            "wallEdges": [
+                {
+                    "side": "East",
+                    "edgeKey": "V:10:4",
+                    "gridX": 9,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:4:0",
+                    "gridX": 4,
+                    "gridZ": 0,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:6:9",
+                    "gridX": 5,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:4:10",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:7:1",
+                    "gridX": 6,
+                    "gridZ": 1,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:3:7",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:5:0",
+                    "gridX": 5,
+                    "gridZ": 0,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:3",
+                    "gridX": 0,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:1:3",
+                    "gridX": 1,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:2:5",
+                    "gridX": 2,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:9:5",
+                    "gridX": 9,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:1:5",
+                    "gridX": 1,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:2:2",
+                    "gridX": 2,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:0:3",
+                    "gridX": 0,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:6:0",
+                    "gridX": 5,
+                    "gridZ": 0,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:1",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:7:2",
+                    "gridX": 7,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:4:9",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:8:2",
+                    "gridX": 7,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:4",
+                    "gridX": 0,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:0:5",
+                    "gridX": 0,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:4:8",
+                    "gridX": 4,
+                    "gridZ": 8,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:10:3",
+                    "gridX": 9,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:6:7",
+                    "gridX": 6,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:3:1",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:6",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:6:7",
+                    "gridX": 5,
+                    "gridZ": 7,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:8:3",
+                    "gridX": 8,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:4:0",
+                    "gridX": 4,
+                    "gridZ": 0,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:9:3",
+                    "gridX": 9,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:7:6",
+                    "gridX": 6,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:2:6",
+                    "gridX": 2,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:6:1",
+                    "gridX": 6,
+                    "gridZ": 1,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:6:8",
+                    "gridX": 5,
+                    "gridZ": 8,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:8:5",
+                    "gridX": 8,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:2:2",
+                    "gridX": 2,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:8:5",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:7:6",
+                    "gridX": 7,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:5:10",
+                    "gridX": 5,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:4:7",
+                    "gridX": 4,
+                    "gridZ": 7,
+                    "spanUnits": 1
+                }
+            ],
+            "doorwayPorts": [
+                {
+                    "portId": "Block_01_PL_36b4c685_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "North",
+                    "gridPosition": {
+                        "x": 4,
+                        "y": 9
+                    },
+                    "localPosition": {
+                        "x": -1.1920928955078126e-7,
+                        "y": 1.25,
+                        "z": 5.0
+                    },
+                    "localForward": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": -1.0
+                    },
+                    "isOccupied": false
+                },
+                {
+                    "portId": "Block_01_PL_4396acfd_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "West",
+                    "gridPosition": {
+                        "x": 0,
+                        "y": 3
+                    },
+                    "localPosition": {
+                        "x": -5.0,
+                        "y": 1.250000238418579,
+                        "z": -1.000000238418579
+                    },
+                    "localForward": {
+                        "x": 1.0000001192092896,
+                        "y": 0.0,
+                        "z": -1.1920928955078126e-7
+                    },
+                    "isOccupied": false
+                },
+                {
+                    "portId": "Block_01_PL_90eec09b_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "East",
+                    "gridPosition": {
+                        "x": 9,
+                        "y": 3
+                    },
+                    "localPosition": {
+                        "x": 5.0,
+                        "y": 1.250000238418579,
+                        "z": -1.000000238418579
+                    },
+                    "localForward": {
+                        "x": -1.0000001192092896,
+                        "y": 0.0,
+                        "z": -1.1920928955078126e-7
+                    },
+                    "isOccupied": false
+                },
+                {
+                    "portId": "Block_01_PL_b5590c99_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "South",
+                    "gridPosition": {
+                        "x": 4,
+                        "y": 0
+                    },
+                    "localPosition": {
+                        "x": 1.1920928955078126e-7,
+                        "y": 1.25,
+                        "z": -5.0
+                    },
+                    "localForward": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 1.0
+                    },
+                    "isOccupied": false
+                }
+            ],
+            "warnings": [
+                "duplicate_blockTypeId: Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01_1' to keep v0 preview records unique."
+            ]
+        },
+        {
+            "blockTypeId": "Block_01",
+            "sourceAssetPath": "Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01 2.asset",
+            "sourcePrefabPath": "Assets/_project/Prefabs/Environment/SpaceBlocks/PF_SB_Palace1.prefab",
+            "displayName": "Block_01",
+            "gridWidth": 10,
+            "gridDepth": 10,
+            "gridSize": 1.0,
+            "previewMode": "procedural",
+            "previewAssetKey": "preview-block-SBD_Block_01_2",
+            "previewBounds": {
+                "center": {
+                    "x": 0.0,
+                    "y": 1.25,
+                    "z": 0.0
+                },
+                "size": {
+                    "x": 10.0,
+                    "y": 2.5,
+                    "z": 10.0
+                }
+            },
+            "structuralPlacements": [
+                {
+                    "placementId": "PL_0151f80b",
+                    "segmentId": "SM_ceiling_white_001_1x1",
+                    "category": "Ceiling",
+                    "gridX": 7,
+                    "gridZ": 3,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_0675ec24",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 7,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_07545a85",
+                    "segmentId": "SM_ceiling_white_001_2x2",
+                    "category": "Ceiling",
+                    "gridX": 5,
+                    "gridZ": 4,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_10950fef",
+                    "segmentId": "SM_ceiling_white_001_2x2",
+                    "category": "Ceiling",
+                    "gridX": 3,
+                    "gridZ": 4,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_13565aa3",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_13c26f86",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 5,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_14044bd1",
+                    "segmentId": "SM_ceiling_white_001_1x1",
+                    "category": "Ceiling",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_1425cf5a",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_16af58bd",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 5,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_1921da09",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 2,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3457e238",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 1,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_361f4fc3",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 0,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3bb83e62",
+                    "segmentId": "SM_wall_EC_001_2x2.5_window",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 7,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3c649ab0",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_437c2969",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_43c3f8d3",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4c830c92",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 2,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4cf7676f",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 2,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_53e7c07b",
+                    "segmentId": "SM_ceiling_white_001_1x1",
+                    "category": "Ceiling",
+                    "gridX": 4,
+                    "gridZ": 3,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_55a56412",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 9,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_564942c3",
+                    "segmentId": "SM_ceiling_white_001_1x1",
+                    "category": "Ceiling",
+                    "gridX": 6,
+                    "gridZ": 3,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_5aba18a5",
+                    "segmentId": "SM_ceiling_white_001_2x2",
+                    "category": "Ceiling",
+                    "gridX": 5,
+                    "gridZ": 6,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_5cb83360",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 0,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6312aa51",
+                    "segmentId": "SM_wall_EC_001_2x2.5_window",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 4,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6f7871b8",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 1,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6f864b43",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 2,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_71b62e61",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_7424c6b3",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 8,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_7842752f",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 0,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_78e3074f",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_7d987348",
+                    "segmentId": "SM_ceiling_white_001_2x2",
+                    "category": "Ceiling",
+                    "gridX": 5,
+                    "gridZ": 8,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_8693ddc9",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_87ee7b0c",
+                    "segmentId": "SM_ceiling_white_001_2x2",
+                    "category": "Ceiling",
+                    "gridX": 1,
+                    "gridZ": 4,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_910f654c",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 6,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_97d815fe",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 0,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_998c3ea7",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_9d2dcac7",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 5,
+                    "gridZ": 2,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_9dc85d0f",
+                    "segmentId": "SM_ceiling_white_001_2x2",
+                    "category": "Ceiling",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_9ea6787d",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_a645d8dc",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 5,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_adccf592",
+                    "segmentId": "SM_ceiling_white_001_2x2",
+                    "category": "Ceiling",
+                    "gridX": 3,
+                    "gridZ": 8,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_b8eaee45",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_be5f5f75",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 5,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_bf162834",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 2,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_c348f1df",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 5,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_cedf0b2f",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_d293acee",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_da773f9e",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_dbff8e27",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 0,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_e11ab772",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 3,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_e223d9aa",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 1,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_e9df9836",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_ea540e2c",
+                    "segmentId": "SM_ceiling_white_001_1x1",
+                    "category": "Ceiling",
+                    "gridX": 5,
+                    "gridZ": 3,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_eef050de",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 4,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_ef585eb5",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 9,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_f7254366",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_fac03a89",
+                    "segmentId": "SM_ceiling_white_001_1x2",
+                    "category": "Ceiling",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_fd8ee11b",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                }
+            ],
+            "wallEdges": [
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:7",
+                    "gridX": 3,
+                    "gridZ": 7,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:7:4",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:2:6",
+                    "gridX": 2,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:2",
+                    "gridX": 3,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:4:1",
+                    "gridX": 4,
+                    "gridZ": 1,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:4:0",
+                    "gridX": 4,
+                    "gridZ": 0,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:7:7",
+                    "gridX": 6,
+                    "gridZ": 7,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:7:8",
+                    "gridX": 6,
+                    "gridZ": 7,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:4:10",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:3:10",
+                    "gridX": 3,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:6:10",
+                    "gridX": 6,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:3:2",
+                    "gridX": 3,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:9",
+                    "gridX": 3,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:6:0",
+                    "gridX": 5,
+                    "gridZ": 0,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:1:4",
+                    "gridX": 1,
+                    "gridZ": 4,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:1:5",
+                    "gridX": 1,
+                    "gridZ": 4,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:6:1",
+                    "gridX": 5,
+                    "gridZ": 1,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:7:2",
+                    "gridX": 6,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:8",
+                    "gridX": 3,
+                    "gridZ": 8,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:2:4",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:7:6",
+                    "gridX": 6,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:5:0",
+                    "gridX": 5,
+                    "gridZ": 0,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:6",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:3",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:6:2",
+                    "gridX": 6,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:7:6",
+                    "gridX": 7,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:8:6",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:1:6",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:5:10",
+                    "gridX": 5,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:4:0",
+                    "gridX": 4,
+                    "gridZ": 0,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:7:3",
+                    "gridX": 6,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:1:4",
+                    "gridX": 1,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:9:4",
+                    "gridX": 8,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:7:9",
+                    "gridX": 6,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:9:5",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:8:4",
+                    "gridX": 8,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                }
+            ],
+            "doorwayPorts": [
+                {
+                    "portId": "Block_01_PL_dbff8e27_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "South",
+                    "gridPosition": {
+                        "x": 4,
+                        "y": 0
+                    },
+                    "localPosition": {
+                        "x": 1.1920928955078126e-7,
+                        "y": 1.25,
+                        "z": -5.0
+                    },
+                    "localForward": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 1.0
+                    },
+                    "isOccupied": false
+                },
+                {
+                    "portId": "Block_01_PL_eef050de_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "East",
+                    "gridPosition": {
+                        "x": 8,
+                        "y": 4
+                    },
+                    "localPosition": {
+                        "x": 4.0,
+                        "y": 1.250000238418579,
+                        "z": -2.384185791015625e-7
+                    },
+                    "localForward": {
+                        "x": -1.0000001192092896,
+                        "y": 0.0,
+                        "z": -1.1920928955078126e-7
+                    },
+                    "isOccupied": false
+                }
+            ],
+            "warnings": [
+                "duplicate_blockTypeId: Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01_2' to keep v0 preview records unique."
+            ]
+        },
+        {
+            "blockTypeId": "Block_01",
+            "sourceAssetPath": "Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01 3.asset",
+            "sourcePrefabPath": "Assets/_project/Prefabs/Environment/SpaceBlocks/PF_SB_Palace2.prefab",
+            "displayName": "Block_01",
+            "gridWidth": 10,
+            "gridDepth": 10,
+            "gridSize": 1.0,
+            "previewMode": "procedural",
+            "previewAssetKey": "preview-block-SBD_Block_01_3",
+            "previewBounds": {
+                "center": {
+                    "x": 0.0,
+                    "y": 1.25,
+                    "z": 0.0
+                },
+                "size": {
+                    "x": 10.0,
+                    "y": 2.5,
+                    "z": 10.0
+                }
+            },
+            "structuralPlacements": [
+                {
+                    "placementId": "PL_04f46170",
+                    "segmentId": "SM_wall_EC_001_2x2.5_window",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 2,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_07204537",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 4,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_1157ff8e",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 0,
+                    "gridZ": 5,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_1fa169cd",
+                    "segmentId": "SM_wall_wood_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 5,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_20ae0a6e",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 6,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_21db2b3e",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_2465c07b",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_24ba05f7",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 2,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_37cadde6",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3b9ada21",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 2,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3bfc2072",
+                    "segmentId": "SM_wall_wood_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 6,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3dae257a",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 7,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4672eece",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_499e9270",
+                    "segmentId": "SM_wall_wood_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 5,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_4aa7607f",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_52ed1007",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_5c2ec002",
+                    "segmentId": "SM_wall_wood_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 6,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_62f665c6",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_67457fda",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 8,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6a424664",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 3,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6a44eecd",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6e37ee76",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_7cf2192d",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 2,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_8b5749fc",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_8c580e32",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_8e20a284",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_8fcde76f",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_94a02425",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_94c4475b",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_98416a75",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_98e0704f",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_99746895",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_ad3063d6",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_aebe8b86",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_af6dd322",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 8,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_b87778f1",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_bc5f433a",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_bc9a2093",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 7,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_c4120af7",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_c6f4552f",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_cb8519b4",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 8,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_d44bdafc",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 9,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_d5d9bacf",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_d831a521",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_d89264a0",
+                    "segmentId": "SM_floor_white_001_2X2",
+                    "category": "Floor",
+                    "gridX": 2,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_e24e00b4",
+                    "segmentId": "SM_wall_EC_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_e2e86ee6",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_eddef7b4",
+                    "segmentId": "SM_wall_EC_001_1x2.5",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 3,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_f1be2d09",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 3,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                }
+            ],
+            "wallEdges": [
+                {
+                    "side": "South",
+                    "edgeKey": "H:4:2",
+                    "gridX": 4,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:5:2",
+                    "gridX": 4,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:10:5",
+                    "gridX": 9,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:2:4",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:6:2",
+                    "gridX": 5,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:8:7",
+                    "gridX": 8,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:10:6",
+                    "gridX": 9,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:6:7",
+                    "gridX": 5,
+                    "gridZ": 7,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:5",
+                    "gridX": 0,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:1:5",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:6",
+                    "gridX": 0,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:7:4",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:6:8",
+                    "gridX": 5,
+                    "gridZ": 8,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:6:3",
+                    "gridX": 6,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:3",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:1:7",
+                    "gridX": 1,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:4:2",
+                    "gridX": 4,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:8:4",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:0:5",
+                    "gridX": 0,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:8:5",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:9:7",
+                    "gridX": 9,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:4:9",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:9:5",
+                    "gridX": 9,
+                    "gridZ": 5,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:5:10",
+                    "gridX": 5,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:4:10",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:4:8",
+                    "gridX": 4,
+                    "gridZ": 8,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:7:7",
+                    "gridX": 7,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:3:3",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:4:7",
+                    "gridX": 4,
+                    "gridZ": 7,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:0:7",
+                    "gridX": 0,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:6:9",
+                    "gridX": 5,
+                    "gridZ": 9,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:6:7",
+                    "gridX": 6,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:3:7",
+                    "gridX": 3,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:2:7",
+                    "gridX": 2,
+                    "gridZ": 6,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:2:4",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:7:3",
+                    "gridX": 6,
+                    "gridZ": 3,
+                    "spanUnits": 1
+                }
+            ],
+            "doorwayPorts": [
+                {
+                    "portId": "Block_01_PL_1fa169cd_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "East",
+                    "gridPosition": {
+                        "x": 9,
+                        "y": 5
+                    },
+                    "localPosition": {
+                        "x": 5.0,
+                        "y": 1.250000238418579,
+                        "z": 0.9999997615814209
+                    },
+                    "localForward": {
+                        "x": -1.0000001192092896,
+                        "y": 0.0,
+                        "z": -1.1920928955078126e-7
+                    },
+                    "isOccupied": false
+                },
+                {
+                    "portId": "Block_01_PL_499e9270_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "West",
+                    "gridPosition": {
+                        "x": 0,
+                        "y": 5
+                    },
+                    "localPosition": {
+                        "x": -5.0,
+                        "y": 1.250000238418579,
+                        "z": 0.9999998807907105
+                    },
+                    "localForward": {
+                        "x": 1.0000001192092896,
+                        "y": 0.0,
+                        "z": -1.1920928955078126e-7
+                    },
+                    "isOccupied": false
+                },
+                {
+                    "portId": "Block_01_PL_aebe8b86_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "North",
+                    "gridPosition": {
+                        "x": 4,
+                        "y": 9
+                    },
+                    "localPosition": {
+                        "x": -1.1920928955078126e-7,
+                        "y": 1.25,
+                        "z": 5.0
+                    },
+                    "localForward": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": -1.0
+                    },
+                    "isOccupied": false
+                }
+            ],
+            "warnings": [
+                "duplicate_blockTypeId: Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01_3' to keep v0 preview records unique."
+            ]
+        },
+        {
+            "blockTypeId": "Block_01",
+            "sourceAssetPath": "Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01.asset",
+            "sourcePrefabPath": "Assets/_project/Prefabs/Environment/SpaceBlocks/PF_SB_SBD_Block_01.prefab",
+            "displayName": "Block_01",
+            "gridWidth": 10,
+            "gridDepth": 10,
+            "gridSize": 1.0,
+            "previewMode": "procedural",
+            "previewAssetKey": "preview-block-SBD_Block_01",
+            "previewBounds": {
+                "center": {
+                    "x": 0.0,
+                    "y": 1.25,
+                    "z": 0.0
+                },
+                "size": {
+                    "x": 10.0,
+                    "y": 2.5,
+                    "z": 10.0
+                }
+            },
+            "structuralPlacements": [
+                {
+                    "placementId": "PL_10f1178d",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_1141d74c",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_1836a095",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_1a402b2e",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 0,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_1d24d8fc",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 2,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_24731e17",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_269012bd",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_2a1708c9",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 2,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3085d37f",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 0,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_311cab2f",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 2,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3941c408",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 8,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3afadfe1",
+                    "segmentId": "SM_wall_white_001_2x2.5_window",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 4,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_430e2bd1",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_488284e1",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 2,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4afc551e",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4b39311b",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 8,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4d73bfaa",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 4,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_55a48e3b",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 3,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_5a7729b1",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 2,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_5b367f38",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_673a9005",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6cae714f",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 0,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_7015d852",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 0,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_74a4eac5",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 6,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_805f81f0",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 6,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_80cd67f9",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 8,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_932f1f41",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 0,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_9467efbf",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 0,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_a10d3f03",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 0,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_a9c01d47",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 9,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_afb9043e",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 0,
+                    "gridZ": 2,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_c5a93158",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 2,
+                    "gridZ": 2,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_c671276e",
+                    "segmentId": "SM_wall_wood_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 6,
+                    "gridZ": 0,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_dd09ebb3",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_ddd2937c",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 2,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_e25e8477",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 4,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_eb6cb2f1",
+                    "segmentId": "SM_wall_white_001_2x2.5_window",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 6,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_f3ad32e7",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 8,
+                    "gridZ": 6,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_f85dcacb",
+                    "segmentId": "SM_floor_wood_002_2X2",
+                    "category": "Floor",
+                    "gridX": 6,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_fd4c7412",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 0,
+                    "gridZ": 2,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                }
+            ],
+            "wallEdges": [
+                {
+                    "side": "South",
+                    "edgeKey": "H:2:4",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:3:4",
+                    "gridX": 2,
+                    "gridZ": 4,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:6:0",
+                    "gridX": 6,
+                    "gridZ": 0,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:6:1",
+                    "gridX": 6,
+                    "gridZ": 0,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:6:10",
+                    "gridX": 6,
+                    "gridZ": 9,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:7:10",
+                    "gridX": 6,
+                    "gridZ": 9,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:2",
+                    "gridX": 0,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:3",
+                    "gridX": 0,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:6:2",
+                    "gridX": 6,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:6:3",
+                    "gridX": 6,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:8",
+                    "gridX": 0,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:9",
+                    "gridX": 0,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:4",
+                    "gridX": 0,
+                    "gridZ": 4,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:5",
+                    "gridX": 0,
+                    "gridZ": 4,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:8:4",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:8:5",
+                    "gridX": 7,
+                    "gridZ": 4,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:8:10",
+                    "gridX": 8,
+                    "gridZ": 9,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:9:10",
+                    "gridX": 8,
+                    "gridZ": 9,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:4:4",
+                    "gridX": 4,
+                    "gridZ": 3,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:5:4",
+                    "gridX": 4,
+                    "gridZ": 3,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:0:10",
+                    "gridX": 0,
+                    "gridZ": 9,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:1:10",
+                    "gridX": 0,
+                    "gridZ": 9,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:4:10",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:5:10",
+                    "gridX": 4,
+                    "gridZ": 9,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:10:6",
+                    "gridX": 9,
+                    "gridZ": 6,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:10:7",
+                    "gridX": 9,
+                    "gridZ": 6,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:6",
+                    "gridX": 0,
+                    "gridZ": 6,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:0:7",
+                    "gridX": 0,
+                    "gridZ": 6,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:10:8",
+                    "gridX": 9,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:10:9",
+                    "gridX": 9,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:7:0",
+                    "gridX": 7,
+                    "gridZ": 0,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:8:0",
+                    "gridX": 7,
+                    "gridZ": 0,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:8:1",
+                    "gridX": 7,
+                    "gridZ": 0,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:2:10",
+                    "gridX": 2,
+                    "gridZ": 9,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:3:10",
+                    "gridX": 2,
+                    "gridZ": 9,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:2:2",
+                    "gridX": 2,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:2:3",
+                    "gridX": 2,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:6:0",
+                    "gridX": 6,
+                    "gridZ": 0,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:8:2",
+                    "gridX": 7,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:8:3",
+                    "gridX": 7,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:8:6",
+                    "gridX": 8,
+                    "gridZ": 6,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:9:6",
+                    "gridX": 8,
+                    "gridZ": 6,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:0:2",
+                    "gridX": 0,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:1:2",
+                    "gridX": 0,
+                    "gridZ": 2,
+                    "spanUnits": 2
+                }
+            ],
+            "doorwayPorts": [
+                {
+                    "portId": "Block_01_PL_a73b16a2_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "East",
+                    "gridPosition": {
+                        "x": 8,
+                        "y": 5
+                    },
+                    "localPosition": {
+                        "x": 4.0,
+                        "y": 1.2500003576278687,
+                        "z": 0.9999997019767761
+                    },
+                    "localForward": {
+                        "x": -1.0000001192092896,
+                        "y": 0.0,
+                        "z": -1.1920928955078126e-7
+                    },
+                    "isOccupied": false
+                }
+            ],
+            "warnings": [
+                "duplicate_blockTypeId: Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01' to keep v0 preview records unique."
+            ]
+        },
+        {
+            "blockTypeId": "Block_01",
+            "sourceAssetPath": "Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_02.asset",
+            "sourcePrefabPath": "Assets/_project/Prefabs/Environment/SpaceBlocks/PF_SB_SBD_Block_02.prefab",
+            "displayName": "Block_01",
+            "gridWidth": 10,
+            "gridDepth": 10,
+            "gridSize": 1.0,
+            "previewMode": "procedural",
+            "previewAssetKey": "preview-block-SBD_Block_02",
+            "previewBounds": {
+                "center": {
+                    "x": 0.0,
+                    "y": 1.25,
+                    "z": 0.0
+                },
+                "size": {
+                    "x": 10.0,
+                    "y": 2.5,
+                    "z": 10.0
+                }
+            },
+            "structuralPlacements": [
+                {
+                    "placementId": "PL_07b1e842",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_18e93813",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 3,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_193e9b2c",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_1dd01427",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 2,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_214d95c5",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_2a3001aa",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 7,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_2b145d23",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_39f6a143",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 9,
+                    "gridZ": 2,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_3eff34f0",
+                    "segmentId": "SM_floor_marble_001_1X1",
+                    "category": "Floor",
+                    "gridX": 9,
+                    "gridZ": 1,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_44471576",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_4b2903ff",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 1,
+                    "gridZ": 7,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_51c86d86",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 7,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_52817a1b",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 7,
+                    "gridZ": 1,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_583accb2",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_586dcfc9",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 5,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_6a834532",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 7,
+                    "gridZ": 3,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_765b91a2",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_7c6e7b59",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_84ad5d02",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_85c32d1a",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 7,
+                    "gridZ": 7,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_8e780318",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_989b862b",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 5,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_99f9bbce",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 8,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_9b09af23",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 5,
+                    "gridZ": 1,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_9d2ee43f",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorleft",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 2,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_9ebd03c1",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 5,
+                    "gridZ": 3,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_a17f6605",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 5,
+                    "gridZ": 1,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_a3ce772a",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 7,
+                    "gridZ": 1,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_b0e7361d",
+                    "segmentId": "SM_wall_white_001_1x1.25",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 1,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_b73d1a78",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 5,
+                    "gridZ": 7,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_bfba3c38",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 7,
+                    "side": "South",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_d0dc193f",
+                    "segmentId": "SM_wall_white_001_2x2.5",
+                    "category": "Wall",
+                    "gridX": 8,
+                    "gridZ": 7,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_daf212bf",
+                    "segmentId": "SM_floor_marble_001_2X2",
+                    "category": "Floor",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "side": "North",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 2
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                },
+                {
+                    "placementId": "PL_ddf232c4",
+                    "segmentId": "SM_wall_white_001_1x2.5_doorright",
+                    "category": "Wall",
+                    "gridX": 9,
+                    "gridZ": 1,
+                    "side": "East",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 1,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "SM_doorway_2X2.5_001",
+                    "isConnectorCandidate": true
+                },
+                {
+                    "placementId": "PL_f936c9d2",
+                    "segmentId": "SM_wall_white_001_2x1.25",
+                    "category": "Wall",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "side": "West",
+                    "rotationY": 0,
+                    "footprint": {
+                        "x": 2,
+                        "y": 1
+                    },
+                    "overlaySegmentId": "",
+                    "isConnectorCandidate": false
+                }
+            ],
+            "wallEdges": [
+                {
+                    "side": "North",
+                    "edgeKey": "H:5:9",
+                    "gridX": 5,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:6:9",
+                    "gridX": 5,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:9:3",
+                    "gridX": 8,
+                    "gridZ": 3,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:9:4",
+                    "gridX": 8,
+                    "gridZ": 3,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:9:3",
+                    "gridX": 9,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:3:1",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:4:1",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:1:7",
+                    "gridX": 1,
+                    "gridZ": 7,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:1:8",
+                    "gridX": 1,
+                    "gridZ": 7,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:3:9",
+                    "gridX": 3,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:4:9",
+                    "gridX": 3,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:9:5",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:9:6",
+                    "gridX": 8,
+                    "gridZ": 5,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:1:9",
+                    "gridX": 1,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:2:9",
+                    "gridX": 1,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:1:5",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:1:6",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:3",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:4",
+                    "gridX": 3,
+                    "gridZ": 3,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:1:5",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:2:5",
+                    "gridX": 1,
+                    "gridZ": 5,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:7:9",
+                    "gridX": 7,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "North",
+                    "edgeKey": "H:8:9",
+                    "gridX": 7,
+                    "gridZ": 8,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:10:2",
+                    "gridX": 9,
+                    "gridZ": 2,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:5:1",
+                    "gridX": 5,
+                    "gridZ": 1,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:6:1",
+                    "gridX": 5,
+                    "gridZ": 1,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:7:1",
+                    "gridX": 7,
+                    "gridZ": 1,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:8:1",
+                    "gridX": 7,
+                    "gridZ": 1,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "South",
+                    "edgeKey": "H:9:1",
+                    "gridX": 9,
+                    "gridZ": 1,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:9:7",
+                    "gridX": 8,
+                    "gridZ": 7,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:9:8",
+                    "gridX": 8,
+                    "gridZ": 7,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "East",
+                    "edgeKey": "V:10:1",
+                    "gridX": 9,
+                    "gridZ": 1,
+                    "spanUnits": 1
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:1",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "spanUnits": 2
+                },
+                {
+                    "side": "West",
+                    "edgeKey": "V:3:2",
+                    "gridX": 3,
+                    "gridZ": 1,
+                    "spanUnits": 2
+                }
+            ],
+            "doorwayPorts": [
+                {
+                    "portId": "Block_01_PL_ddf232c4_SM_doorway_2X2.5_001",
+                    "openingType": "Doorway",
+                    "connectionKind": "Passage",
+                    "widthUnits": 2,
+                    "height": 2.5,
+                    "wallSide": "East",
+                    "gridPosition": {
+                        "x": 9,
+                        "y": 1
+                    },
+                    "localPosition": {
+                        "x": 5.0,
+                        "y": 1.250000238418579,
+                        "z": -3.000000238418579
+                    },
+                    "localForward": {
+                        "x": -1.0000001192092896,
+                        "y": 0.0,
+                        "z": -1.1920928955078126e-7
+                    },
+                    "isOccupied": false
+                }
+            ],
+            "warnings": [
+                "duplicate_blockTypeId: Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_02' to keep v0 preview records unique."
+            ]
+        }
+    ]
+}

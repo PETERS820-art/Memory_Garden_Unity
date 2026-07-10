@@ -1,0 +1,353 @@
+{
+    "schemaVersion": "app-preview-catalog-v0",
+    "generatedAtUtc": "2026-07-10T07:33:32.2703242Z",
+    "records": [
+        {
+            "previewAssetKey": "preview-block-SBD_Block_01",
+            "sourceType": "block",
+            "sourceAssetPath": "Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01.asset",
+            "previewMode": "procedural",
+            "recommendedAppRenderer": "BlockProceduralPreview",
+            "fallbackShape": "blockGrid",
+            "colorHint": "",
+            "dimensions": {
+                "x": 10.0,
+                "y": 2.5,
+                "z": 10.0
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Use block grid, wall edges, and doorway ports to rebuild a lightweight preview.",
+                "duplicate_blockTypeId: Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01' to keep v0 preview records unique."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-block-SBD_Block_01_1",
+            "sourceType": "block",
+            "sourceAssetPath": "Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01 1.asset",
+            "previewMode": "procedural",
+            "recommendedAppRenderer": "BlockProceduralPreview",
+            "fallbackShape": "blockGrid",
+            "colorHint": "",
+            "dimensions": {
+                "x": 10.0,
+                "y": 2.5,
+                "z": 10.0
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Use block grid, wall edges, and doorway ports to rebuild a lightweight preview.",
+                "duplicate_blockTypeId: Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01_1' to keep v0 preview records unique."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-block-SBD_Block_01_2",
+            "sourceType": "block",
+            "sourceAssetPath": "Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01 2.asset",
+            "previewMode": "procedural",
+            "recommendedAppRenderer": "BlockProceduralPreview",
+            "fallbackShape": "blockGrid",
+            "colorHint": "",
+            "dimensions": {
+                "x": 10.0,
+                "y": 2.5,
+                "z": 10.0
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Use block grid, wall edges, and doorway ports to rebuild a lightweight preview.",
+                "duplicate_blockTypeId: Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01_2' to keep v0 preview records unique."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-block-SBD_Block_01_3",
+            "sourceType": "block",
+            "sourceAssetPath": "Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_01 3.asset",
+            "previewMode": "procedural",
+            "recommendedAppRenderer": "BlockProceduralPreview",
+            "fallbackShape": "blockGrid",
+            "colorHint": "",
+            "dimensions": {
+                "x": 10.0,
+                "y": 2.5,
+                "z": 10.0
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Use block grid, wall edges, and doorway ports to rebuild a lightweight preview.",
+                "duplicate_blockTypeId: Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_01_3' to keep v0 preview records unique."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-block-SBD_Block_02",
+            "sourceType": "block",
+            "sourceAssetPath": "Assets/_project/ScriptableObjects/SpaceBlocks/SBD_Block_02.asset",
+            "previewMode": "procedural",
+            "recommendedAppRenderer": "BlockProceduralPreview",
+            "fallbackShape": "blockGrid",
+            "colorHint": "",
+            "dimensions": {
+                "x": 10.0,
+                "y": 2.5,
+                "z": 10.0
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Use block grid, wall edges, and doorway ports to rebuild a lightweight preview.",
+                "duplicate_blockTypeId: Block type 'Block_01' appears multiple times. Using previewAssetKey 'preview-block-SBD_Block_02' to keep v0 preview records unique."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-furniture-DF_plith_001",
+            "sourceType": "furniture",
+            "sourceAssetPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_plith_001.prefab",
+            "previewMode": "primitive",
+            "recommendedAppRenderer": "PrimitiveFurniturePreview",
+            "fallbackShape": "stand",
+            "colorHint": "",
+            "dimensions": {
+                "x": 1.5443936586380005,
+                "y": 0.7524114847183228,
+                "z": 1.544393539428711
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Treat this as a lightweight silhouette instead of a direct Unity prefab import."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-furniture-DF_shelf_001",
+            "sourceType": "furniture",
+            "sourceAssetPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_shelf_001.prefab",
+            "previewMode": "primitive",
+            "recommendedAppRenderer": "PrimitiveFurniturePreview",
+            "fallbackShape": "shelf",
+            "colorHint": "",
+            "dimensions": {
+                "x": 1.4558932781219483,
+                "y": 0.4800001382827759,
+                "z": 0.8800002336502075
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Treat this as a lightweight silhouette instead of a direct Unity prefab import."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-furniture-DF_shelf_003",
+            "sourceType": "furniture",
+            "sourceAssetPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_shelf_003.prefab",
+            "previewMode": "primitive",
+            "recommendedAppRenderer": "PrimitiveFurniturePreview",
+            "fallbackShape": "shelf",
+            "colorHint": "",
+            "dimensions": {
+                "x": 2.608275890350342,
+                "y": 1.3102223873138428,
+                "z": 1.000000238418579
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Treat this as a lightweight silhouette instead of a direct Unity prefab import."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-furniture-DF_wallshelf_001",
+            "sourceType": "furniture",
+            "sourceAssetPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_wallshelf_001.prefab",
+            "previewMode": "primitive",
+            "recommendedAppRenderer": "PrimitiveFurniturePreview",
+            "fallbackShape": "wallShelf",
+            "colorHint": "",
+            "dimensions": {
+                "x": 0.8624002933502197,
+                "y": 2.40000057220459,
+                "z": 0.35000014305114748
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Treat this as a lightweight silhouette instead of a direct Unity prefab import."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-furniture-PF_DF_carpet_001",
+            "sourceType": "furniture",
+            "sourceAssetPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_carpet_001.prefab",
+            "previewMode": "primitive",
+            "recommendedAppRenderer": "PrimitiveFurniturePreview",
+            "fallbackShape": "lowTable",
+            "colorHint": "",
+            "dimensions": {
+                "x": 2.6909708976745607,
+                "y": 2.0290355682373049,
+                "z": 0.020000005140900613
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Treat this as a lightweight silhouette instead of a direct Unity prefab import."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-furniture-PF_DF_frame_001",
+            "sourceType": "furniture",
+            "sourceAssetPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_frame_001.prefab",
+            "previewMode": "primitive",
+            "recommendedAppRenderer": "PrimitiveFurniturePreview",
+            "fallbackShape": "frame",
+            "colorHint": "",
+            "dimensions": {
+                "x": 0.930908203125,
+                "y": 0.8388349413871765,
+                "z": 0.059870123863220218
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Treat this as a lightweight silhouette instead of a direct Unity prefab import."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-furniture-PF_DF_lamp_001",
+            "sourceType": "furniture",
+            "sourceAssetPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_lamp_001.prefab",
+            "previewMode": "primitive",
+            "recommendedAppRenderer": "PrimitiveFurniturePreview",
+            "fallbackShape": "stand",
+            "colorHint": "",
+            "dimensions": {
+                "x": 0.6478538513183594,
+                "y": 1.6374216079711915,
+                "z": 0.3804742097854614
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Treat this as a lightweight silhouette instead of a direct Unity prefab import."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-furniture-PF_DF_lamp_002",
+            "sourceType": "furniture",
+            "sourceAssetPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_lamp_002.prefab",
+            "previewMode": "primitive",
+            "recommendedAppRenderer": "PrimitiveFurniturePreview",
+            "fallbackShape": "stand",
+            "colorHint": "",
+            "dimensions": {
+                "x": 0.7218666076660156,
+                "y": 1.4720704555511475,
+                "z": 0.6253772974014282
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Treat this as a lightweight silhouette instead of a direct Unity prefab import."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-furniture-PF_DF_plith_002",
+            "sourceType": "furniture",
+            "sourceAssetPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_plith_002.prefab",
+            "previewMode": "primitive",
+            "recommendedAppRenderer": "PrimitiveFurniturePreview",
+            "fallbackShape": "stand",
+            "colorHint": "",
+            "dimensions": {
+                "x": 1.5239704847335816,
+                "y": 1.551375150680542,
+                "z": 0.5441327095031738
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Treat this as a lightweight silhouette instead of a direct Unity prefab import."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-furniture-PF_DF_shelf_002",
+            "sourceType": "furniture",
+            "sourceAssetPath": "Assets/_project/Prefabs/DisplayFurniture/PF_DF_shelf_002.prefab",
+            "previewMode": "primitive",
+            "recommendedAppRenderer": "PrimitiveFurniturePreview",
+            "fallbackShape": "shelf",
+            "colorHint": "",
+            "dimensions": {
+                "x": 1.0799999237060547,
+                "y": 0.6000001430511475,
+                "z": 1.3869895935058594
+            },
+            "thumbnailPath": "",
+            "notes": [
+                "Treat this as a lightweight silhouette instead of a direct Unity prefab import."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-item-MI_cube_001",
+            "sourceType": "item",
+            "sourceAssetPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_cube_001.prefab",
+            "previewMode": "billboard",
+            "recommendedAppRenderer": "BillboardItemPreview",
+            "fallbackShape": "box",
+            "colorHint": "",
+            "dimensions": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+            },
+            "thumbnailPath": "Assets/_project/Art/Models/MemoryItems/MI_Cube_001/Media/Photos/P_MI_cube_001_01.png",
+            "notes": [
+                "Do not reproduce XR, gaze, rigidbody, or Memory Mode behavior in the App."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-item-MI_doll_001",
+            "sourceType": "item",
+            "sourceAssetPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_doll_001.prefab",
+            "previewMode": "billboard",
+            "recommendedAppRenderer": "BillboardItemPreview",
+            "fallbackShape": "teddy",
+            "colorHint": "",
+            "dimensions": {
+                "x": 0.6899470090866089,
+                "y": 1.0086380243301392,
+                "z": 0.6165879964828491
+            },
+            "thumbnailPath": "Assets/_project/Art/Models/MemoryItems/MI_doll_001/Media/Photos/P_MI_doll_001_01.png",
+            "notes": [
+                "Do not reproduce XR, gaze, rigidbody, or Memory Mode behavior in the App."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-item-MI_sculpture_001",
+            "sourceType": "item",
+            "sourceAssetPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_sculpture_001.prefab",
+            "previewMode": "billboard",
+            "recommendedAppRenderer": "BillboardItemPreview",
+            "fallbackShape": "unknown",
+            "colorHint": "",
+            "dimensions": {
+                "x": 0.7876100540161133,
+                "y": 1.8811843395233155,
+                "z": 0.7876100540161133
+            },
+            "thumbnailPath": "Assets/_project/Art/Models/MemoryItems/MI_sculpture_001/Media/Photos/P_MI_sculpture_001_01.png",
+            "notes": [
+                "Do not reproduce XR, gaze, rigidbody, or Memory Mode behavior in the App."
+            ]
+        },
+        {
+            "previewAssetKey": "preview-item-MI_vermiu_001",
+            "sourceType": "item",
+            "sourceAssetPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_vermiu_001.prefab",
+            "previewMode": "billboard",
+            "recommendedAppRenderer": "BillboardItemPreview",
+            "fallbackShape": "unknown",
+            "colorHint": "",
+            "dimensions": {
+                "x": 0.3804931640625,
+                "y": 0.347381591796875,
+                "z": 0.97894287109375
+            },
+            "thumbnailPath": "Assets/_project/Art/Models/MemoryItems/MI_vermiu_001/Media/Photos/P_MI_vermiu_001_04.jpg",
+            "notes": [
+                "Do not reproduce XR, gaze, rigidbody, or Memory Mode behavior in the App."
+            ]
+        }
+    ]
+}

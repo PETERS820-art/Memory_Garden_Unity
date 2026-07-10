@@ -1,0 +1,86 @@
+{
+    "schemaVersion": "app-preview-catalog-v0",
+    "generatedAtUtc": "2026-07-10T07:33:32.2703242Z",
+    "records": [
+        {
+            "itemId": "MI_cube_001",
+            "displayName": "CUBE",
+            "sourcePrefabPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_cube_001.prefab",
+            "sourceDataAssetPath": "Assets/_project/Art/Models/MemoryItems/MI_Cube_001/Data/MI_cube_001_Data.asset",
+            "previewAssetKey": "preview-item-MI_cube_001",
+            "previewMode": "billboard",
+            "silhouetteType": "box",
+            "dimensions": {
+                "x": 2.0,
+                "y": 2.0,
+                "z": 2.0
+            },
+            "itemSize": "Tall",
+            "allowedSlotTypes": [],
+            "enablePlacement": true,
+            "emotionType": "melancholic",
+            "thumbnailHint": "Assets/_project/Art/Models/MemoryItems/MI_Cube_001/Media/Photos/P_MI_cube_001_01.png",
+            "warnings": []
+        },
+        {
+            "itemId": "MI_doll_001",
+            "displayName": "Teddy Bear",
+            "sourcePrefabPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_doll_001.prefab",
+            "sourceDataAssetPath": "Assets/_project/Art/Models/MemoryItems/MI_doll_001/Data/MI_doll_001_Data.asset",
+            "previewAssetKey": "preview-item-MI_doll_001",
+            "previewMode": "billboard",
+            "silhouetteType": "teddy",
+            "dimensions": {
+                "x": 0.6899470090866089,
+                "y": 1.0086380243301392,
+                "z": 0.6165879964828491
+            },
+            "itemSize": "Tall",
+            "allowedSlotTypes": [],
+            "enablePlacement": true,
+            "emotionType": "nostalgic",
+            "thumbnailHint": "Assets/_project/Art/Models/MemoryItems/MI_doll_001/Media/Photos/P_MI_doll_001_01.png",
+            "warnings": []
+        },
+        {
+            "itemId": "MI_sculpture_001",
+            "displayName": "sculpture",
+            "sourcePrefabPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_sculpture_001.prefab",
+            "sourceDataAssetPath": "Assets/_project/Art/Models/MemoryItems/MI_sculpture_001/Data/MI_sculpture_001_Data.asset",
+            "previewAssetKey": "preview-item-MI_sculpture_001",
+            "previewMode": "billboard",
+            "silhouetteType": "unknown",
+            "dimensions": {
+                "x": 0.7876100540161133,
+                "y": 1.8811843395233155,
+                "z": 0.7876100540161133
+            },
+            "itemSize": "Tall",
+            "allowedSlotTypes": [],
+            "enablePlacement": true,
+            "emotionType": "neutral",
+            "thumbnailHint": "Assets/_project/Art/Models/MemoryItems/MI_sculpture_001/Media/Photos/P_MI_sculpture_001_01.png",
+            "warnings": []
+        },
+        {
+            "itemId": "MI_vermiu_001",
+            "displayName": "vermiu",
+            "sourcePrefabPath": "Assets/_project/Prefabs/MemoryItems/PF_MI_vermiu_001.prefab",
+            "sourceDataAssetPath": "Assets/_project/Art/Models/MemoryItems/MI_vermiu_001/Data/MI_vermiu_001_Data.asset",
+            "previewAssetKey": "preview-item-MI_vermiu_001",
+            "previewMode": "billboard",
+            "silhouetteType": "unknown",
+            "dimensions": {
+                "x": 0.3804931640625,
+                "y": 0.347381591796875,
+                "z": 0.97894287109375
+            },
+            "itemSize": "Medium",
+            "allowedSlotTypes": [],
+            "enablePlacement": true,
+            "emotionType": "hopeful",
+            "thumbnailHint": "Assets/_project/Art/Models/MemoryItems/MI_vermiu_001/Media/Photos/P_MI_vermiu_001_04.jpg",
+            "warnings": []
+        }
+    ]
+}
