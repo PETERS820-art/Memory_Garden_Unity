@@ -16,6 +16,7 @@ public static class MemoryUIHiFiBuilder
     private const string GeneratedUiSpriteFolder = "Assets/_project/Art/Generated/MemoryUI";
     private const string RoundedSpriteAssetPath = GeneratedUiSpriteFolder + "/MemoryUIRoundedRect.png";
     private const string CircleSpriteAssetPath = GeneratedUiSpriteFolder + "/MemoryUICircle.png";
+    private const float UiFollowDistanceMeters = 1.1f;
     private static readonly Vector2 StoryBoardModuleAnchoredPosition = new Vector2(-78f, -44f);
     private static readonly Vector3 StoryBoardModuleScale = new Vector3(0.82f, 0.82f, 1f);
     private static readonly Vector3 StoryBoardModuleRotation = new Vector3(0f, -16f, 0f);
@@ -109,9 +110,10 @@ public static class MemoryUIHiFiBuilder
 
         CopyLayer(root, oldRoot != null ? oldRoot : uiContainer);
         root.AddComponent<CanvasGroup>();
-        root.AddComponent<MemoryUIBillboard>();
-        root.AddComponent<MemoryModeUIFollower>();
+        MemoryUIBillboard billboard = root.AddComponent<MemoryUIBillboard>();
+        MemoryModeUIFollower follower = root.AddComponent<MemoryModeUIFollower>();
         MemoryUIRootController controller = root.AddComponent<MemoryUIRootController>();
+        ApplyRootDistanceDefaults(billboard, follower);
 
         if (oldRoot != null)
         {
@@ -128,6 +130,31 @@ public static class MemoryUIHiFiBuilder
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
 
         Debug.Log("[MemoryUIHiFiBuilder] Rebuilt MemoryUIRoot_HiFi with motion-ready roots and layered glass styling.");
+    }
+
+    private static void ApplyRootDistanceDefaults(MemoryUIBillboard billboard, MemoryModeUIFollower follower)
+    {
+        if (billboard != null)
+        {
+            SerializedObject serializedBillboard = new SerializedObject(billboard);
+            SerializedProperty distanceProperty = serializedBillboard.FindProperty("distanceFromCamera");
+            if (distanceProperty != null)
+            {
+                distanceProperty.floatValue = UiFollowDistanceMeters;
+                serializedBillboard.ApplyModifiedPropertiesWithoutUndo();
+            }
+        }
+
+        if (follower != null)
+        {
+            SerializedObject serializedFollower = new SerializedObject(follower);
+            SerializedProperty followDistanceProperty = serializedFollower.FindProperty("followDistance");
+            if (followDistanceProperty != null)
+            {
+                followDistanceProperty.floatValue = UiFollowDistanceMeters;
+                serializedFollower.ApplyModifiedPropertiesWithoutUndo();
+            }
+        }
     }
 
     private static void LoadVisualResources()

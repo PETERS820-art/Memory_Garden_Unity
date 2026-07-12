@@ -16,8 +16,9 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
+  m_CustomRenderQueue: 2000
+  stringTagMap:
+    RenderType: Opaque
   disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
@@ -129,9 +130,15 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _GrowthBlend: 0
+    - _GrowthMaxRadius: 12
+    - _GrowthNoiseStrength: 0.5
+    - _GrowthRadius: 0
+    - _GrowthSoftness: 1.2
+    - _HighlightBoost: 1
     - _LightRangeCompression: 0.66
-    - _Metallic: 0
     - _MemoryBlend: 1
+    - _Metallic: 0
     - _NormalFlatten: 0.55
     - _OcclusionStrength: 1
     - _PainterlyScale: 1
@@ -141,6 +148,7 @@ Material:
     - _ReceiveShadows: 1
     - _RimPower: 1.17
     - _RimStrength: 0.479
+    - _RuntimeTransitionActive: 0
     - _Saturation: 1
     - _ScreenGrainStrength: 0.419
     - _ShadeSteps: 4.04
@@ -157,6 +165,11 @@ Material:
     - _StrokeContrast: 1.22
     - _StrokeDensity: 0.52
     - _Surface: 0
+    - _TranslucencyHalo: 0
+    - _TranslucencyPower: 2
+    - _TranslucencyStrength: 0
+    - _TranslucencyViewDependency: 1.25
+    - _TranslucencyWrap: 0.4
     - _ViewBrushScale: 1.1
     - _ViewBrushStrength: 0.818
     - _ViewProjectionBlend: 0.851
@@ -169,11 +182,14 @@ Material:
     - _BaseColor: {r: 1, g: 0.98274004, b: 0.92156863, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _EmotionTintColor: {r: 0.94, g: 0.9, b: 0.86, a: 1}
-    - _LightTintColor: {r: 1, g: 0.7428968, b: 0.4198113, a: 1}
+    - _EmotionTintColor: {r: 0.3018868, g: 0.3018868, b: 0.3018868, a: 1}
+    - _GrowthOrigin: {r: 0, g: 0, b: 0, a: 0}
+    - _LightTintColor: {r: 0.7924528, g: 0.6307597, b: 0.42986828, a: 1}
+    - _PainterlyBaseColor: {r: 1, g: 1, b: 1, a: 0}
     - _RimColor: {r: 0.85, g: 0.92, b: 1, a: 1}
-    - _ShadowColor: {r: 0.24376574, g: 0.62352943, b: 0.16862744, a: 1}
+    - _ShadowColor: {r: 0.17599949, g: 0.46226418, b: 0.11992704, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _TranslucencyColor: {r: 1, g: 0.82, b: 0.62, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &1754657870346983228
 MonoBehaviour:

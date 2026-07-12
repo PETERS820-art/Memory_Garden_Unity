@@ -17,6 +17,9 @@ public class HandVisualController : MonoBehaviour
     [SerializeField] private bool showHand = true;
 
     private Renderer[] cachedRenderers;
+    private Transform cachedContentTransform;
+    private Vector3 baseContentLocalPosition;
+    private Quaternion baseContentLocalRotation;
 
     public Transform HandModelRoot => handModelRoot;
     public Vector3 PositionOffset
@@ -98,6 +101,7 @@ public class HandVisualController : MonoBehaviour
 
     private void OnEnable()
     {
+        CacheContentBaseTransform();
         CacheRenderers();
         ApplyMaterialOverride();
         ApplyVisualState();
@@ -110,6 +114,7 @@ public class HandVisualController : MonoBehaviour
 
     private void OnValidate()
     {
+        CacheContentBaseTransform();
         CacheRenderers();
         ApplyMaterialOverride();
         ApplyVisualState();
@@ -122,14 +127,17 @@ public class HandVisualController : MonoBehaviour
             return;
         }
 
+        CacheContentBaseTransform();
+
         handModelRoot.localPosition = positionOffset;
         handModelRoot.localRotation = GetReferenceAlignmentRotation() * Quaternion.Euler(rotationOffsetEuler);
         handModelRoot.localScale = scale;
 
         if (contentRoot != null)
         {
-            contentRoot.localPosition = contentPositionOffset;
-            contentRoot.localRotation = Quaternion.Euler(contentRotationOffsetEuler);
+            Quaternion contentRotation = baseContentLocalRotation * Quaternion.Euler(contentRotationOffsetEuler);
+            contentRoot.localRotation = contentRotation;
+            contentRoot.localPosition = baseContentLocalPosition + (contentRotation * contentPositionOffset);
         }
 
         if (handModelRoot.gameObject.activeSelf != showHand)
@@ -164,6 +172,27 @@ public class HandVisualController : MonoBehaviour
 
         Transform rendererRoot = contentRoot != null ? contentRoot : handModelRoot;
         cachedRenderers = rendererRoot.GetComponentsInChildren<Renderer>(true);
+    }
+
+    private void CacheContentBaseTransform()
+    {
+        if (contentRoot == null)
+        {
+            cachedContentTransform = null;
+            baseContentLocalPosition = Vector3.zero;
+            baseContentLocalRotation = Quaternion.identity;
+            return;
+        }
+
+        if (cachedContentTransform == contentRoot)
+        {
+            return;
+        }
+
+        cachedContentTransform = contentRoot;
+        Quaternion configuredContentRotation = Quaternion.Euler(contentRotationOffsetEuler);
+        baseContentLocalRotation = contentRoot.localRotation * Quaternion.Inverse(configuredContentRotation);
+        baseContentLocalPosition = contentRoot.localPosition - (contentRoot.localRotation * contentPositionOffset);
     }
 
     private void ApplyMaterialOverride()

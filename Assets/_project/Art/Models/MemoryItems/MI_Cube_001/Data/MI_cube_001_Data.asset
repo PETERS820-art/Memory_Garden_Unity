@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: MI_cube_001
   itemName: CUBE
   shortDescription: cube
-  emotionType: neutral
+  emotionType: melancholic
   storyText: nothing else, it's just the original cube for test.maybe it represent
     my first attemptation of Unity world.
   photos:

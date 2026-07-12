@@ -15,7 +15,7 @@ MonoBehaviour:
   itemId: MI_vermiu_001
   itemName: vermiu
   shortDescription: 'idle for vermiu. '
-  emotionType: neutral
+  emotionType: hopeful
   storyText: vermiu
   photos:
   - {fileID: 21300000, guid: ee435292219daa84dbe653adba83d934, type: 3}

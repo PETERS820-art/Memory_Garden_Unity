@@ -285,6 +285,19 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 return pow(wrappedBack, max(_TranslucencyPower, 0.001h)) * _TranslucencyStrength * (1.0h + viewScatter + halo);
             }
 
+            float2 GetPerEyeNormalizedScreenSpaceUV(float4 positionCS)
+            {
+                float2 screenUV = GetNormalizedScreenSpaceUV(positionCS);
+
+                #if defined(UNITY_SINGLE_PASS_STEREO)
+                    float4 scaleOffset = unity_StereoScaleOffset[unity_StereoEyeIndex];
+                    float2 safeScale = max(scaleOffset.xy, float2(0.00001, 0.00001));
+                    screenUV = (screenUV - scaleOffset.zw) / safeScale;
+                #endif
+
+                return saturate(screenUV);
+            }
+
             Varyings vert(Attributes input)
             {
                 Varyings output = (Varyings)0;
@@ -391,7 +404,7 @@ Shader "MemoryGarden/Memory Painterly PBR"
                 half3 pbrColor = ambient + diffuse + additionalDiffuse + specular + additionalSpecular + emission;
 
                 float2 worldUV = input.positionWS.xz * painterlyScale;
-                float2 screenUV = GetNormalizedScreenSpaceUV(input.positionCS);
+                float2 screenUV = GetPerEyeNormalizedScreenSpaceUV(input.positionCS);
                 float2 centeredScreenUV = (screenUV - 0.5) * painterlyScale;
 
                 float2 brushGrainUV = baseUV * painterlyScale + worldUV * (0.035 * painterlyScale);
@@ -418,9 +431,17 @@ Shader "MemoryGarden/Memory Painterly PBR"
 
                 half viewBlend = saturate(_ViewProjectionBlend * _ViewBrushStrength);
                 half grainBlend = saturate(_ViewProjectionBlend * (0.45h + _ScreenGrainStrength));
+                half screenGrainStrength = _ScreenGrainStrength;
+
+                #if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+                    // Screen-space brush projection causes binocular mismatch in VR, so fall back to world/object anchored brush fields.
+                    viewBlend = 0.0h;
+                    grainBlend = 0.0h;
+                    screenGrainStrength = 0.0h;
+                #endif
 
                 half brushGrain = lerp(brushGrainWorld, brushGrainView, grainBlend);
-                brushGrain = lerp(brushGrain, brushGrain + brushGrainView * 0.35h, _ScreenGrainStrength);
+                brushGrain = lerp(brushGrain, brushGrain + brushGrainView * 0.35h, screenGrainStrength);
                 half dryBrush = lerp(dryBrushWorld, dryBrushView, viewBlend);
                 half watercolor = lerp(watercolorWorld, watercolorView, saturate(viewBlend * 0.45h));
                 half edgeBreak = lerp(edgeBreakWorld, edgeBreakView, viewBlend);

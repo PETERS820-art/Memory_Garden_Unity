@@ -135,6 +135,7 @@ Material:
     - _GrowthNoiseStrength: 0.5
     - _GrowthRadius: 0
     - _GrowthSoftness: 1.2
+    - _HighlightBoost: 1
     - _LightRangeCompression: 0.66
     - _MemoryBlend: 1
     - _Metallic: 0
@@ -164,6 +165,11 @@ Material:
     - _StrokeContrast: 1.22
     - _StrokeDensity: 0.52
     - _Surface: 0
+    - _TranslucencyHalo: 0
+    - _TranslucencyPower: 2
+    - _TranslucencyStrength: 0
+    - _TranslucencyViewDependency: 1.25
+    - _TranslucencyWrap: 0.4
     - _ViewBrushScale: 1.1
     - _ViewBrushStrength: 0.818
     - _ViewProjectionBlend: 0.851
@@ -178,11 +184,12 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _EmotionTintColor: {r: 0.94, g: 0.9, b: 0.86, a: 1}
     - _GrowthOrigin: {r: 0, g: 0, b: 0, a: 0}
-    - _LightTintColor: {r: 0.52799034, g: 0.923732, b: 0.990566, a: 1}
+    - _LightTintColor: {r: 0.46306515, g: 0.7611484, b: 0.8113208, a: 1}
     - _PainterlyBaseColor: {r: 1, g: 1, b: 1, a: 0}
     - _RimColor: {r: 0.85, g: 0.92, b: 1, a: 1}
-    - _ShadowColor: {r: 0.7264151, g: 0.12677999, b: 0.64951956, a: 1}
+    - _ShadowColor: {r: 0.5566038, g: 0.09714311, b: 0.4995467, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _TranslucencyColor: {r: 1, g: 0.82, b: 0.62, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &1754657870346983228
 MonoBehaviour:

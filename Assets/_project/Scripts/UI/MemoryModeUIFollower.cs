@@ -3,7 +3,7 @@ using UnityEngine;
 public class MemoryModeUIFollower : MonoBehaviour
 {
     [SerializeField] private Camera targetCamera;
-    [SerializeField] private float followDistance = 1.3f;
+    [SerializeField] private float followDistance = 1.1f;
     [SerializeField] private float verticalOffset = -0.05f;
     [SerializeField] private float lateralOffset;
     [SerializeField] private float positionSmoothTime = 0.2f;
