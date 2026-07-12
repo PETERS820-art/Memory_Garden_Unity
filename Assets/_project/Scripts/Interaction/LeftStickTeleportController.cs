@@ -20,6 +20,8 @@ namespace MemoryGarden.Interaction
         public bool requireValidSurface = true;
         public bool showDebugRay;
         public bool useFloorSegmentMarker = true;
+        [Tooltip("Ignore door-left, door-right, and doorway colliders only for teleport aiming rays.")]
+        public bool ignoreDoorOpeningColliders = true;
 
         [Header("Diagnostics")]
         public bool logDebug = true;
@@ -33,6 +35,7 @@ namespace MemoryGarden.Interaction
         Collider m_LastHitCollider;
         bool m_LastDidHit;
         bool m_LastHitValid;
+        readonly RaycastHit[] m_RaycastHits = new RaycastHit[32];
 
         InputAction ThumbstickAction => leftThumbstickAction != null ? leftThumbstickAction.action : null;
 
@@ -112,15 +115,15 @@ namespace MemoryGarden.Interaction
         void UpdateAim()
         {
             var ray = new Ray(rayOrigin.position, rayOrigin.forward);
-            var didHit = Physics.Raycast(ray, out var hit, maxDistance, teleportSurfaceMask, QueryTriggerInteraction.Ignore);
+            var didHit = TryGetFirstTeleportHit(ray, out var hit, out var ignoredDoorHits, out var firstIgnoredDoor);
             var marker = didHit ? hit.collider.GetComponentInParent<TeleportSurfaceMarker>() : null;
             var hierarchyFloor = didHit ? FindRecognizedFloorSegment(hit.collider.transform) : null;
             var recognizedFloor = marker != null || hierarchyFloor != null;
             var valid = didHit && (!requireValidSurface || !useFloorSegmentMarker || recognizedFloor);
 
             var hitSummary = didHit
-                ? $"Ray hit | collider={GetPath(hit.collider.transform)} | point={hit.point} | distance={hit.distance:F2} | marker={(marker != null ? GetPath(marker.transform) : "NONE")} | hierarchyFloor={(hierarchyFloor != null ? GetPath(hierarchyFloor) : "NONE")} | valid={valid}"
-                : $"Ray miss | maxDistance={maxDistance:F2} | mask={teleportSurfaceMask.value}";
+                ? $"Ray hit | collider={GetPath(hit.collider.transform)} | point={hit.point} | distance={hit.distance:F2} | ignoredDoorHits={ignoredDoorHits} | marker={(marker != null ? GetPath(marker.transform) : "NONE")} | hierarchyFloor={(hierarchyFloor != null ? GetPath(hierarchyFloor) : "NONE")} | valid={valid}"
+                : $"Ray miss | maxDistance={maxDistance:F2} | mask={teleportSurfaceMask.value} | ignoredDoorHits={ignoredDoorHits} | firstIgnoredDoor={(firstIgnoredDoor != null ? GetPath(firstIgnoredDoor) : "NONE")}";
             if (didHit != m_LastDidHit || hit.collider != m_LastHitCollider || valid != m_LastHitValid || Time.unscaledTime >= m_NextDebugLogTime)
             {
                 Log(hitSummary);
@@ -203,6 +206,55 @@ namespace MemoryGarden.Interaction
                     return floorSegment;
 
                 current = current.parent;
+            }
+
+            return null;
+        }
+
+        bool TryGetFirstTeleportHit(Ray ray, out RaycastHit selectedHit, out int ignoredDoorHits, out Transform firstIgnoredDoor)
+        {
+            selectedHit = default;
+            ignoredDoorHits = 0;
+            firstIgnoredDoor = null;
+            var selectedDistance = float.PositiveInfinity;
+            var hitCount = Physics.RaycastNonAlloc(ray, m_RaycastHits, maxDistance, teleportSurfaceMask, QueryTriggerInteraction.Ignore);
+
+            for (var i = 0; i < hitCount; i++)
+            {
+                var candidate = m_RaycastHits[i];
+                if (candidate.collider == null)
+                    continue;
+
+                var ignoredDoor = ignoreDoorOpeningColliders ? FindDoorOpeningAncestor(candidate.collider.transform) : null;
+                if (ignoredDoor != null)
+                {
+                    ignoredDoorHits++;
+                    if (firstIgnoredDoor == null)
+                        firstIgnoredDoor = ignoredDoor;
+                    continue;
+                }
+
+                if (candidate.distance >= selectedDistance)
+                    continue;
+
+                selectedDistance = candidate.distance;
+                selectedHit = candidate;
+            }
+
+            return selectedHit.collider != null;
+        }
+
+        static Transform FindDoorOpeningAncestor(Transform value)
+        {
+            while (value != null)
+            {
+                var objectName = value.name;
+                if (objectName.IndexOf("doorleft", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    objectName.IndexOf("doorright", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    objectName.IndexOf("doorway", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return value;
+
+                value = value.parent;
             }
 
             return null;
